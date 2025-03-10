@@ -46,6 +46,9 @@ export default function Sidebar({
   React.useEffect(() => {
     setIsFirstRender(false);
     loadChatHistory();
+    if (isMobile && !isCollapsed) {
+      onToggleCollapse();
+    }
   }, []);
 
   React.useEffect(() => {

@@ -15,9 +15,6 @@ export default function Header({ isCollapsed }: { isCollapsed: boolean }) {
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [selectedModel, setSelectedModel] = useState(() => {
-    return getLocalStorage("selected_model", "gemini-2.0-flash");
-  });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -42,15 +39,6 @@ export default function Header({ isCollapsed }: { isCollapsed: boolean }) {
     setSelectedProvider(providerId);
     setLocalStorage("selected_provider", providerId);
     setIsDropdownOpen(false);
-  };
-
-  const handleSaveAPIKey = (apiKey: string) => {
-    setLocalStorage("api_key", apiKey);
-  };
-
-  const handleSaveModel = (model: string) => {
-    setSelectedModel(model);
-    setLocalStorage("selected_model", model);
   };
 
   return (
@@ -125,9 +113,6 @@ export default function Header({ isCollapsed }: { isCollapsed: boolean }) {
       <ProviderSettingsModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSaveAPIKey={handleSaveAPIKey}
-        onSaveModel={handleSaveModel}
-        selectedModel={selectedModel}
         selectedProvider={selectedProvider}
       />
     </>

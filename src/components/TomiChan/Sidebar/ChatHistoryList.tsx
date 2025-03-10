@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { IconEdit, IconTrash, IconDotsVertical } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChatHistory } from "../types";
-import Portal from "../components/Portal";
+import { ChatHistory } from "../../../types";
+import Portal from "../../Portal";
 
 interface ChatHistoryListProps {
   isCollapsed: boolean;

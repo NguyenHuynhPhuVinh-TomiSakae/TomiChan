@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Message } from "../types";
+import { Message } from "../../types";
 import { IconArrowDown } from "@tabler/icons-react";
 import { motion } from "framer-motion";
-import Markdown from "./Markdown";
+import Markdown from "../Markdown";
 
 interface ChatMessagesProps {
   messages: Message[];

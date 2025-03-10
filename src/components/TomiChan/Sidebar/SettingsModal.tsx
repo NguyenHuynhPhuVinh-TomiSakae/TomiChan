@@ -1,6 +1,6 @@
 import React from "react";
 import { IconX, IconSun, IconMoon, IconWorld } from "@tabler/icons-react";
-import Portal from "./Portal";
+import Portal from "../../Portal";
 
 interface SettingsModalProps {
   isOpen: boolean;

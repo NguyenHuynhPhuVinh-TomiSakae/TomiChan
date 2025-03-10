@@ -1,10 +1,10 @@
 "use client";
-import TomiChat from "../components/TomiChat";
-import ChatInput from "../components/ChatInput";
-import Sidebar from "../components/Sidebar";
+import TomiChat from "../components/TomiChan/TomiChat";
+import ChatInput from "../components/TomiChan/ChatInput";
+import Sidebar from "../components/TomiChan/Sidebar/Sidebar";
 import React from "react";
-import ChatMessages from "../components/ChatMessages";
-import Header from "../components/Header";
+import ChatMessages from "../components/TomiChan/ChatMessages";
+import Header from "../components/TomiChan/Header";
 import { useThemeContext } from "../providers/ThemeProvider";
 import { useGemini } from "../hooks/useGemini";
 import { v4 as uuidv4 } from "uuid";

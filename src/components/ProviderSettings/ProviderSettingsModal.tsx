@@ -1,25 +1,35 @@
 import React, { useState } from "react";
 import { IconX } from "@tabler/icons-react";
-import Portal from "./Portal";
+import Portal from "../Portal";
+import GoogleSettings from "./GoogleSettings";
+import GroqSettings from "./GroqSettings";
 
-interface APIKeyModalProps {
+interface ProviderSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (apiKey: string) => void;
+  onSaveAPIKey: (apiKey: string) => void;
+  onSaveModel: (model: string) => void;
+  selectedModel: string;
+  selectedProvider: string;
 }
 
-export default function APIKeyModal({
+export default function ProviderSettingsModal({
   isOpen,
   onClose,
-  onSave,
-}: APIKeyModalProps) {
+  onSaveAPIKey,
+  onSaveModel,
+  selectedModel,
+  selectedProvider,
+}: ProviderSettingsModalProps) {
   const [apiKey, setApiKey] = useState("");
+  const [model, setModel] = useState(selectedModel);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(apiKey);
+    onSaveAPIKey(apiKey);
+    onSaveModel(model);
     onClose();
   };
 
@@ -28,7 +38,9 @@ export default function APIKeyModal({
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
         <div className="bg-white dark:bg-black rounded-lg w-full max-w-md p-6 relative text-black dark:text-white dark:border dark:border-white">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Cài đặt API Key</h2>
+            <h2 className="text-xl font-semibold">
+              Cài đặt {selectedProvider === "google" ? "Google AI" : "Groq"}
+            </h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
@@ -38,29 +50,21 @@ export default function APIKeyModal({
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Nhập API Key của bạn
-              </label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black text-black dark:text-white"
-                placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            {selectedProvider === "google" ? (
+              <GoogleSettings
+                model={model}
+                apiKey={apiKey}
+                onModelChange={setModel}
+                onApiKeyChange={setApiKey}
               />
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Bạn có thể lấy API Key tại{" "}
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  Google AI Studio
-                </a>
-              </p>
-            </div>
+            ) : (
+              <GroqSettings
+                model={model}
+                apiKey={apiKey}
+                onModelChange={setModel}
+                onApiKeyChange={setApiKey}
+              />
+            )}
 
             <div className="flex justify-end gap-3">
               <button

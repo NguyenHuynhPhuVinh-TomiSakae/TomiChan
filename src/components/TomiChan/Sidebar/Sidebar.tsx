@@ -5,9 +5,9 @@ import {
   IconLayoutSidebarLeftCollapse,
 } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Message, ChatHistory } from "../types";
+import { Message, ChatHistory } from "../../../types";
 import SettingsModal from "./SettingsModal";
-import { chatDB } from "../utils/db";
+import { chatDB } from "../../../utils/db";
 import ChatHistoryList from "./ChatHistoryList";
 
 interface SidebarProps {

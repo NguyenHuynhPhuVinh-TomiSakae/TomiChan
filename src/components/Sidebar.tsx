@@ -1,12 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   IconMessage,
   IconSettings,
   IconLayoutSidebarLeftCollapse,
+  IconEdit,
+  IconTrash,
 } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Message } from "../types";
 import SettingsModal from "./SettingsModal";
+import { chatDB, ChatHistory } from "../utils/db";
 
 interface SidebarProps {
   onNewChat: () => void;
@@ -15,6 +18,10 @@ interface SidebarProps {
   messages: Message[];
   theme: "light" | "dark" | "system";
   onThemeChange: (theme: "light" | "dark" | "system") => void;
+  currentChatId?: string;
+  onSelectChat: (chatId: string) => void;
+  onDeleteChat?: (chatId: string) => void;
+  onEditChatTitle?: (chatId: string, newTitle: string) => void;
 }
 
 export default function Sidebar({
@@ -24,16 +31,62 @@ export default function Sidebar({
   messages,
   theme,
   onThemeChange,
+  currentChatId,
+  onSelectChat,
+  onDeleteChat,
+  onEditChatTitle,
 }: SidebarProps) {
   const [isFirstRender, setIsFirstRender] = React.useState(true);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
+  const [chatHistory, setChatHistory] = React.useState<ChatHistory[]>([]);
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [updateTrigger, setUpdateTrigger] = useState(0);
 
   React.useEffect(() => {
     setIsFirstRender(false);
+    loadChatHistory();
   }, []);
+
+  React.useEffect(() => {
+    loadChatHistory();
+  }, [messages, updateTrigger]);
+
+  const loadChatHistory = async () => {
+    const history = await chatDB.getAllChats();
+    setChatHistory(
+      history.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+    );
+  };
 
   const handleOpenSettings = () => {
     setIsSettingsModalOpen(true);
+  };
+
+  const handleEditClick = (chat: ChatHistory, e: React.MouseEvent) => {
+    e.stopPropagation(); // Ngăn việc chọn chat
+    setEditingChatId(chat.id);
+    setEditTitle(chat.title);
+  };
+
+  const handleEditSubmit = async (chatId: string, e: React.FormEvent) => {
+    e.preventDefault();
+    if (onEditChatTitle && editTitle.trim()) {
+      await onEditChatTitle(chatId, editTitle.trim());
+      setEditingChatId(null);
+      setUpdateTrigger((prev) => prev + 1);
+    }
+  };
+
+  const handleDeleteClick = async (chatId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (
+      onDeleteChat &&
+      window.confirm("Bạn có chắc muốn xóa cuộc trò chuyện này?")
+    ) {
+      await onDeleteChat(chatId);
+      setUpdateTrigger((prev) => prev + 1);
+    }
   };
 
   return (
@@ -106,9 +159,60 @@ export default function Sidebar({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, transition: { duration: 0 } }}
               transition={{ delay: 0.3 }}
-              className="text-sm text-gray-500 dark:text-gray-400 mb-2"
+              className="space-y-2"
             >
-              Lịch sử trò chuyện
+              <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                Lịch sử trò chuyện
+              </div>
+              {chatHistory.map((chat) => (
+                <div key={chat.id} className="group relative">
+                  {editingChatId === chat.id ? (
+                    <form
+                      onSubmit={(e) => handleEditSubmit(chat.id, e)}
+                      className="w-full p-2 bg-gray-100 dark:bg-gray-800 rounded-lg"
+                    >
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full bg-transparent border-none focus:outline-none text-sm"
+                        autoFocus
+                        onBlur={() => setEditingChatId(null)}
+                      />
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => onSelectChat(chat.id)}
+                      className={`w-full p-2 text-left rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-between ${
+                        currentChatId === chat.id
+                          ? "bg-gray-100 dark:bg-gray-800"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate text-sm">{chat.title}</div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(chat.updatedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => handleEditClick(chat, e)}
+                          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                        >
+                          <IconEdit size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteClick(chat.id, e)}
+                          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-red-500"
+                        >
+                          <IconTrash size={16} />
+                        </button>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              ))}
             </motion.div>
           )}
         </AnimatePresence>

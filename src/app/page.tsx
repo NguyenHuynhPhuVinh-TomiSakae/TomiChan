@@ -7,19 +7,44 @@ import ChatMessages from "../components/ChatMessages";
 import Header from "../components/Header";
 import { useThemeContext } from "../providers/ThemeProvider";
 import { useGemini } from "../hooks/useGemini";
+import { v4 as uuidv4 } from "uuid";
+import { chatDB } from "../utils/db";
 
 export default function Home() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const { theme, setTheme } = useThemeContext();
-  const { messages, sendMessage, clearMessages } = useGemini();
+  const [currentChatId, setCurrentChatId] = React.useState<string>(uuidv4());
+  const { messages, sendMessage, clearMessages } = useGemini(currentChatId);
 
   const handleToggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   const handleNewChat = () => {
-    console.log("Tạo cuộc trò chuyện mới");
+    const newChatId = uuidv4();
+    setCurrentChatId(newChatId);
     clearMessages();
+  };
+
+  const handleSelectChat = async (chatId: string) => {
+    setCurrentChatId(chatId);
+    // clearMessages() sẽ được gọi tự động thông qua useEffect trong useGemini
+  };
+
+  const handleDeleteChat = async (chatId: string) => {
+    await chatDB.deleteChat(chatId);
+    if (currentChatId === chatId) {
+      handleNewChat(); // Tạo chat mới nếu xóa chat hiện tại
+    }
+  };
+
+  const handleEditChatTitle = async (chatId: string, newTitle: string) => {
+    const chat = await chatDB.getChat(chatId);
+    if (chat) {
+      chat.title = newTitle;
+      chat.updatedAt = new Date(); // Cập nhật thời gian
+      await chatDB.saveChat(chat);
+    }
   };
 
   return (
@@ -31,6 +56,10 @@ export default function Home() {
         messages={messages}
         theme={theme}
         onThemeChange={setTheme}
+        currentChatId={currentChatId}
+        onSelectChat={handleSelectChat}
+        onDeleteChat={handleDeleteChat}
+        onEditChatTitle={handleEditChatTitle}
       />
       <main
         className={`flex-1 ${

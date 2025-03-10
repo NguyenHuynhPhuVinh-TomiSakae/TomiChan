@@ -12,9 +12,11 @@
     "@google/generative-ai": "^0.24.0",
     "@tabler/icons-react": "^3.31.0",
     "framer-motion": "^12.4.10",
+    "idb": "^8.0.2",
     "next": "15.2.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -22,6 +24,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.2.1",
     "tailwindcss": "^4",

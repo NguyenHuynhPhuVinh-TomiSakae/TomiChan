@@ -17,7 +17,7 @@ export default function ChatMessages({ messages }: ChatMessagesProps) {
   }, [messages]);
 
   return (
-    <div className="w-full space-y-4 px-8 py-4">
+    <div className="w-full space-y-4 py-4">
       {messages.map((message) => (
         <div
           key={message.id}
@@ -26,10 +26,10 @@ export default function ChatMessages({ messages }: ChatMessagesProps) {
           }`}
         >
           <div
-            className={`max-w-[70%] rounded-2xl px-6 py-3 ${
+            className={`max-w-[70%] px-6 py-3 ${
               message.sender === "user"
-                ? "bg-black text-white"
-                : "bg-gray-100 text-black"
+                ? "bg-gray-100 text-black mx-8 rounded-tl-3xl rounded-bl-3xl rounded-br-3xl"
+                : "text-black"
             } whitespace-pre-wrap break-words`}
           >
             {message.content}

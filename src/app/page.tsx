@@ -5,6 +5,7 @@ import Sidebar from "../components/Sidebar";
 import React from "react";
 import ChatMessages from "../components/ChatMessages";
 import { Message } from "../types";
+import Header from "../components/Header";
 
 export default function Home() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
@@ -52,15 +53,19 @@ export default function Home() {
         } transition-all duration-300`}
       >
         {messages.length === 0 ? (
-          <div className="h-screen flex flex-col justify-center items-center">
-            <TomiChat />
-            <div className="w-full max-w-4xl mx-auto p-4">
-              <ChatInput onSendMessage={handleSendMessage} />
+          <>
+            <Header isCollapsed={isCollapsed} />
+            <div className="h-screen flex flex-col justify-center items-center">
+              <TomiChat />
+              <div className="w-full max-w-4xl mx-auto p-4">
+                <ChatInput onSendMessage={handleSendMessage} />
+              </div>
             </div>
-          </div>
+          </>
         ) : (
           <>
-            <div className="w-full max-w-4xl mx-auto flex-1 pb-126">
+            <Header isCollapsed={isCollapsed} />
+            <div className="w-full max-w-4xl mx-auto flex-1 pb-126 pt-20">
               <ChatMessages messages={messages} />
             </div>
 

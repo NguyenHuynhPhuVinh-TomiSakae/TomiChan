@@ -6,13 +6,12 @@ import React from "react";
 import ChatMessages from "../components/ChatMessages";
 import { Message } from "../types";
 import Header from "../components/Header";
+import { useThemeContext } from "../providers/ThemeProvider";
 
 export default function Home() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [messages, setMessages] = React.useState<Message[]>([]);
-  const [theme, setTheme] = React.useState<"light" | "dark" | "system">(
-    "system"
-  );
+  const { theme, setTheme } = useThemeContext();
 
   const handleToggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -43,7 +42,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-white dark:bg-black">
       <Sidebar
         onNewChat={handleNewChat}
         isCollapsed={isCollapsed}
@@ -55,7 +54,7 @@ export default function Home() {
       <main
         className={`flex-1 ${
           messages.length > 0 ? (isCollapsed ? "ml-16" : "ml-64") : ""
-        } transition-all duration-300`}
+        } transition-all duration-300 text-black dark:text-white`}
       >
         {messages.length === 0 ? (
           <>
@@ -75,7 +74,7 @@ export default function Home() {
             </div>
 
             <div
-              className="fixed bottom-0 right-0 bg-white transition-all duration-300"
+              className="fixed bottom-0 right-0 bg-white dark:bg-black transition-all duration-300"
               style={{ left: isCollapsed ? "64px" : "256px" }}
             >
               <div className="w-full max-w-4xl mx-auto p-4">

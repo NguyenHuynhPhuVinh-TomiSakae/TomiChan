@@ -40,7 +40,7 @@ export default function Sidebar({
     <div
       className={`${isCollapsed ? "w-16" : "w-64"} ${
         messages.length > 0 ? "fixed" : "relative"
-      } left-0 top-0 bottom-0 bg-white border-r border-black flex flex-col transition-all duration-300`}
+      } left-0 top-0 bottom-0 bg-white dark:bg-black border-r border-black dark:border-white flex flex-col transition-all duration-300 text-black dark:text-white`}
     >
       {/* Header with Title and Collapse button */}
       <div className="p-4 flex items-center justify-between">
@@ -61,7 +61,7 @@ export default function Sidebar({
         </div>
         <button
           onClick={onToggleCollapse}
-          className="p-2 hover:bg-gray-100 rounded-full cursor-pointer flex-shrink-0"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full cursor-pointer flex-shrink-0"
         >
           <IconLayoutSidebarLeftCollapse
             size={24}
@@ -71,10 +71,10 @@ export default function Sidebar({
       </div>
 
       {/* New Chat Button */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-800">
         <button
           onClick={onNewChat}
-          className={`w-full py-2 bg-black text-white cursor-pointer rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors ${
+          className={`w-full py-2 bg-black dark:bg-white text-white dark:text-black cursor-pointer rounded-lg flex items-center justify-center hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors ${
             isCollapsed ? "px-2" : "px-4"
           }`}
         >
@@ -106,7 +106,7 @@ export default function Sidebar({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, transition: { duration: 0 } }}
               transition={{ delay: 0.3 }}
-              className="text-sm text-gray-500 mb-2"
+              className="text-sm text-gray-500 dark:text-gray-400 mb-2"
             >
               Lịch sử trò chuyện
             </motion.div>
@@ -115,10 +115,10 @@ export default function Sidebar({
       </div>
 
       {/* Settings Button */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-800">
         <button
           onClick={handleOpenSettings}
-          className={`w-full py-2 cursor-pointer text-gray-700 rounded-lg flex items-center hover:bg-gray-200 transition-colors ${
+          className={`w-full py-2 cursor-pointer text-gray-700 dark:text-gray-300 rounded-lg flex items-center hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors ${
             isCollapsed ? "px-2 justify-center" : "px-4"
           }`}
         >

@@ -18,26 +18,28 @@ export default function SettingsModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
+      <div className="bg-white dark:bg-black rounded-lg w-full max-w-md p-6 relative text-black dark:text-white dark:border dark:border-white">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold">Cài đặt</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
           >
             <IconX size={20} />
           </button>
         </div>
 
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Giao diện</h3>
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            Giao diện
+          </h3>
           <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => onThemeChange("light")}
               className={`flex flex-col items-center p-3 rounded-lg border cursor-pointer ${
                 theme === "light"
-                  ? "border-black bg-gray-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-black dark:border-white bg-white dark:bg-black"
+                  : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
               }`}
             >
               <IconSun size={24} />
@@ -47,8 +49,8 @@ export default function SettingsModal({
               onClick={() => onThemeChange("dark")}
               className={`flex flex-col items-center p-3 rounded-lg border cursor-pointer ${
                 theme === "dark"
-                  ? "border-black bg-gray-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-black dark:border-white bg-white dark:bg-black"
+                  : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
               }`}
             >
               <IconMoon size={24} />
@@ -58,8 +60,8 @@ export default function SettingsModal({
               onClick={() => onThemeChange("system")}
               className={`flex flex-col items-center p-3 rounded-lg border cursor-pointer ${
                 theme === "system"
-                  ? "border-black bg-gray-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-black dark:border-white bg-white dark:bg-black"
+                  : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
               }`}
             >
               <IconWorld size={24} />
@@ -71,7 +73,7 @@ export default function SettingsModal({
         <div className="mt-6 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+            className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors cursor-pointer"
           >
             Xong
           </button>

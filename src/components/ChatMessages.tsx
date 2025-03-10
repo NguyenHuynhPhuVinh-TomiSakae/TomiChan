@@ -28,8 +28,8 @@ export default function ChatMessages({ messages }: ChatMessagesProps) {
           <div
             className={`max-w-[70%] px-6 py-3 ${
               message.sender === "user"
-                ? "bg-gray-100 text-black mx-8 rounded-tl-3xl rounded-bl-3xl rounded-br-3xl"
-                : "text-black"
+                ? "bg-gray-100 dark:bg-gray-900 text-black dark:text-white mx-8 rounded-tl-3xl rounded-bl-3xl rounded-br-3xl"
+                : "text-black dark:text-white"
             } whitespace-pre-wrap break-words`}
           >
             {message.content}

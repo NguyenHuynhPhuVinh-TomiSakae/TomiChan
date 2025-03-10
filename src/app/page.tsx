@@ -62,7 +62,7 @@ export default function Home() {
         ) : (
           // Layout mới khi có tin nhắn
           <>
-            <div className="w-full max-w-2xl mx-auto flex-1 pb-24">
+            <div className="w-full max-w-2xl mx-auto flex-1 pb-126">
               <ChatMessages messages={messages} />
             </div>
 

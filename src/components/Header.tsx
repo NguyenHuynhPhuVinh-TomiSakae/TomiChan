@@ -1,23 +1,22 @@
 import React, { useState } from "react";
 import { IconKey } from "@tabler/icons-react";
 import APIKeyModal from "./APIKeyModal";
+import { getLocalStorage, setLocalStorage } from "../utils/localStorage";
 
 export default function Header({ isCollapsed }: { isCollapsed: boolean }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(() => {
-    // Lấy mô hình đã lưu từ localStorage hoặc sử dụng giá trị mặc định
-    return localStorage.getItem("selected_model") || "gemini-2.0-flash";
+    return getLocalStorage("selected_model", "gemini-2.0-flash");
   });
 
   const handleSaveAPIKey = (apiKey: string) => {
-    // Lưu API key vào localStorage hoặc state management system
-    localStorage.setItem("api_key", apiKey);
+    setLocalStorage("api_key", apiKey);
   };
 
   const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const model = e.target.value;
     setSelectedModel(model);
-    localStorage.setItem("selected_model", model);
+    setLocalStorage("selected_model", model);
   };
 
   return (

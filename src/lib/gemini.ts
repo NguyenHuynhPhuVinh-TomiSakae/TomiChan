@@ -3,6 +3,7 @@ import {
   HarmCategory,
   HarmBlockThreshold,
 } from "@google/generative-ai";
+import { getLocalStorage } from "../utils/localStorage";
 
 export const getGeminiResponse = async (
   message: string,
@@ -10,16 +11,13 @@ export const getGeminiResponse = async (
   onChunk: (chunk: string) => void
 ) => {
   try {
-    // Lấy API key từ local storage
-    const apiKey = localStorage.getItem("api_key");
+    const apiKey = getLocalStorage("api_key");
 
     if (!apiKey) {
       return "Vui lòng nhập API key trong cài đặt.";
     }
 
-    // Lấy mô hình đã chọn từ localStorage hoặc sử dụng giá trị mặc định
-    const selectedModel =
-      localStorage.getItem("selected_model") || "gemini-2.0-flash";
+    const selectedModel = getLocalStorage("selected_model", "gemini-2.0-flash");
 
     const genAI = new GoogleGenerativeAI(apiKey);
 

@@ -10,6 +10,7 @@ import { useGemini } from "../hooks/useGemini";
 import { v4 as uuidv4 } from "uuid";
 import { chatDB } from "../utils/db";
 import { useMediaQuery } from "react-responsive";
+import LoadingScreen from "../components/TomiChan/LoadingScreen";
 
 export default function Home() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
@@ -17,6 +18,7 @@ export default function Home() {
   const [currentChatId, setCurrentChatId] = React.useState<string>(uuidv4());
   const { messages, sendMessage, clearMessages } = useGemini(currentChatId);
   const isMobile = useMediaQuery({ maxWidth: 768 });
+  const [showLoading, setShowLoading] = React.useState(true);
 
   const handleToggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -48,6 +50,10 @@ export default function Home() {
       await chatDB.saveChat(chat);
     }
   };
+
+  if (showLoading) {
+    return <LoadingScreen onLoadingComplete={() => setShowLoading(false)} />;
+  }
 
   return (
     <div className="flex min-h-screen bg-white dark:bg-black">

@@ -61,7 +61,7 @@ export default function ChatInput({
               <AnimatePresence>
                 <motion.button
                   type="button"
-                  className="absolute left-3 bottom-3 cursor-pointer bg-gray-200 hover:bg-gray-300 rounded-full p-2 transition-all duration-200"
+                  className="absolute left-3 bottom-10 cursor-pointer bg-gray-200 hover:bg-gray-300 rounded-full p-2 transition-all duration-200"
                   onClick={(e) => {
                     e.preventDefault();
                     if (onPlusClick) onPlusClick();
@@ -78,7 +78,7 @@ export default function ChatInput({
                 {message.trim() && (
                   <motion.button
                     type="submit"
-                    className="absolute right-3 bottom-3 cursor-pointer rounded-full p-2"
+                    className="absolute right-3 bottom-10 cursor-pointer rounded-full p-2"
                     disabled={!message.trim()}
                     initial={{
                       opacity: 0,
@@ -105,6 +105,17 @@ export default function ChatInput({
               </AnimatePresence>
             </div>
           </div>
+        </div>
+        <div className="text-center mt-2 text-sm text-gray-500">
+          Đây là dự án mã nguồn mở của TomiSakae! -{" "}
+          <a
+            href="https://github.com/NguyenHuynhPhuVinh-TomiSakae/TomiChan"
+            className="underline hover:text-gray-700"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Xem tại đây
+          </a>
         </div>
       </div>
     </form>

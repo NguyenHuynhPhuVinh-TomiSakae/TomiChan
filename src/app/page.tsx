@@ -52,17 +52,15 @@ export default function Home() {
         } transition-all duration-300`}
       >
         {messages.length === 0 ? (
-          // Layout ban đầu với TomiChat ở giữa
           <div className="h-screen flex flex-col justify-center items-center">
             <TomiChat />
-            <div className="w-full max-w-2xl mx-auto p-4">
+            <div className="w-full max-w-4xl mx-auto p-4">
               <ChatInput onSendMessage={handleSendMessage} />
             </div>
           </div>
         ) : (
-          // Layout mới khi có tin nhắn
           <>
-            <div className="w-full max-w-2xl mx-auto flex-1 pb-126">
+            <div className="w-full max-w-4xl mx-auto flex-1 pb-126">
               <ChatMessages messages={messages} />
             </div>
 
@@ -70,7 +68,7 @@ export default function Home() {
               className="fixed bottom-0 right-0 bg-white transition-all duration-300"
               style={{ left: isCollapsed ? "64px" : "256px" }}
             >
-              <div className="w-full max-w-2xl mx-auto p-4">
+              <div className="w-full max-w-4xl mx-auto p-4">
                 <ChatInput
                   onSendMessage={handleSendMessage}
                   onPlusClick={handleNewChat}

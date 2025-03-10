@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
 import { Message, ChatHistory } from "../types";
 import { getGeminiResponse } from "../lib/gemini";
@@ -16,7 +17,7 @@ export function useGemini(chatId?: string) {
         if (chat) {
           setMessages(chat.messages);
         } else {
-          setMessages([]); // Reset messages nếu không tìm thấy chat
+          setMessages([]);
         }
       }
     };
@@ -25,6 +26,10 @@ export function useGemini(chatId?: string) {
   }, [chatId]); // Chỉ phụ thuộc vào chatId
 
   const sendMessage = async (message: string) => {
+    // Lưu lại chatId và messages hiện tại
+    const currentChatId = chatId;
+    const currentMessages = [...messages];
+
     const apiKey = localStorage.getItem("api_key");
 
     if (!apiKey) {
@@ -52,83 +57,67 @@ export function useGemini(chatId?: string) {
       sender: "user",
     };
 
-    setMessages((prev) => [...prev, newMessage]);
+    const botMessageId = (Date.now() + 1).toString();
+    const newBotMessage: Message = {
+      id: botMessageId,
+      content: "",
+      sender: "bot" as const,
+    };
+
+    // Cập nhật messages với cả user message và bot message
+    const updatedMessages = [...currentMessages, newMessage, newBotMessage];
+    setMessages(updatedMessages);
     setIsLoading(true);
     setError(null);
 
-    // Lưu vào DB ngay khi người dùng gửi tin nhắn
-    if (chatId) {
-      const updatedMessages = [...messages, newMessage];
-      const chat: ChatHistory = {
-        id: chatId,
-        title: updatedMessages[0]?.content.slice(0, 50) + "...", // Sử dụng tin nhắn đầu làm title
-        messages: updatedMessages,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      await chatDB.saveChat(chat);
-    }
-
-    const botMessageId = (Date.now() + 1).toString();
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: botMessageId,
-        content: "",
-        sender: "bot",
-      },
-    ]);
-
     try {
-      // Chuyển đổi lịch sử trò chuyện cho AI
-      const chatHistory = messages.map((msg) => ({
+      const chatHistory = currentMessages.map((msg) => ({
         role: msg.sender === "user" ? "user" : "model",
         parts: [{ text: msg.content }],
       }));
 
-      // Thêm tin nhắn mới vào history
       chatHistory.push({
         role: "user",
         parts: [{ text: message }],
       });
 
+      let accumulatedMessages = [...currentMessages, newMessage];
+
       const handleChunk = (chunk: string) => {
         setMessages((prev) => {
-          const updatedMessages = [...prev];
-          const botMessageIndex = updatedMessages.findIndex(
+          const newMessages = [...prev];
+          const botMessageIndex = newMessages.findIndex(
             (msg) => msg.id === botMessageId
           );
 
           if (botMessageIndex !== -1) {
-            updatedMessages[botMessageIndex] = {
-              ...updatedMessages[botMessageIndex],
-              content: updatedMessages[botMessageIndex].content + chunk,
+            newMessages[botMessageIndex] = {
+              ...newMessages[botMessageIndex],
+              content: newMessages[botMessageIndex].content + chunk,
             };
+
+            // Cập nhật accumulated messages
+            accumulatedMessages = newMessages;
+
+            // Lưu vào DB với accumulated messages
+            if (currentChatId) {
+              const chat: ChatHistory = {
+                id: currentChatId,
+                title: accumulatedMessages[0]?.content.slice(0, 50) + "...",
+                messages: accumulatedMessages,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              };
+              chatDB.saveChat(chat);
+            }
           }
 
-          return updatedMessages;
+          return newMessages;
         });
       };
 
-      // Gửi toàn bộ history cho AI
       await getGeminiResponse(message, chatHistory, handleChunk);
-
-      // Lưu vào DB sau khi nhận phản hồi từ bot
-      if (chatId) {
-        setMessages((currentMessages) => {
-          const chat: ChatHistory = {
-            id: chatId,
-            title: currentMessages[0]?.content.slice(0, 50) + "...",
-            messages: currentMessages,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
-          chatDB.saveChat(chat);
-          return currentMessages;
-        });
-      }
     } catch (error) {
-      console.error("Lỗi khi xử lý tin nhắn:", error);
       setError("Đã xảy ra lỗi khi xử lý yêu cầu");
 
       // Cập nhật messages với thông báo lỗi

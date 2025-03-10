@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Message } from "../types";
+import { Message, ChatHistory } from "../types";
 import { getGeminiResponse } from "../lib/gemini";
-import { chatDB, ChatHistory } from "../utils/db";
+import { chatDB } from "../utils/db";
 
 export function useGemini(chatId?: string) {
   const [messages, setMessages] = useState<Message[]>([]);

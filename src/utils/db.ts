@@ -1,13 +1,5 @@
 import { openDB, DBSchema } from "idb";
-import { Message } from "../types";
-
-export interface ChatHistory {
-  id: string;
-  title: string;
-  messages: Message[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { ChatHistory } from "../types";
 
 interface ChatDB extends DBSchema {
   chats: {

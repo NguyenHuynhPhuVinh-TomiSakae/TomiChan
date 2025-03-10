@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
+import React, { useState, useEffect } from "react";
+import { IconEdit, IconTrash, IconDotsVertical } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatHistory } from "../types";
 import Portal from "../components/Portal";
@@ -85,6 +85,22 @@ function ChatGroup({
   setEditTitle,
   setEditingChatId,
 }: ChatGroupProps) {
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".menu-container")) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   if (chats.length === 0) return null;
 
   return (
@@ -110,31 +126,55 @@ function ChatGroup({
             <div className="flex">
               <div
                 onClick={() => onSelectChat(chat.id)}
-                className={`flex-1 p-2 text-left rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
+                className={`w-full p-2 text-left rounded-lg transition-colors flex items-center cursor-pointer ${
                   currentChatId === chat.id
                     ? "bg-gray-200 dark:bg-gray-800"
                     : "hover:bg-gray-100 dark:hover:bg-gray-900"
                 }`}
               >
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 max-w-[200px]">
                   <div className="truncate text-sm">{chat.title}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="truncate text-xs text-gray-500">
                     {new Date(chat.updatedAt).toLocaleDateString()}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex-shrink-0 relative ml-2 w-8 menu-container">
                   <button
-                    onClick={(e) => onEditClick(chat, e)}
-                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuId(openMenuId === chat.id ? null : chat.id);
+                    }}
+                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <IconEdit size={16} />
+                    <IconDotsVertical size={16} />
                   </button>
-                  <button
-                    onClick={(e) => onDeleteClick(chat.id, e)}
-                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded text-red-500 cursor-pointer"
-                  >
-                    <IconTrash size={16} />
-                  </button>
+                  {openMenuId === chat.id && (
+                    <div
+                      className="absolute right-0 mt-1 py-1 w-32 bg-white dark:bg-black rounded-lg shadow-lg border dark:border-white z-10"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={(e) => {
+                          onEditClick(chat, e);
+                          setOpenMenuId(null);
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center gap-2 cursor-pointer"
+                      >
+                        <IconEdit size={16} />
+                        <span>Sửa</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          onDeleteClick(chat.id, e);
+                          setOpenMenuId(null);
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center gap-2 text-red-500 cursor-pointer"
+                      >
+                        <IconTrash size={16} />
+                        <span>Xóa</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

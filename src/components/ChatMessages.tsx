@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Message } from "../types";
 import { IconArrowDown } from "@tabler/icons-react";
 import { motion } from "framer-motion";
+import Markdown from "./Markdown";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -72,9 +73,9 @@ export default function ChatMessages({ messages }: ChatMessagesProps) {
                 message.sender === "user"
                   ? "bg-gray-100 dark:bg-gray-900 text-black dark:text-white mx-8 rounded-tl-3xl rounded-bl-3xl rounded-br-3xl"
                   : "text-black dark:text-white"
-              } whitespace-pre-wrap break-words`}
+              }`}
             >
-              {message.content}
+              <Markdown content={message.content} />
             </div>
           </div>
         ))}

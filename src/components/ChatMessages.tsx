@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Message } from "../types";
 import { IconArrowDown } from "@tabler/icons-react";
+import { motion } from "framer-motion";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -80,12 +81,22 @@ export default function ChatMessages({ messages }: ChatMessagesProps) {
       </div>
 
       {showScrollButton && (
-        <button
+        <motion.button
           onClick={scrollToBottom}
-          className="fixed bottom-24 right-8 bg-white dark:bg-black p-2 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-900 border border-black dark:border-white transition-all z-[9999] cursor-pointer"
+          className="fixed bottom-24 right-24 bg-white dark:bg-black p-2 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-900 border border-black dark:border-white transition-all z-[9999] cursor-pointer"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          whileHover={{ scale: 0.9 }}
+          transition={{ duration: 0.2 }}
         >
-          <IconArrowDown size={24} stroke={1.5} />
-        </button>
+          <motion.div
+            animate={{ y: [0, 3, 0] }}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+          >
+            <IconArrowDown size={16} stroke={1.5} />
+          </motion.div>
+        </motion.button>
       )}
     </div>
   );

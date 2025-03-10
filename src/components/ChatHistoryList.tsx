@@ -196,15 +196,22 @@ export default function ChatHistoryList({
     const oneWeek = 7 * oneDay;
     const oneMonth = 30 * oneDay;
 
+    const yesterday = new Date(today.getTime() - oneDay);
+
     return {
       today: chats.filter(
         (chat) =>
           new Date(chat.updatedAt).toDateString() === today.toDateString()
       ),
+      yesterday: chats.filter(
+        (chat) =>
+          new Date(chat.updatedAt).toDateString() === yesterday.toDateString()
+      ),
       thisWeek: chats.filter(
         (chat) =>
           new Date(chat.updatedAt).getTime() > today.getTime() - oneWeek &&
-          new Date(chat.updatedAt).toDateString() !== today.toDateString()
+          new Date(chat.updatedAt).toDateString() !== today.toDateString() &&
+          new Date(chat.updatedAt).toDateString() !== yesterday.toDateString()
       ),
       thisMonth: chats.filter(
         (chat) =>
@@ -237,6 +244,19 @@ export default function ChatHistoryList({
             <ChatGroup
               title="Hôm nay"
               chats={groupedChats.today}
+              currentChatId={currentChatId}
+              editingChatId={editingChatId}
+              editTitle={editTitle}
+              onSelectChat={onSelectChat}
+              onEditSubmit={handleEditSubmit}
+              onEditClick={handleEditClick}
+              onDeleteClick={handleDeleteClick}
+              setEditTitle={setEditTitle}
+              setEditingChatId={setEditingChatId}
+            />
+            <ChatGroup
+              title="Hôm qua"
+              chats={groupedChats.yesterday}
               currentChatId={currentChatId}
               editingChatId={editingChatId}
               editTitle={editTitle}

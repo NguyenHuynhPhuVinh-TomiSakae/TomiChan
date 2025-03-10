@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { IconSend2, IconPlus } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -13,7 +13,7 @@ export default function ChatInput({
   onPlusClick,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
-  const [textareaHeight, setTextareaHeight] = useState(56); // Bắt đầu với chiều cao tối thiểu
+  const [textareaHeight, setTextareaHeight] = useState(56);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -21,7 +21,7 @@ export default function ChatInput({
     if (message.trim()) {
       onSendMessage(message);
       setMessage("");
-      setTextareaHeight(56); // Reset chiều cao khi gửi tin nhắn
+      setTextareaHeight(56);
     }
   };
 
@@ -29,65 +29,16 @@ export default function ChatInput({
     const textarea = e.target;
     setMessage(textarea.value);
 
-    // Cập nhật chiều cao ngay lập tức
-    updateTextareaHeight(textarea);
-  };
-
-  // Tách logic cập nhật chiều cao thành hàm riêng
-  const updateTextareaHeight = (
-    textarea: HTMLTextAreaElement,
-    reset: boolean = false
-  ) => {
-    // Lưu vị trí con trỏ
-    const selectionStart = textarea.selectionStart;
-    const selectionEnd = textarea.selectionEnd;
-
-    // Reset chiều cao để tính toán lại
     textarea.style.height = "56px";
-
-    // Tính toán chiều cao mới và cập nhật state
     const newHeight = Math.max(Math.min(textarea.scrollHeight, 200), 56);
     textarea.style.height = `${newHeight}px`;
     setTextareaHeight(newHeight);
-
-    // Khôi phục vị trí con trỏ
-    textarea.setSelectionRange(selectionStart, selectionEnd);
-
-    // Nếu xóa hết nội dung, reset về chiều cao mặc định
-    if (reset) {
-      textarea.style.height = "56px";
-      setTextareaHeight(56);
-      return;
-    }
   };
-
-  // Đảm bảo chiều cao được cập nhật khi component mount và khi message thay đổi
-  useEffect(() => {
-    if (textareaRef.current) {
-      if (message.trim()) {
-        updateTextareaHeight(textareaRef.current);
-      } else {
-        updateTextareaHeight(textareaRef.current, true);
-      }
-    }
-  }, [message]);
-
-  // Đảm bảo chiều cao được cập nhật khi component mount
-  useEffect(() => {
-    if (textareaRef.current) {
-      updateTextareaHeight(textareaRef.current);
-    }
-  }, []);
 
   return (
     <form onSubmit={handleSubmit} className="relative w-full">
       <div className="flex flex-col w-full">
-        <motion.div
-          className="w-full overflow-hidden bg-white rounded-2xl border border-black"
-          initial={{ height: 56 }}
-          animate={{ height: textareaHeight + 48 }}
-          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-        >
+        <div className="w-full overflow-hidden bg-white rounded-2xl border border-black">
           <div className="w-full h-full flex flex-col">
             <textarea
               ref={textareaRef}
@@ -95,6 +46,7 @@ export default function ChatInput({
               onChange={handleTextareaChange}
               placeholder="Nhập câu hỏi của bạn..."
               className="w-full pt-4 pb-4 px-6 focus:outline-none resize-none overflow-y min-h-[56px] max-h-[200px] bg-transparent flex-grow"
+              style={{ height: `${textareaHeight}px` }}
               rows={1}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -109,7 +61,7 @@ export default function ChatInput({
               <AnimatePresence>
                 <motion.button
                   type="button"
-                  className="absolute left-3 bottom-3 cursor-pointer bg-gray-200 hover:bg-gray-300 rounded-full p-2"
+                  className="absolute left-3 bottom-3 cursor-pointer bg-gray-200 hover:bg-gray-300 rounded-full p-2 transition-all duration-200"
                   onClick={(e) => {
                     e.preventDefault();
                     if (onPlusClick) onPlusClick();
@@ -153,7 +105,7 @@ export default function ChatInput({
               </AnimatePresence>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </form>
   );

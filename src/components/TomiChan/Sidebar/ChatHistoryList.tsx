@@ -104,84 +104,88 @@ function ChatGroup({
   if (chats.length === 0) return null;
 
   return (
-    <div>
-      <div className="text-xs text-gray-500 mb-2">{title}</div>
-      {chats.map((chat) => (
-        <div key={chat.id} className="group relative">
-          {editingChatId === chat.id ? (
-            <form
-              onSubmit={(e) => onEditSubmit(chat.id, e)}
-              className="w-full p-2 bg-gray-100 dark:bg-gray-900 rounded-lg"
-            >
-              <input
-                type="text"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                className="w-full bg-transparent border-none focus:outline-none text-sm"
-                autoFocus
-                onBlur={() => setEditingChatId(null)}
-              />
-            </form>
-          ) : (
-            <div className="flex">
-              <div
-                onClick={() => onSelectChat(chat.id)}
-                className={`w-full p-2 text-left rounded-lg transition-colors flex items-center cursor-pointer ${
-                  currentChatId === chat.id
-                    ? "bg-gray-200 dark:bg-gray-800"
-                    : "hover:bg-gray-100 dark:hover:bg-gray-900"
-                }`}
+    <>
+      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-800 pb-2">
+        {title}
+      </div>
+      <div className="space-y-2">
+        {chats.map((chat) => (
+          <div key={chat.id} className="group relative">
+            {editingChatId === chat.id ? (
+              <form
+                onSubmit={(e) => onEditSubmit(chat.id, e)}
+                className="w-full p-2 bg-gray-100 dark:bg-gray-900 rounded-lg"
               >
-                <div className="flex-1 min-w-0 max-w-[200px]">
-                  <div className="truncate text-sm">{chat.title}</div>
-                  <div className="truncate text-xs text-gray-500">
-                    {new Date(chat.updatedAt).toLocaleDateString()}
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full bg-transparent border-none focus:outline-none text-sm"
+                  autoFocus
+                  onBlur={() => setEditingChatId(null)}
+                />
+              </form>
+            ) : (
+              <div className="flex">
+                <div
+                  onClick={() => onSelectChat(chat.id)}
+                  className={`w-full p-2 text-left rounded-lg transition-colors flex items-center cursor-pointer ${
+                    currentChatId === chat.id
+                      ? "bg-gray-200 dark:bg-gray-800"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-900"
+                  }`}
+                >
+                  <div className="flex-1 min-w-0 max-w-[200px]">
+                    <div className="truncate text-sm">{chat.title}</div>
+                    <div className="truncate text-xs text-gray-500">
+                      {new Date(chat.updatedAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 relative ml-2 w-8 menu-container">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuId(openMenuId === chat.id ? null : chat.id);
+                      }}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <IconDotsVertical size={16} />
+                    </button>
+                    {openMenuId === chat.id && (
+                      <div
+                        className="absolute right-0 mt-1 py-1 w-32 bg-white dark:bg-black rounded-lg shadow-lg border dark:border-white z-10"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={(e) => {
+                            onEditClick(chat, e);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center gap-2 cursor-pointer"
+                        >
+                          <IconEdit size={16} />
+                          <span>Sửa</span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            onDeleteClick(chat.id, e);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center gap-2 text-red-500 cursor-pointer"
+                        >
+                          <IconTrash size={16} />
+                          <span>Xóa</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="flex-shrink-0 relative ml-2 w-8 menu-container">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenMenuId(openMenuId === chat.id ? null : chat.id);
-                    }}
-                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <IconDotsVertical size={16} />
-                  </button>
-                  {openMenuId === chat.id && (
-                    <div
-                      className="absolute right-0 mt-1 py-1 w-32 bg-white dark:bg-black rounded-lg shadow-lg border dark:border-white z-10"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={(e) => {
-                          onEditClick(chat, e);
-                          setOpenMenuId(null);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center gap-2 cursor-pointer"
-                      >
-                        <IconEdit size={16} />
-                        <span>Sửa</span>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          onDeleteClick(chat.id, e);
-                          setOpenMenuId(null);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center gap-2 text-red-500 cursor-pointer"
-                      >
-                        <IconTrash size={16} />
-                        <span>Xóa</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -277,10 +281,10 @@ export default function ChatHistoryList({
           transition={{ delay: 0.3 }}
           className="flex flex-col h-full"
         >
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+          <div className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-4 px-2">
             Lịch sử trò chuyện
           </div>
-          <div className="space-y-4 overflow-y-auto pr-2 flex-1 thin-scrollbar">
+          <div className="space-y-2 overflow-y-auto px-2 flex-1 thin-scrollbar">
             <ChatGroup
               title="Hôm nay"
               chats={groupedChats.today}

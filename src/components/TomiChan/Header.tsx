@@ -51,7 +51,7 @@ export default function Header({ isCollapsed }: { isCollapsed: boolean }) {
           <div className="flex items-center space-x-4">
             <div className="relative" ref={dropdownRef}>
               <button
-                className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black flex items-center gap-2 cursor-pointer"
+                className="px-4 py-2 rounded-lg text-sm bg-white dark:bg-black flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
                 <Image

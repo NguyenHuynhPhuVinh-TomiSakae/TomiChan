@@ -64,7 +64,7 @@ export default function Sidebar({
     <div
       className={`${isCollapsed ? "w-16" : "w-64"} ${
         messages.length > 0 ? "fixed" : "relative"
-      } left-0 top-0 bottom-0 bg-white dark:bg-black border-r border-black dark:border-white flex flex-col transition-all duration-300 text-black dark:text-white`}
+      } left-0 top-0 bottom-0 bg-white dark:bg-black border-r border-black dark:border-white flex flex-col transition-all duration-300 text-black dark:text-white rounded-r-4xl`}
     >
       {/* Header with Title and Collapse button */}
       <div className="p-4 flex items-center justify-between">

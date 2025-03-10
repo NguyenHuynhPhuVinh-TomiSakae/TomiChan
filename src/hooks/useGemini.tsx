@@ -38,13 +38,13 @@ export function useGemini() {
     setIsLoading(true);
     setError(null);
 
-    // Thêm trạng thái loading
-    const loadingId = Date.now() + 1;
+    // Thêm tin nhắn bot với nội dung rỗng để cập nhật theo luồng
+    const botMessageId = (Date.now() + 1).toString();
     setMessages((prev) => [
       ...prev,
       {
-        id: loadingId.toString(),
-        content: "Đang xử lý...",
+        id: botMessageId,
+        content: "",
         sender: "bot",
       },
     ]);
@@ -56,34 +56,48 @@ export function useGemini() {
         parts: [{ text: msg.content }],
       }));
 
-      // Gọi API Gemini
-      const response = await getGeminiResponse(message, chatHistory);
+      // Hàm callback để xử lý từng phần của phản hồi
+      const handleChunk = (chunk: string) => {
+        setMessages((prev) => {
+          const updatedMessages = [...prev];
+          const botMessageIndex = updatedMessages.findIndex(
+            (msg) => msg.id === botMessageId
+          );
 
-      // Cập nhật messages, thay thế tin nhắn loading
-      setMessages((prev) =>
-        prev
-          .filter((msg) => msg.id !== loadingId.toString())
-          .concat({
-            id: (Date.now() + 2).toString(),
-            content: response,
-            sender: "bot",
-          })
-      );
+          if (botMessageIndex !== -1) {
+            updatedMessages[botMessageIndex] = {
+              ...updatedMessages[botMessageIndex],
+              content: updatedMessages[botMessageIndex].content + chunk,
+            };
+          }
+
+          return updatedMessages;
+        });
+      };
+
+      // Gọi API Gemini với hàm callback xử lý từng phần
+      await getGeminiResponse(message, chatHistory, handleChunk);
     } catch (error) {
       console.error("Lỗi khi xử lý tin nhắn:", error);
       setError("Đã xảy ra lỗi khi xử lý yêu cầu");
 
       // Cập nhật messages với thông báo lỗi
-      setMessages((prev) =>
-        prev
-          .filter((msg) => msg.id !== loadingId.toString())
-          .concat({
-            id: (Date.now() + 2).toString(),
+      setMessages((prev) => {
+        const updatedMessages = [...prev];
+        const botMessageIndex = updatedMessages.findIndex(
+          (msg) => msg.id === botMessageId
+        );
+
+        if (botMessageIndex !== -1) {
+          updatedMessages[botMessageIndex] = {
+            ...updatedMessages[botMessageIndex],
             content:
               "Đã xảy ra lỗi khi xử lý tin nhắn của bạn. Vui lòng thử lại sau.",
-            sender: "bot",
-          })
-      );
+          };
+        }
+
+        return updatedMessages;
+      });
     } finally {
       setIsLoading(false);
     }

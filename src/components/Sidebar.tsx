@@ -74,7 +74,7 @@ export default function Sidebar({
       <div className="p-4 border-t border-gray-200 dark:border-gray-800">
         <button
           onClick={onNewChat}
-          className={`w-full py-2 bg-black dark:bg-white text-white dark:text-black cursor-pointer rounded-lg flex items-center justify-center hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors ${
+          className={`w-full py-2 text-black bg-white dark:bg-black hover:bg-gray-100 dark:hover:bg-gray-900 dark:text-white cursor-pointer rounded-lg flex items-center justify-center transition-colors border border-black dark:border-white ${
             isCollapsed ? "px-2" : "px-4"
           }`}
         >

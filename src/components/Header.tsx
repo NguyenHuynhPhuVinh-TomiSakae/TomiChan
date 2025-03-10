@@ -4,10 +4,20 @@ import APIKeyModal from "./APIKeyModal";
 
 export default function Header({ isCollapsed }: { isCollapsed: boolean }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(() => {
+    // Lấy mô hình đã lưu từ localStorage hoặc sử dụng giá trị mặc định
+    return localStorage.getItem("selected_model") || "gemini-2.0-flash";
+  });
 
   const handleSaveAPIKey = (apiKey: string) => {
     // Lưu API key vào localStorage hoặc state management system
     localStorage.setItem("api_key", apiKey);
+  };
+
+  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const model = e.target.value;
+    setSelectedModel(model);
+    localStorage.setItem("selected_model", model);
   };
 
   return (
@@ -18,9 +28,13 @@ export default function Header({ isCollapsed }: { isCollapsed: boolean }) {
       >
         <div className="w-full p-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <select className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black">
-              <option value="gemini-2-0-flash">Gemini 2.0 Flash</option>
-              <option value="gemini-2-0-flash-lite">
+            <select
+              className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+              value={selectedModel}
+              onChange={handleModelChange}
+            >
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+              <option value="gemini-2.0-flash-lite">
                 Gemini 2.0 Flash Lite
               </option>
             </select>

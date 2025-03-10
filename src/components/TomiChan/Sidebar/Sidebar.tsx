@@ -93,7 +93,7 @@ export default function Sidebar({
             ? "top-0 bottom-0"
             : messages.length > 0
             ? "fixed top-0 bottom-0"
-            : "relative"
+            : "h-screen"
         }`}
         style={sidebarStyle}
       >

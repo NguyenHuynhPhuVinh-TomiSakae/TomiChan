@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.0",
     "@tabler/icons-react": "^3.31.0",
     "framer-motion": "^12.4.10",
     "next": "15.2.1",

@@ -58,6 +58,93 @@ function DeleteModal({ isOpen, onClose, onConfirm }: DeleteModalProps) {
   );
 }
 
+interface ChatGroupProps {
+  title: string;
+  chats: ChatHistory[];
+  currentChatId?: string;
+  editingChatId: string | null;
+  editTitle: string;
+  onSelectChat: (chatId: string) => void;
+  onEditSubmit: (chatId: string, e: React.FormEvent) => void;
+  onEditClick: (chat: ChatHistory, e: React.MouseEvent) => void;
+  onDeleteClick: (chatId: string, e: React.MouseEvent) => void;
+  setEditTitle: (title: string) => void;
+  setEditingChatId: (id: string | null) => void;
+}
+
+function ChatGroup({
+  title,
+  chats,
+  currentChatId,
+  editingChatId,
+  editTitle,
+  onSelectChat,
+  onEditSubmit,
+  onEditClick,
+  onDeleteClick,
+  setEditTitle,
+  setEditingChatId,
+}: ChatGroupProps) {
+  if (chats.length === 0) return null;
+
+  return (
+    <div>
+      <div className="text-xs text-gray-500 mb-2">{title}</div>
+      {chats.map((chat) => (
+        <div key={chat.id} className="group relative">
+          {editingChatId === chat.id ? (
+            <form
+              onSubmit={(e) => onEditSubmit(chat.id, e)}
+              className="w-full p-2 bg-gray-100 dark:bg-gray-900 rounded-lg"
+            >
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="w-full bg-transparent border-none focus:outline-none text-sm"
+                autoFocus
+                onBlur={() => setEditingChatId(null)}
+              />
+            </form>
+          ) : (
+            <div className="flex">
+              <div
+                onClick={() => onSelectChat(chat.id)}
+                className={`flex-1 p-2 text-left rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
+                  currentChatId === chat.id
+                    ? "bg-gray-200 dark:bg-gray-800"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-900"
+                }`}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="truncate text-sm">{chat.title}</div>
+                  <div className="text-xs text-gray-500">
+                    {new Date(chat.updatedAt).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => onEditClick(chat, e)}
+                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer"
+                  >
+                    <IconEdit size={16} />
+                  </button>
+                  <button
+                    onClick={(e) => onDeleteClick(chat.id, e)}
+                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded text-red-500 cursor-pointer"
+                  >
+                    <IconTrash size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ChatHistoryList({
   isCollapsed,
   isFirstRender,
@@ -147,254 +234,58 @@ export default function ChatHistoryList({
             Lịch sử trò chuyện
           </div>
           <div className="space-y-4 overflow-y-auto pr-2 flex-1 thin-scrollbar">
-            {groupedChats.today.length > 0 && (
-              <div>
-                <div className="text-xs text-gray-500 mb-2">Hôm nay</div>
-                {groupedChats.today.map((chat) => (
-                  <div key={chat.id} className="group relative">
-                    {editingChatId === chat.id ? (
-                      <form
-                        onSubmit={(e) => handleEditSubmit(chat.id, e)}
-                        className="w-full p-2 bg-gray-100 dark:bg-gray-900 rounded-lg"
-                      >
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          className="w-full bg-transparent border-none focus:outline-none text-sm"
-                          autoFocus
-                          onBlur={() => setEditingChatId(null)}
-                        />
-                      </form>
-                    ) : (
-                      <div className="flex">
-                        <div
-                          onClick={() => onSelectChat(chat.id)}
-                          className={`flex-1 p-2 text-left rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center justify-between cursor-pointer ${
-                            currentChatId === chat.id
-                              ? "bg-gray-100 dark:bg-gray-900"
-                              : ""
-                          }`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate text-sm">{chat.title}</div>
-                            <div className="text-xs text-gray-500">
-                              {new Date(chat.updatedAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditClick(chat, e);
-                              }}
-                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer"
-                            >
-                              <IconEdit size={16} />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(chat.id, e);
-                              }}
-                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded text-red-500 cursor-pointer"
-                            >
-                              <IconTrash size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {groupedChats.thisWeek.length > 0 && (
-              <div>
-                <div className="text-xs text-gray-500 mb-2">Tuần này</div>
-                {groupedChats.thisWeek.map((chat) => (
-                  <div key={chat.id} className="group relative">
-                    {editingChatId === chat.id ? (
-                      <form
-                        onSubmit={(e) => handleEditSubmit(chat.id, e)}
-                        className="w-full p-2 bg-gray-100 dark:bg-gray-900 rounded-lg"
-                      >
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          className="w-full bg-transparent border-none focus:outline-none text-sm"
-                          autoFocus
-                          onBlur={() => setEditingChatId(null)}
-                        />
-                      </form>
-                    ) : (
-                      <div className="flex">
-                        <div
-                          onClick={() => onSelectChat(chat.id)}
-                          className={`flex-1 p-2 text-left rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center justify-between cursor-pointer ${
-                            currentChatId === chat.id
-                              ? "bg-gray-100 dark:bg-gray-900"
-                              : ""
-                          }`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate text-sm">{chat.title}</div>
-                            <div className="text-xs text-gray-500">
-                              {new Date(chat.updatedAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditClick(chat, e);
-                              }}
-                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer"
-                            >
-                              <IconEdit size={16} />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(chat.id, e);
-                              }}
-                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded text-red-500 cursor-pointer"
-                            >
-                              <IconTrash size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {groupedChats.thisMonth.length > 0 && (
-              <div>
-                <div className="text-xs text-gray-500 mb-2">Tháng này</div>
-                {groupedChats.thisMonth.map((chat) => (
-                  <div key={chat.id} className="group relative">
-                    {editingChatId === chat.id ? (
-                      <form
-                        onSubmit={(e) => handleEditSubmit(chat.id, e)}
-                        className="w-full p-2 bg-gray-100 dark:bg-gray-900 rounded-lg"
-                      >
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          className="w-full bg-transparent border-none focus:outline-none text-sm"
-                          autoFocus
-                          onBlur={() => setEditingChatId(null)}
-                        />
-                      </form>
-                    ) : (
-                      <div className="flex">
-                        <div
-                          onClick={() => onSelectChat(chat.id)}
-                          className={`flex-1 p-2 text-left rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center justify-between cursor-pointer ${
-                            currentChatId === chat.id
-                              ? "bg-gray-100 dark:bg-gray-900"
-                              : ""
-                          }`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate text-sm">{chat.title}</div>
-                            <div className="text-xs text-gray-500">
-                              {new Date(chat.updatedAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditClick(chat, e);
-                              }}
-                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer"
-                            >
-                              <IconEdit size={16} />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(chat.id, e);
-                              }}
-                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded text-red-500 cursor-pointer"
-                            >
-                              <IconTrash size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {groupedChats.older.length > 0 && (
-              <div>
-                <div className="text-xs text-gray-500 mb-2">Cũ hơn</div>
-                {groupedChats.older.map((chat) => (
-                  <div key={chat.id} className="group relative">
-                    {editingChatId === chat.id ? (
-                      <form
-                        onSubmit={(e) => handleEditSubmit(chat.id, e)}
-                        className="w-full p-2 bg-gray-100 dark:bg-gray-900 rounded-lg"
-                      >
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          className="w-full bg-transparent border-none focus:outline-none text-sm"
-                          autoFocus
-                          onBlur={() => setEditingChatId(null)}
-                        />
-                      </form>
-                    ) : (
-                      <div className="flex">
-                        <div
-                          onClick={() => onSelectChat(chat.id)}
-                          className={`flex-1 p-2 text-left rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center justify-between cursor-pointer ${
-                            currentChatId === chat.id
-                              ? "bg-gray-100 dark:bg-gray-900"
-                              : ""
-                          }`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate text-sm">{chat.title}</div>
-                            <div className="text-xs text-gray-500">
-                              {new Date(chat.updatedAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditClick(chat, e);
-                              }}
-                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer"
-                            >
-                              <IconEdit size={16} />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(chat.id, e);
-                              }}
-                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded text-red-500 cursor-pointer"
-                            >
-                              <IconTrash size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            <ChatGroup
+              title="Hôm nay"
+              chats={groupedChats.today}
+              currentChatId={currentChatId}
+              editingChatId={editingChatId}
+              editTitle={editTitle}
+              onSelectChat={onSelectChat}
+              onEditSubmit={handleEditSubmit}
+              onEditClick={handleEditClick}
+              onDeleteClick={handleDeleteClick}
+              setEditTitle={setEditTitle}
+              setEditingChatId={setEditingChatId}
+            />
+            <ChatGroup
+              title="Tuần này"
+              chats={groupedChats.thisWeek}
+              currentChatId={currentChatId}
+              editingChatId={editingChatId}
+              editTitle={editTitle}
+              onSelectChat={onSelectChat}
+              onEditSubmit={handleEditSubmit}
+              onEditClick={handleEditClick}
+              onDeleteClick={handleDeleteClick}
+              setEditTitle={setEditTitle}
+              setEditingChatId={setEditingChatId}
+            />
+            <ChatGroup
+              title="Tháng này"
+              chats={groupedChats.thisMonth}
+              currentChatId={currentChatId}
+              editingChatId={editingChatId}
+              editTitle={editTitle}
+              onSelectChat={onSelectChat}
+              onEditSubmit={handleEditSubmit}
+              onEditClick={handleEditClick}
+              onDeleteClick={handleDeleteClick}
+              setEditTitle={setEditTitle}
+              setEditingChatId={setEditingChatId}
+            />
+            <ChatGroup
+              title="Cũ hơn"
+              chats={groupedChats.older}
+              currentChatId={currentChatId}
+              editingChatId={editingChatId}
+              editTitle={editTitle}
+              onSelectChat={onSelectChat}
+              onEditSubmit={handleEditSubmit}
+              onEditClick={handleEditClick}
+              onDeleteClick={handleDeleteClick}
+              setEditTitle={setEditTitle}
+              setEditingChatId={setEditingChatId}
+            />
           </div>
           <DeleteModal
             isOpen={deleteModalOpen}

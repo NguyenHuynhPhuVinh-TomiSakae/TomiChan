@@ -20,7 +20,7 @@ export default function SettingsModal({
   return (
     <Portal>
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-        <div className="bg-white dark:bg-black rounded-lg w-full max-w-md p-6 relative text-black dark:text-white dark:border dark:border-white">
+        <div className="bg-white dark:bg-black sm:rounded-lg w-full max-w-md p-6 relative text-black dark:text-white dark:border dark:border-white">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">Cài đặt</h2>
             <button

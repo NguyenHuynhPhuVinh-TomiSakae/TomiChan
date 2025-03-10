@@ -45,7 +45,7 @@ export default function ChatInput({
               value={message}
               onChange={handleTextareaChange}
               placeholder="Nhập câu hỏi của bạn..."
-              className="w-full pt-4 pb-4 px-6 focus:outline-none resize-none overflow-y min-h-[56px] max-h-[200px] bg-transparent flex-grow placeholder:text-gray-500 dark:placeholder:text-gray-400"
+              className="w-full pt-3 pb-3 sm:pt-4 sm:pb-4 px-4 sm:px-6 focus:outline-none resize-none overflow-y min-h-[50px] sm:min-h-[56px] max-h-[160px] sm:max-h-[200px] bg-transparent flex-grow placeholder:text-gray-500 dark:placeholder:text-gray-400"
               style={{ height: `${textareaHeight}px` }}
               rows={1}
               onKeyDown={(e) => {
@@ -117,11 +117,11 @@ export default function ChatInput({
             </div>
           </div>
         </div>
-        <div className="text-center mt-2 text-sm text-gray-500">
+        <div className="text-center mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
           Đây là dự án mã nguồn mở của TomiSakae! -{" "}
           <a
             href="https://github.com/NguyenHuynhPhuVinh-TomiSakae/TomiChan"
-            className="underline hover:text-gray-700"
+            className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >

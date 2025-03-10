@@ -3,12 +3,21 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   IconChevronDown,
   IconAdjustmentsHorizontal,
+  IconLayoutSidebarLeftCollapse,
 } from "@tabler/icons-react";
 import Image from "next/image";
 import ProviderSettingsModal from "../ProviderSettings/ProviderSettingsModal";
 import { getLocalStorage, setLocalStorage } from "../../utils/localStorage";
 
-export default function Header({ isCollapsed }: { isCollapsed: boolean }) {
+export default function Header({
+  isCollapsed,
+  isMobile,
+  onToggleCollapse,
+}: {
+  isCollapsed: boolean;
+  isMobile: boolean;
+  onToggleCollapse: () => void;
+}) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(() => {
     return getLocalStorage("selected_provider", "google");
@@ -44,11 +53,24 @@ export default function Header({ isCollapsed }: { isCollapsed: boolean }) {
   return (
     <>
       <div
-        className="fixed top-0 right-0 left-64 bg-white dark:bg-black text-black dark:text-white z-10 transition-all duration-300"
-        style={{ left: isCollapsed ? "64px" : "256px" }}
+        className="fixed top-0 right-0 z-10 bg-white dark:bg-black text-black dark:text-white transition-all duration-300"
+        style={{
+          left: isMobile ? 0 : isCollapsed ? "64px" : "256px",
+        }}
       >
-        <div className="w-full p-4 flex items-center justify-between">
+        <div className="w-full p-2 sm:p-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
+            {isMobile && (
+              <button
+                onClick={onToggleCollapse}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full cursor-pointer flex-shrink-0"
+              >
+                <IconLayoutSidebarLeftCollapse
+                  size={24}
+                  className={isCollapsed ? "rotate-180" : ""}
+                />
+              </button>
+            )}
             <div className="relative" ref={dropdownRef}>
               <button
                 className="px-4 py-2 rounded-lg text-sm bg-white dark:bg-black flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900"

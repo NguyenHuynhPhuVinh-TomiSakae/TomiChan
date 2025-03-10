@@ -3,17 +3,34 @@ import TomiChat from "../components/TomiChat";
 import ChatInput from "../components/ChatInput";
 import Sidebar from "../components/Sidebar";
 import React from "react";
+import ChatMessages from "../components/ChatMessages";
+import { Message } from "../types";
 
 export default function Home() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const [messages, setMessages] = React.useState<Message[]>([]);
 
   const handleToggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   const handleSendMessage = (message: string) => {
-    console.log("Tin nhắn đã gửi:", message);
-    // Xử lý tin nhắn ở đây (gửi API, cập nhật state, v.v.)
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      content: message,
+      sender: "user",
+    };
+    setMessages((prev) => [...prev, newMessage]);
+
+    // Giả lập phản hồi từ bot
+    setTimeout(() => {
+      const botResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "Đây là phản hồi tự động từ bot.",
+        sender: "bot",
+      };
+      setMessages((prev) => [...prev, botResponse]);
+    }, 1000);
   };
 
   const handleNewChat = () => {
@@ -22,22 +39,46 @@ export default function Home() {
   };
 
   return (
-    <div className="flex">
+    <div className="flex min-h-screen">
       <Sidebar
         onNewChat={handleNewChat}
         isCollapsed={isCollapsed}
         onToggleCollapse={handleToggleCollapse}
+        messages={messages}
       />
-      <main className="flex-1 flex flex-col items-center justify-center min-h-screen bg-white p-4">
-        <div className="w-full max-w-2xl flex flex-col justify-center items-center">
-          <TomiChat />
-          {/* Phần hiển thị tin nhắn sẽ nằm ở đây */}
-          <div className="mb-4 flex-grow">
-            {/* Các tin nhắn sẽ được hiển thị ở đây */}
+      <main
+        className={`flex-1 ${
+          messages.length > 0 ? (isCollapsed ? "ml-16" : "ml-64") : ""
+        } transition-all duration-300`}
+      >
+        {messages.length === 0 ? (
+          // Layout ban đầu với TomiChat ở giữa
+          <div className="h-screen flex flex-col justify-center items-center">
+            <TomiChat />
+            <div className="w-full max-w-2xl mx-auto p-4">
+              <ChatInput onSendMessage={handleSendMessage} />
+            </div>
           </div>
+        ) : (
+          // Layout mới khi có tin nhắn
+          <>
+            <div className="w-full max-w-2xl mx-auto flex-1 pb-24">
+              <ChatMessages messages={messages} />
+            </div>
 
-          <ChatInput onSendMessage={handleSendMessage} />
-        </div>
+            <div
+              className="fixed bottom-0 right-0 bg-white transition-all duration-300"
+              style={{ left: isCollapsed ? "64px" : "256px" }}
+            >
+              <div className="w-full max-w-2xl mx-auto p-4">
+                <ChatInput
+                  onSendMessage={handleSendMessage}
+                  onPlusClick={handleNewChat}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );

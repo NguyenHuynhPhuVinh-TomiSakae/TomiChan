@@ -5,17 +5,20 @@ import {
   IconLayoutSidebarLeftCollapse,
 } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Message } from "../types";
 
 interface SidebarProps {
   onNewChat: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  messages: Message[];
 }
 
 export default function Sidebar({
   onNewChat,
   isCollapsed,
   onToggleCollapse,
+  messages,
 }: SidebarProps) {
   const [isFirstRender, setIsFirstRender] = React.useState(true);
 
@@ -25,9 +28,9 @@ export default function Sidebar({
 
   return (
     <div
-      className={`${
-        isCollapsed ? "w-16" : "w-64"
-      } h-screen bg-white border-r border-black flex flex-col transition-all duration-300 rounded-4xl`}
+      className={`${isCollapsed ? "w-16" : "w-64"} ${
+        messages.length > 0 ? "fixed" : "relative"
+      } left-0 top-0 bottom-0 bg-white border-r border-black flex flex-col transition-all duration-300`}
     >
       {/* Header with Title and Collapse button */}
       <div className="p-4 flex items-center justify-between">

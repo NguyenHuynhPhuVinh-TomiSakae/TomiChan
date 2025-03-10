@@ -6,12 +6,15 @@ import {
 } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Message } from "../types";
+import SettingsModal from "./SettingsModal";
 
 interface SidebarProps {
   onNewChat: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   messages: Message[];
+  theme: "light" | "dark" | "system";
+  onThemeChange: (theme: "light" | "dark" | "system") => void;
 }
 
 export default function Sidebar({
@@ -19,12 +22,19 @@ export default function Sidebar({
   isCollapsed,
   onToggleCollapse,
   messages,
+  theme,
+  onThemeChange,
 }: SidebarProps) {
   const [isFirstRender, setIsFirstRender] = React.useState(true);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     setIsFirstRender(false);
   }, []);
+
+  const handleOpenSettings = () => {
+    setIsSettingsModalOpen(true);
+  };
 
   return (
     <div
@@ -107,6 +117,7 @@ export default function Sidebar({
       {/* Settings Button */}
       <div className="p-4 border-t border-gray-200">
         <button
+          onClick={handleOpenSettings}
           className={`w-full py-2 cursor-pointer text-gray-700 rounded-lg flex items-center hover:bg-gray-200 transition-colors ${
             isCollapsed ? "px-2 justify-center" : "px-4"
           }`}
@@ -129,6 +140,13 @@ export default function Sidebar({
           </AnimatePresence>
         </button>
       </div>
+
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        theme={theme}
+        onThemeChange={onThemeChange}
+      />
     </div>
   );
 }

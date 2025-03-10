@@ -10,6 +10,9 @@ import Header from "../components/Header";
 export default function Home() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [messages, setMessages] = React.useState<Message[]>([]);
+  const [theme, setTheme] = React.useState<"light" | "dark" | "system">(
+    "system"
+  );
 
   const handleToggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -46,6 +49,8 @@ export default function Home() {
         isCollapsed={isCollapsed}
         onToggleCollapse={handleToggleCollapse}
         messages={messages}
+        theme={theme}
+        onThemeChange={setTheme}
       />
       <main
         className={`flex-1 ${

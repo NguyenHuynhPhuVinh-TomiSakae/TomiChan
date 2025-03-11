@@ -3,14 +3,20 @@ import { Message } from "../../types";
 import { IconArrowDown } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import Markdown from "../Markdown";
+import { useMediaQuery } from "react-responsive";
 
 interface ChatMessagesProps {
   messages: Message[];
+  isLoading?: boolean;
 }
 
-export default function ChatMessages({ messages }: ChatMessagesProps) {
+export default function ChatMessages({
+  messages,
+  isLoading,
+}: ChatMessagesProps) {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const prevMessagesLengthRef = useRef(0);
+  const isMobile = useMediaQuery({ maxWidth: 768 });
 
   const scrollToBottom = () => {
     window.scrollTo({
@@ -72,16 +78,27 @@ export default function ChatMessages({ messages }: ChatMessagesProps) {
               className={`px-3 py-2 sm:px-6 sm:py-3 ${
                 message.sender === "user"
                   ? "bg-gray-100 dark:bg-gray-900 text-black dark:text-white mx-4 sm:mx-8 rounded-tl-2xl rounded-bl-2xl rounded-br-2xl sm:rounded-tl-3xl sm:rounded-bl-3xl sm:rounded-br-3xl max-w-[85%] sm:max-w-[70%]"
-                  : "text-black dark:text-white"
+                  : "text-black dark:text-white w-full max-w-full"
               }`}
             >
-              <Markdown content={message.content} />
+              <div className="max-w-full overflow-x-auto thin-scrollbar">
+                <div className="max-w-fit">
+                  <Markdown content={message.content} />
+                </div>
+              </div>
+              {isLoading && message === messages[messages.length - 1] && (
+                <motion.div
+                  className="w-4 h-4 border-2 border-black dark:border-white mt-2"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+              )}
             </div>
           </div>
         ))}
       </div>
 
-      {showScrollButton && (
+      {showScrollButton && !isMobile && (
         <motion.button
           onClick={scrollToBottom}
           className="fixed bottom-16 sm:bottom-24 right-4 sm:right-24 bg-white dark:bg-black p-2 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-900 border border-black dark:border-white transition-all z-[9999] cursor-pointer"

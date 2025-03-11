@@ -36,7 +36,13 @@ export default function ChatInput({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-full">
+    <motion.form
+      onSubmit={handleSubmit}
+      className="relative w-full"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
+    >
       <div className="flex flex-col w-full">
         <div className="w-full overflow-hidden bg-white dark:bg-black rounded-2xl border border-black dark:border-white">
           <div className="w-full h-full flex flex-col">
@@ -57,11 +63,11 @@ export default function ChatInput({
             />
 
             {/* Layout cho các nút */}
-            <div className="h-16">
+            <div className="h-10 sm:h-14">
               <AnimatePresence>
                 <motion.button
                   type="button"
-                  className="absolute left-3 bottom-10 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-2 transition-all duration-200 border border-black dark:border-white"
+                  className="absolute left-2 sm:left-3 bottom-8 sm:bottom-10 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 sm:p-2 transition-all duration-200 border border-black dark:border-white"
                   onClick={(e) => {
                     e.preventDefault();
                     if (onPlusClick) onPlusClick();
@@ -71,8 +77,8 @@ export default function ChatInput({
                   transition={{ duration: 0.2 }}
                 >
                   <IconPlus
-                    size={22}
-                    className="text-black dark:text-white"
+                    size={18}
+                    className="text-black dark:text-white sm:w-[22px] sm:h-[22px]"
                     stroke={1.5}
                   />
                 </motion.button>
@@ -82,7 +88,7 @@ export default function ChatInput({
                 {message.trim() && (
                   <motion.button
                     type="submit"
-                    className="absolute right-3 bottom-10 cursor-pointer rounded-full p-2 bg-black dark:bg-white"
+                    className="absolute right-2 sm:right-3 bottom-8 sm:bottom-10 cursor-pointer rounded-full p-2 bg-black dark:bg-white"
                     disabled={!message.trim()}
                     initial={{
                       opacity: 0,
@@ -107,8 +113,8 @@ export default function ChatInput({
                     transition={{ duration: 0.2 }}
                   >
                     <IconSend2
-                      size={22}
-                      className="text-white dark:text-black"
+                      size={18}
+                      className="text-white dark:text-black sm:w-[22px] sm:h-[22px]"
                       stroke={1.5}
                     />
                   </motion.button>
@@ -129,6 +135,6 @@ export default function ChatInput({
           </a>
         </div>
       </div>
-    </form>
+    </motion.form>
   );
 }

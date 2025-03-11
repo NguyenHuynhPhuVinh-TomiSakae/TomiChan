@@ -6,17 +6,18 @@ import React from "react";
 import ChatMessages from "../components/TomiChan/ChatMessages";
 import Header from "../components/TomiChan/Header";
 import { useThemeContext } from "../providers/ThemeProvider";
-import { useGemini } from "../hooks/useGemini";
+import { useChatProvider } from "../hooks/useChatProvider";
 import { v4 as uuidv4 } from "uuid";
 import { chatDB } from "../utils/db";
 import { useMediaQuery } from "react-responsive";
 import LoadingScreen from "../components/TomiChan/LoadingScreen";
 
 export default function Home() {
-  const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const [isCollapsed, setIsCollapsed] = React.useState(true);
   const { theme, setTheme } = useThemeContext();
   const [currentChatId, setCurrentChatId] = React.useState<string>(uuidv4());
-  const { messages, sendMessage, clearMessages } = useGemini(currentChatId);
+  const { messages, sendMessage, clearMessages, isLoading } =
+    useChatProvider(currentChatId);
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showLoading, setShowLoading] = React.useState(true);
 
@@ -32,13 +33,12 @@ export default function Home() {
 
   const handleSelectChat = async (chatId: string) => {
     setCurrentChatId(chatId);
-    // clearMessages() sẽ được gọi tự động thông qua useEffect trong useGemini
   };
 
   const handleDeleteChat = async (chatId: string) => {
     await chatDB.deleteChat(chatId);
     if (currentChatId === chatId) {
-      handleNewChat(); // Tạo chat mới nếu xóa chat hiện tại
+      handleNewChat();
     }
   };
 
@@ -46,7 +46,7 @@ export default function Home() {
     const chat = await chatDB.getChat(chatId);
     if (chat) {
       chat.title = newTitle;
-      chat.updatedAt = new Date(); // Cập nhật thời gian
+      chat.updatedAt = new Date();
       await chatDB.saveChat(chat);
     }
   };
@@ -81,7 +81,7 @@ export default function Home() {
               : ""
           } ${isMobile ? "w-full" : ""}`}
       >
-        {messages.length === 0 ? (
+        {messages.length === 0 && !isMobile ? (
           <>
             <Header
               isCollapsed={isCollapsed}
@@ -102,10 +102,15 @@ export default function Home() {
               isMobile={isMobile}
               onToggleCollapse={handleToggleCollapse}
             />
-            <div className="w-full max-w-4xl mx-auto flex-1 pb-126 pt-20">
-              <ChatMessages messages={messages} />
-            </div>
-
+            {messages.length > 0 ? (
+              <div className="w-full max-w-4xl mx-auto flex-1 pb-126 pt-20">
+                <ChatMessages messages={messages} isLoading={isLoading} />
+              </div>
+            ) : (
+              <div className="h-screen flex flex-col justify-center items-center">
+                <TomiChat />
+              </div>
+            )}
             <div
               className="fixed bottom-0 right-0 bg-white dark:bg-black transition-all duration-300 w-full sm:w-auto"
               style={{

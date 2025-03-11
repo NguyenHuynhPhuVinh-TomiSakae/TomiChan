@@ -1,39 +1,26 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState, useEffect } from "react";
-import { Message, ChatHistory } from "../types";
+import { useChat } from "./useChat";
 import { getGeminiResponse } from "../lib/gemini";
-import { chatDB } from "../utils/db";
+import { Message } from "../types";
 
-export function useGemini(chatId?: string) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Load tin nhắn khi chatId thay đổi
-  useEffect(() => {
-    const loadChat = async () => {
-      if (chatId) {
-        const chat = await chatDB.getChat(chatId);
-        if (chat) {
-          setMessages(chat.messages);
-        } else {
-          setMessages([]);
-        }
-      }
-    };
-
-    loadChat();
-  }, [chatId]); // Chỉ phụ thuộc vào chatId
+export function useGeminiChat(chatId?: string) {
+  const {
+    messages,
+    setMessages,
+    isLoading,
+    setIsLoading,
+    error,
+    setError,
+    saveChat,
+    clearMessages,
+  } = useChat(chatId);
 
   const sendMessage = async (message: string) => {
-    // Lưu lại chatId và messages hiện tại
+    const apiKey = localStorage.getItem("api_key");
     const currentChatId = chatId;
     const currentMessages = [...messages];
 
-    const apiKey = localStorage.getItem("api_key");
-
     if (!apiKey) {
-      // Thông báo cho người dùng nhập API key
       setMessages((prev) => [
         ...prev,
         {
@@ -61,10 +48,9 @@ export function useGemini(chatId?: string) {
     const newBotMessage: Message = {
       id: botMessageId,
       content: "",
-      sender: "bot" as const,
+      sender: "bot",
     };
 
-    // Cập nhật messages với cả user message và bot message
     const updatedMessages = [...currentMessages, newMessage, newBotMessage];
     setMessages(updatedMessages);
     setIsLoading(true);
@@ -95,21 +81,8 @@ export function useGemini(chatId?: string) {
               ...newMessages[botMessageIndex],
               content: newMessages[botMessageIndex].content + chunk,
             };
-
-            // Cập nhật accumulated messages
             accumulatedMessages = newMessages;
-
-            // Lưu vào DB với accumulated messages
-            if (currentChatId) {
-              const chat: ChatHistory = {
-                id: currentChatId,
-                title: accumulatedMessages[0]?.content.slice(0, 50) + "...",
-                messages: accumulatedMessages,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              };
-              chatDB.saveChat(chat);
-            }
+            saveChat(accumulatedMessages, currentChatId);
           }
 
           return newMessages;
@@ -119,8 +92,6 @@ export function useGemini(chatId?: string) {
       await getGeminiResponse(message, chatHistory, handleChunk);
     } catch (error) {
       setError("Đã xảy ra lỗi khi xử lý yêu cầu");
-
-      // Cập nhật messages với thông báo lỗi
       setMessages((prev) => {
         const updatedMessages = [...prev];
         const botMessageIndex = updatedMessages.findIndex(
@@ -140,11 +111,6 @@ export function useGemini(chatId?: string) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const clearMessages = () => {
-    setMessages([]);
-    setError(null);
   };
 
   return {

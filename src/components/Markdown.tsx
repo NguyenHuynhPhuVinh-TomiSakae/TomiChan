@@ -44,43 +44,57 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     }) {
       const match = /language-(\w+)/.exec(className || "");
 
-      let codeContent = "";
-      if (children) {
-        if (typeof children === "string") {
-          codeContent = children;
-        } else if (Array.isArray(children)) {
-          codeContent = children
-            .map((child) =>
-              typeof child === "string"
-                ? child
-                : child &&
-                  typeof child === "object" &&
-                  "props" in child &&
-                  child.props?.children
-                ? String(child.props.children)
-                : ""
-            )
-            .join("");
-        } else if (typeof children === "object" && children !== null) {
-          const childObj = children as any;
-          if ("props" in childObj && childObj.props?.children) {
-            codeContent = String(childObj.props.children);
-          } else {
-            console.log("Không thể trích xuất nội dung code:", children);
-            codeContent = JSON.stringify(children, null, 2);
+      const getStringContent = (child: any): string => {
+        if (typeof child === "string") return child;
+        if (!child) return "";
+
+        // Xử lý đặc biệt cho các phần tử HTML
+        if (typeof child === "object") {
+          if (child.props?.children) {
+            if (Array.isArray(child.props.children)) {
+              return child.props.children.map(getStringContent).join("");
+            }
+            return getStringContent(child.props.children);
+          }
+          // Xử lý trường hợp object có type và value
+          if ("type" in child && "value" in child) {
+            return child.value;
           }
         }
-      }
+        return "";
+      };
+
+      const codeContent = Array.isArray(children)
+        ? children.map(getStringContent).join("")
+        : getStringContent(children);
 
       return !inline && match ? (
-        <SyntaxHighlighter
-          style={isDarkMode ? oneDark : oneLight}
-          language={match[1]}
-          PreTag="div"
-          className="rounded-lg"
-        >
-          {codeContent.replace(/\n$/, "")}
-        </SyntaxHighlighter>
+        <div className="relative max-w-full">
+          <div
+            className="overflow-x-auto"
+            style={{
+              maxWidth: "100%",
+              width: "100%",
+            }}
+          >
+            <SyntaxHighlighter
+              style={isDarkMode ? oneDark : oneLight}
+              language={match[1]}
+              PreTag="div"
+              className="rounded-lg"
+              wrapLongLines={false}
+              customStyle={{
+                margin: 0,
+                padding: "1rem",
+                background: isDarkMode ? "#282c34" : "#f8f9fa",
+                width: "100%",
+                minWidth: "fit-content",
+              }}
+            >
+              {codeContent.replace(/\n$/, "")}
+            </SyntaxHighlighter>
+          </div>
+        </div>
       ) : (
         <code
           className={`${

@@ -22,7 +22,11 @@ export function useChat(chatId?: string) {
     loadChat();
   }, [chatId]);
 
-  const saveChat = async (messages: Message[], currentChatId?: string) => {
+  const saveChat = async (
+    messages: Message[],
+    currentChatId?: string,
+    provider: string = "google"
+  ) => {
     if (currentChatId) {
       const chat: ChatHistory = {
         id: currentChatId,
@@ -30,6 +34,7 @@ export function useChat(chatId?: string) {
         messages: messages,
         createdAt: new Date(),
         updatedAt: new Date(),
+        provider,
       };
       await chatDB.saveChat(chat);
     }

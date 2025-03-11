@@ -82,7 +82,7 @@ export default function Home() {
               : ""
           } ${isMobile ? "w-full" : ""}`}
       >
-        {messages.length === 0 ? (
+        {messages.length === 0 && !isMobile ? (
           <>
             <Header
               isCollapsed={isCollapsed}
@@ -103,10 +103,15 @@ export default function Home() {
               isMobile={isMobile}
               onToggleCollapse={handleToggleCollapse}
             />
-            <div className="w-full max-w-4xl mx-auto flex-1 pb-126 pt-20">
-              <ChatMessages messages={messages} isLoading={isLoading} />
-            </div>
-
+            {messages.length > 0 ? (
+              <div className="w-full max-w-4xl mx-auto flex-1 pb-126 pt-20">
+                <ChatMessages messages={messages} isLoading={isLoading} />
+              </div>
+            ) : (
+              <div className="h-screen flex flex-col justify-center items-center">
+                <TomiChat />
+              </div>
+            )}
             <div
               className="fixed bottom-0 right-0 bg-white dark:bg-black transition-all duration-300 w-full sm:w-auto"
               style={{

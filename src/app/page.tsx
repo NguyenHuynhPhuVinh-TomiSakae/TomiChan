@@ -6,7 +6,7 @@ import React from "react";
 import ChatMessages from "../components/TomiChan/ChatMessages";
 import Header from "../components/TomiChan/Header";
 import { useThemeContext } from "../providers/ThemeProvider";
-import { useGemini } from "../hooks/useGemini";
+import { useChatProvider } from "../hooks/useChatProvider";
 import { v4 as uuidv4 } from "uuid";
 import { chatDB } from "../utils/db";
 import { useMediaQuery } from "react-responsive";
@@ -17,7 +17,7 @@ export default function Home() {
   const { theme, setTheme } = useThemeContext();
   const [currentChatId, setCurrentChatId] = React.useState<string>(uuidv4());
   const { messages, sendMessage, clearMessages, isLoading } =
-    useGemini(currentChatId);
+    useChatProvider(currentChatId);
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showLoading, setShowLoading] = React.useState(true);
 
@@ -33,13 +33,12 @@ export default function Home() {
 
   const handleSelectChat = async (chatId: string) => {
     setCurrentChatId(chatId);
-    // clearMessages() sẽ được gọi tự động thông qua useEffect trong useGemini
   };
 
   const handleDeleteChat = async (chatId: string) => {
     await chatDB.deleteChat(chatId);
     if (currentChatId === chatId) {
-      handleNewChat(); // Tạo chat mới nếu xóa chat hiện tại
+      handleNewChat();
     }
   };
 
@@ -47,7 +46,7 @@ export default function Home() {
     const chat = await chatDB.getChat(chatId);
     if (chat) {
       chat.title = newTitle;
-      chat.updatedAt = new Date(); // Cập nhật thời gian
+      chat.updatedAt = new Date();
       await chatDB.saveChat(chat);
     }
   };

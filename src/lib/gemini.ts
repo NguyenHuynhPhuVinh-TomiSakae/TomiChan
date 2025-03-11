@@ -8,7 +8,8 @@ import { getLocalStorage } from "../utils/localStorage";
 export const getGeminiResponse = async (
   message: string,
   history: { role: string; parts: { text: string }[] }[] = [],
-  onChunk: (chunk: string) => void
+  onChunk: (chunk: string) => void,
+  signal?: AbortSignal
 ) => {
   try {
     const apiKey = getLocalStorage("api_key");
@@ -112,7 +113,7 @@ export const getGeminiResponse = async (
       history: history,
     });
 
-    const result = await chatSession.sendMessageStream(message);
+    const result = await chatSession.sendMessageStream(message, { signal });
 
     let fullResponse = "";
     for await (const chunk of result.stream) {
@@ -123,6 +124,9 @@ export const getGeminiResponse = async (
 
     return fullResponse;
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw error;
+    }
     console.error("Lỗi khi gọi API Gemini:", error);
     return "Đã xảy ra lỗi khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.";
   }

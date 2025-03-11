@@ -13,7 +13,7 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
     getLocalStorage("groq_api_key", "")
   );
   const [model, setModel] = useState(() =>
-    getLocalStorage("groq_model", "deepseek-r1-distill-qwen-32b")
+    getLocalStorage("groq_model", "deepseek-r1-distill-llama-70b")
   );
   const [systemPrompt, setSystemPrompt] = useState(() =>
     getLocalStorage(
@@ -64,7 +64,7 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
       setApiKey(getLocalStorage("groq_api_key", ""));
       const savedModel = getLocalStorage(
         "groq_model",
-        "deepseek-r1-distill-qwen-32b"
+        "deepseek-r1-distill-llama-70b"
       );
       setModel(savedModel);
       setSystemPrompt(

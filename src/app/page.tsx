@@ -16,7 +16,7 @@ export default function Home() {
   const [isCollapsed, setIsCollapsed] = React.useState(true);
   const { theme, setTheme } = useThemeContext();
   const [currentChatId, setCurrentChatId] = React.useState<string>(uuidv4());
-  const { messages, sendMessage, clearMessages, isLoading } =
+  const { messages, sendMessage, clearMessages, isLoading, stopGeneration } =
     useChatProvider(currentChatId);
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showLoading, setShowLoading] = React.useState(true);
@@ -91,7 +91,12 @@ export default function Home() {
             <div className="h-screen flex flex-col justify-center items-center">
               <TomiChat />
               <div className="w-full max-w-4xl mx-auto p-4">
-                <ChatInput onSendMessage={sendMessage} />
+                <ChatInput
+                  onSendMessage={sendMessage}
+                  onPlusClick={handleNewChat}
+                  onStopGeneration={stopGeneration}
+                  isGenerating={isLoading}
+                />
               </div>
             </div>
           </>
@@ -121,6 +126,8 @@ export default function Home() {
                 <ChatInput
                   onSendMessage={sendMessage}
                   onPlusClick={handleNewChat}
+                  onStopGeneration={stopGeneration}
+                  isGenerating={isLoading}
                 />
               </div>
             </div>

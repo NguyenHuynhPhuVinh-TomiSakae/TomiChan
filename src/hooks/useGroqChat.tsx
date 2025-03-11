@@ -2,6 +2,7 @@
 import { useChat } from "./useChat";
 import { getGroqResponse } from "../lib/groq";
 import { Message } from "../types";
+import { useState } from "react";
 
 export function useGroqChat(chatId?: string) {
   const {
@@ -14,6 +15,16 @@ export function useGroqChat(chatId?: string) {
     saveChat,
     clearMessages,
   } = useChat(chatId);
+
+  const [abortController, setAbortController] =
+    useState<AbortController | null>(null);
+
+  const stopGeneration = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+  };
 
   const sendMessage = async (message: string) => {
     const apiKey = localStorage.getItem("groq_api_key");
@@ -84,8 +95,18 @@ export function useGroqChat(chatId?: string) {
         });
       };
 
-      await getGroqResponse(message, chatHistory, handleChunk);
+      const controller = new AbortController();
+      setAbortController(controller);
+      await getGroqResponse(
+        message,
+        chatHistory,
+        handleChunk,
+        controller.signal
+      );
     } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
       setError("Đã xảy ra lỗi khi xử lý yêu cầu");
       setMessages((prev) => {
         const updatedMessages = [...prev];
@@ -105,6 +126,7 @@ export function useGroqChat(chatId?: string) {
       });
     } finally {
       setIsLoading(false);
+      setAbortController(null);
     }
   };
 
@@ -114,5 +136,6 @@ export function useGroqChat(chatId?: string) {
     error,
     sendMessage,
     clearMessages,
+    stopGeneration,
   };
 }

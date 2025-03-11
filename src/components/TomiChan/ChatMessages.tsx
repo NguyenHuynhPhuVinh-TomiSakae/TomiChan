@@ -78,10 +78,14 @@ export default function ChatMessages({
               className={`px-3 py-2 sm:px-6 sm:py-3 ${
                 message.sender === "user"
                   ? "bg-gray-100 dark:bg-gray-900 text-black dark:text-white mx-4 sm:mx-8 rounded-tl-2xl rounded-bl-2xl rounded-br-2xl sm:rounded-tl-3xl sm:rounded-bl-3xl sm:rounded-br-3xl max-w-[85%] sm:max-w-[70%]"
-                  : "text-black dark:text-white"
+                  : "text-black dark:text-white w-full max-w-full"
               }`}
             >
-              <Markdown content={message.content} />
+              <div className="max-w-full overflow-x-auto thin-scrollbar">
+                <div className="max-w-fit">
+                  <Markdown content={message.content} />
+                </div>
+              </div>
               {isLoading && message === messages[messages.length - 1] && (
                 <motion.div
                   className="w-4 h-4 border-2 border-black dark:border-white mt-2"

@@ -2,6 +2,7 @@
 import { useChat } from "./useChat";
 import { getGeminiResponse } from "../lib/gemini";
 import { Message } from "../types";
+import { useState } from "react";
 
 export function useGeminiChat(chatId?: string) {
   const {
@@ -14,6 +15,9 @@ export function useGeminiChat(chatId?: string) {
     saveChat,
     clearMessages,
   } = useChat(chatId);
+
+  const [abortController, setAbortController] =
+    useState<AbortController | null>(null);
 
   const sendMessage = async (message: string) => {
     const apiKey = localStorage.getItem("api_key");
@@ -89,8 +93,19 @@ export function useGeminiChat(chatId?: string) {
         });
       };
 
-      await getGeminiResponse(message, chatHistory, handleChunk);
+      const controller = new AbortController();
+      setAbortController(controller);
+
+      await getGeminiResponse(
+        message,
+        chatHistory,
+        handleChunk,
+        controller.signal
+      );
     } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
       setError("Đã xảy ra lỗi khi xử lý yêu cầu");
       setMessages((prev) => {
         const updatedMessages = [...prev];
@@ -110,6 +125,14 @@ export function useGeminiChat(chatId?: string) {
       });
     } finally {
       setIsLoading(false);
+      setAbortController(null);
+    }
+  };
+
+  const stopGeneration = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
     }
   };
 
@@ -119,5 +142,6 @@ export function useGeminiChat(chatId?: string) {
     error,
     sendMessage,
     clearMessages,
+    stopGeneration,
   };
 }

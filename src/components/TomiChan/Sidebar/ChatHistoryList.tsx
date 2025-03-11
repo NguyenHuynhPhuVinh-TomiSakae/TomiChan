@@ -3,6 +3,7 @@ import { IconEdit, IconTrash, IconDotsVertical } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatHistory } from "../../../types";
 import Portal from "../../Portal";
+import Image from "next/image";
 
 interface ChatHistoryListProps {
   isCollapsed: boolean;
@@ -101,6 +102,18 @@ function ChatGroup({
     };
   }, []);
 
+  // Map provider to icon path
+  const getProviderIcon = (provider: string) => {
+    switch (provider) {
+      case "google":
+        return "/google-logo.svg";
+      case "groq":
+        return "/groq-logo.svg";
+      default:
+        return "/google-logo.svg"; // Default icon
+    }
+  };
+
   if (chats.length === 0) return null;
 
   return (
@@ -135,6 +148,18 @@ function ChatGroup({
                       : "hover:bg-gray-100 dark:hover:bg-gray-900"
                   }`}
                 >
+                  {/* Display provider icon */}
+                  {chat.provider && (
+                    <div className="flex-shrink-0 mr-2">
+                      <Image
+                        src={getProviderIcon(chat.provider)}
+                        alt={chat.provider}
+                        width={16}
+                        height={16}
+                        className="w-4 h-4"
+                      />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0 max-w-[200px]">
                     <div className="truncate text-sm">{chat.title}</div>
                     <div className="truncate text-xs text-gray-500">

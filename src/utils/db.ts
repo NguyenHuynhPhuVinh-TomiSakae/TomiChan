@@ -1,5 +1,6 @@
 import { openDB, DBSchema } from "idb";
 import { ChatHistory } from "../types";
+import { getLocalStorage } from "./localStorage";
 
 interface ChatDB extends DBSchema {
   chats: {
@@ -24,6 +25,9 @@ class ChatDBManager {
 
   async saveChat(chat: ChatHistory): Promise<void> {
     const db = await this.getDB();
+    if (!chat.provider) {
+      chat.provider = getLocalStorage("selected_provider", "google");
+    }
     await db.put(this.STORE_NAME, chat);
   }
 

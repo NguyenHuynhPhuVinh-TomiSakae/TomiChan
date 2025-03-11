@@ -1,13 +1,16 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { IconSend2, IconPlus, IconSquare } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
+import UploadFiles from "./UploadFiles";
+import { useImageUpload } from "@/hooks/useUploadFiles";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   onPlusClick?: () => void;
   onStopGeneration?: () => void;
   isGenerating?: boolean;
+  onImagesUpload?: (files: File[]) => void;
 }
 
 export default function ChatInput({
@@ -15,9 +18,17 @@ export default function ChatInput({
   onPlusClick,
   onStopGeneration,
   isGenerating = false,
+  onImagesUpload,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [textareaHeight, setTextareaHeight] = useState(56);
+  const {
+    selectedImages,
+    fileInputRef,
+    handleFileInputChange,
+    handleRemoveImage,
+    handleClearAllImages,
+  } = useImageUpload(onImagesUpload);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -39,6 +50,14 @@ export default function ChatInput({
     setTextareaHeight(newHeight);
   };
 
+  useEffect(() => {
+    return () => {
+      selectedImages.forEach((image) => {
+        URL.revokeObjectURL(image.preview);
+      });
+    };
+  }, []);
+
   return (
     <motion.form
       onSubmit={handleSubmit}
@@ -50,6 +69,12 @@ export default function ChatInput({
       <div className="flex flex-col w-full">
         <div className="w-full overflow-hidden bg-white dark:bg-black rounded-2xl border border-black dark:border-white">
           <div className="w-full h-full flex flex-col">
+            <UploadFiles
+              selectedImages={selectedImages}
+              onRemoveImage={handleRemoveImage}
+              onClearAllImages={handleClearAllImages}
+            />
+
             <textarea
               ref={textareaRef}
               value={message}
@@ -67,7 +92,6 @@ export default function ChatInput({
               }}
             />
 
-            {/* Layout cho các nút */}
             <div className="h-10 sm:h-14">
               <AnimatePresence>
                 <motion.button
@@ -75,7 +99,12 @@ export default function ChatInput({
                   className="absolute left-2 sm:left-3 bottom-8 sm:bottom-10 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 sm:p-2 transition-all duration-200 border border-black dark:border-white"
                   onClick={(e) => {
                     e.preventDefault();
-                    if (onPlusClick && !isGenerating) onPlusClick();
+                    if (isGenerating) return;
+                    if (onPlusClick) {
+                      onPlusClick();
+                    } else {
+                      fileInputRef.current?.click();
+                    }
                   }}
                   disabled={isGenerating}
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -151,6 +180,15 @@ export default function ChatInput({
                 )}
               </AnimatePresence>
             </div>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileInputChange}
+              multiple
+              accept="image/*"
+              className="hidden"
+            />
           </div>
         </div>
         <div className="text-center mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">

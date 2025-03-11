@@ -72,6 +72,10 @@ export default function Home() {
     clearMessages();
   };
 
+  const handleImagesUpload = (files: File[]) => {
+    console.log("Uploaded files:", files);
+  };
+
   if (showLoading) {
     return <LoadingScreen onLoadingComplete={() => setShowLoading(false)} />;
   }
@@ -116,7 +120,7 @@ export default function Home() {
               <div className="w-full max-w-4xl mx-auto p-4">
                 <ChatInput
                   onSendMessage={sendMessage}
-                  onPlusClick={handleNewChat}
+                  onImagesUpload={handleImagesUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                 />
@@ -150,7 +154,7 @@ export default function Home() {
               <div className="w-full max-w-4xl mx-auto p-2 sm:p-4">
                 <ChatInput
                   onSendMessage={sendMessage}
-                  onPlusClick={handleNewChat}
+                  onImagesUpload={handleImagesUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                 />

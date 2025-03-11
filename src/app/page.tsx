@@ -33,6 +33,9 @@ export default function Home() {
     const newChatId = uuidv4();
     setCurrentChatId(newChatId);
     clearMessages();
+    if (isMobile) {
+      handleToggleCollapse();
+    }
   };
 
   const handleSelectChat = async (chatId: string) => {

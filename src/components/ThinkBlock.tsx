@@ -1,18 +1,33 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useThemeContext } from "../providers/ThemeProvider";
 import { IconBrain, IconChevronDown } from "@tabler/icons-react";
 
 interface ThinkBlockProps {
   children: React.ReactNode;
+  id?: string;
 }
 
-export const ThinkBlock = ({ children }: ThinkBlockProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+// Lưu trạng thái mở/đóng của các ThinkBlock
+const expandedStates: Record<string, boolean> = {};
+
+export const ThinkBlock = ({ children, id }: ThinkBlockProps) => {
+  // Tạo ID ngẫu nhiên nếu không được cung cấp
+  const blockId = useRef(
+    id || `think-${Math.random().toString(36).substring(2, 9)}`
+  ).current;
+  const [isExpanded, setIsExpanded] = useState(
+    expandedStates[blockId] || false
+  );
   const { theme } = useThemeContext();
   const isDarkMode =
     theme === "dark" ||
     (theme === "system" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  // Cập nhật trạng thái toàn cục khi trạng thái cục bộ thay đổi
+  useEffect(() => {
+    expandedStates[blockId] = isExpanded;
+  }, [isExpanded, blockId]);
 
   return (
     <div

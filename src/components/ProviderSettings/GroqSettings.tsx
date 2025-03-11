@@ -35,8 +35,14 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
   const handleModelChange = (selectedModel: string) => {
     setModel(selectedModel);
 
-    // Nhóm 1: llama, gemma, mistral, allam
-    if (
+    // Nhóm 2: qwen, deepseek (kiểm tra trước)
+    if (selectedModel.includes("qwen") || selectedModel.includes("deepseek")) {
+      setTemperature(0.6);
+      setTopP(0.95);
+      setMaxOutputTokens(4096);
+    }
+    // Nhóm 1: llama, gemma, mistral, mixtral, allam
+    else if (
       selectedModel.includes("llama") ||
       selectedModel.includes("gemma") ||
       selectedModel.includes("mistral") ||
@@ -46,15 +52,6 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
       setTemperature(1);
       setTopP(1);
       setMaxOutputTokens(1024);
-    }
-    // Nhóm 2: qwen, deepseek
-    else if (
-      selectedModel.includes("qwen") ||
-      selectedModel.includes("deepseek")
-    ) {
-      setTemperature(0.6);
-      setTopP(0.95);
-      setMaxOutputTokens(4096);
     }
   };
 
@@ -74,24 +71,18 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
         )
       );
 
-      // Đặt các tham số mặc định dựa trên model đã lưu
-      if (
-        savedModel.includes("llama") ||
-        savedModel.includes("gemma") ||
-        savedModel.includes("mistral") ||
-        savedModel.includes("mixtral") ||
-        savedModel.includes("allam")
-      ) {
-        setTemperature(Number(getLocalStorage("groq_temperature", "1")));
-        setTopP(Number(getLocalStorage("groq_top_p", "1")));
-        setMaxOutputTokens(
-          Number(getLocalStorage("groq_max_output_tokens", "1024"))
-        );
-      } else {
+      // Đặt các tham số mặc định dựa trên model đã lưu (kiểm tra nhóm 2 trước)
+      if (savedModel.includes("qwen") || savedModel.includes("deepseek")) {
         setTemperature(Number(getLocalStorage("groq_temperature", "0.6")));
         setTopP(Number(getLocalStorage("groq_top_p", "0.95")));
         setMaxOutputTokens(
           Number(getLocalStorage("groq_max_output_tokens", "4096"))
+        );
+      } else {
+        setTemperature(Number(getLocalStorage("groq_temperature", "1")));
+        setTopP(Number(getLocalStorage("groq_top_p", "1")));
+        setMaxOutputTokens(
+          Number(getLocalStorage("groq_max_output_tokens", "1024"))
         );
       }
     }
@@ -106,6 +97,24 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
     setLocalStorage("groq_top_p", topP.toString());
     setLocalStorage("groq_max_output_tokens", maxOutputTokens.toString());
     onClose();
+  };
+
+  // Thêm hàm handleReset
+  const handleReset = () => {
+    // Giữ nguyên API key
+    const currentApiKey = apiKey;
+
+    // Reset các giá trị về mặc định
+    setModel("deepseek-r1-distill-llama-70b");
+    setSystemPrompt(
+      "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
+    );
+    setTemperature(0.6);
+    setTopP(0.95);
+    setMaxOutputTokens(4096);
+
+    // Giữ nguyên API key
+    setApiKey(currentApiKey);
   };
 
   if (!isOpen) return null;
@@ -265,6 +274,13 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+              >
+                Đặt lại mặc định
+              </button>
               <button
                 type="button"
                 onClick={onClose}

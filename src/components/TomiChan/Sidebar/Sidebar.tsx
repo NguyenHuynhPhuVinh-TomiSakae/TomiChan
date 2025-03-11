@@ -46,7 +46,7 @@ export default function Sidebar({
   React.useEffect(() => {
     setIsFirstRender(false);
     loadChatHistory();
-    if (isMobile && !isCollapsed) {
+    if (!isMobile && isCollapsed) {
       onToggleCollapse();
     }
   }, []);
@@ -66,7 +66,7 @@ export default function Sidebar({
     setIsSettingsModalOpen(true);
   };
 
-  // Thay thế phần sidebarStyle
+  // Thay đổi sidebarStyle
   const sidebarStyle: React.CSSProperties = {
     position: isMobile ? "fixed" : messages.length > 0 ? "fixed" : "relative",
     width: isCollapsed
@@ -74,10 +74,18 @@ export default function Sidebar({
         ? "100%"
         : "4rem"
       : isMobile
-      ? "100%"
+      ? "80%" // Thay đổi từ 100% thành 80%
       : "16rem",
     zIndex: isMobile ? 50 : 10,
     left: isMobile && isCollapsed ? "-100%" : 0,
+  };
+
+  // Thêm xử lý cho onSelectChat trong ChatHistoryList
+  const handleSelectChat = (chatId: string) => {
+    onSelectChat(chatId);
+    if (isMobile) {
+      onToggleCollapse(); // Tự động thu gọn sidebar trên mobile
+    }
   };
 
   return (
@@ -85,7 +93,7 @@ export default function Sidebar({
       {/* Overlay cho mobile khi sidebar mở */}
       {isMobile && !isCollapsed && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="fixed inset-0 bg-black/50 z-40"
           onClick={onToggleCollapse}
         />
       )}
@@ -164,7 +172,7 @@ export default function Sidebar({
             isFirstRender={isFirstRender}
             chatHistory={chatHistory}
             currentChatId={currentChatId}
-            onSelectChat={onSelectChat}
+            onSelectChat={handleSelectChat}
             onDeleteChat={onDeleteChat}
             onEditChatTitle={onEditChatTitle}
             onUpdateTrigger={() => setUpdateTrigger((prev) => prev + 1)}

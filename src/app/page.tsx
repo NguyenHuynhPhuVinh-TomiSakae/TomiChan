@@ -13,7 +13,7 @@ import { useMediaQuery } from "react-responsive";
 import LoadingScreen from "../components/TomiChan/LoadingScreen";
 
 export default function Home() {
-  const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const [isCollapsed, setIsCollapsed] = React.useState(true);
   const { theme, setTheme } = useThemeContext();
   const [currentChatId, setCurrentChatId] = React.useState<string>(uuidv4());
   const { messages, sendMessage, clearMessages } = useGemini(currentChatId);

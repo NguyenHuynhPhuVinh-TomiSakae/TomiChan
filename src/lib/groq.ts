@@ -23,10 +23,10 @@ export const getGroqResponse = async (
       "groq_system_prompt",
       "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
     );
-    const temperature = Number(getLocalStorage("groq_temperature", "1"));
-    const topP = Number(getLocalStorage("groq_top_p", "1"));
+    const temperature = Number(getLocalStorage("groq_temperature", "0.6"));
+    const topP = Number(getLocalStorage("groq_top_p", "0.95"));
     const maxOutputTokens = Number(
-      getLocalStorage("groq_max_output_tokens", "1024")
+      getLocalStorage("groq_max_output_tokens", "4096")
     );
 
     const groq = new Groq({

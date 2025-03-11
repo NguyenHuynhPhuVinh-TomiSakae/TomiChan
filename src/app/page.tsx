@@ -11,13 +11,17 @@ import { v4 as uuidv4 } from "uuid";
 import { chatDB } from "../utils/db";
 import { useMediaQuery } from "react-responsive";
 import LoadingScreen from "../components/TomiChan/LoadingScreen";
+import { getLocalStorage, setLocalStorage } from "@/utils/localStorage";
 
 export default function Home() {
   const [isCollapsed, setIsCollapsed] = React.useState(true);
   const { theme, setTheme } = useThemeContext();
   const [currentChatId, setCurrentChatId] = React.useState<string>(uuidv4());
+  const [selectedProvider, setSelectedProvider] = React.useState(() => {
+    return getLocalStorage("selected_provider", "google");
+  });
   const { messages, sendMessage, clearMessages, isLoading, stopGeneration } =
-    useChatProvider(currentChatId);
+    useChatProvider(currentChatId, selectedProvider);
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showLoading, setShowLoading] = React.useState(true);
 
@@ -32,6 +36,13 @@ export default function Home() {
   };
 
   const handleSelectChat = async (chatId: string) => {
+    const chat = await chatDB.getChat(chatId);
+
+    if (chat && chat.provider && chat.provider !== selectedProvider) {
+      setSelectedProvider(chat.provider);
+      setLocalStorage("selected_provider", chat.provider);
+    }
+
     setCurrentChatId(chatId);
   };
 
@@ -49,6 +60,13 @@ export default function Home() {
       chat.updatedAt = new Date();
       await chatDB.saveChat(chat);
     }
+  };
+
+  const handleProviderChange = (provider: string) => {
+    setSelectedProvider(provider);
+    const newChatId = uuidv4();
+    setCurrentChatId(newChatId);
+    clearMessages();
   };
 
   if (showLoading) {
@@ -87,6 +105,8 @@ export default function Home() {
               isCollapsed={isCollapsed}
               isMobile={isMobile}
               onToggleCollapse={handleToggleCollapse}
+              onProviderChange={handleProviderChange}
+              selectedProvider={selectedProvider}
             />
             <div className="h-screen flex flex-col justify-center items-center">
               <TomiChat />
@@ -106,9 +126,11 @@ export default function Home() {
               isCollapsed={isCollapsed}
               isMobile={isMobile}
               onToggleCollapse={handleToggleCollapse}
+              onProviderChange={handleProviderChange}
+              selectedProvider={selectedProvider}
             />
             {messages.length > 0 ? (
-              <div className="w-full max-w-4xl mx-auto flex-1 pb-126 pt-20">
+              <div className="w-full max-w-4xl mx-auto flex-1 pb-32 sm:pb-126 pt-20">
                 <ChatMessages messages={messages} isLoading={isLoading} />
               </div>
             ) : (

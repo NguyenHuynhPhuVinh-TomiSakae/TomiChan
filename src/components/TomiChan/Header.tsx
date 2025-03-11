@@ -13,17 +13,29 @@ export default function Header({
   isCollapsed,
   isMobile,
   onToggleCollapse,
+  onProviderChange,
+  selectedProvider: propSelectedProvider,
 }: {
   isCollapsed: boolean;
   isMobile: boolean;
   onToggleCollapse: () => void;
+  onProviderChange?: (provider: string) => void;
+  selectedProvider?: string;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(() => {
-    return getLocalStorage("selected_provider", "google");
+    return (
+      propSelectedProvider || getLocalStorage("selected_provider", "google")
+    );
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (propSelectedProvider && propSelectedProvider !== selectedProvider) {
+      setSelectedProvider(propSelectedProvider);
+    }
+  }, [propSelectedProvider, selectedProvider]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -47,6 +59,9 @@ export default function Header({
   const handleProviderSelect = (providerId: string) => {
     setSelectedProvider(providerId);
     setLocalStorage("selected_provider", providerId);
+    if (onProviderChange) {
+      onProviderChange(providerId);
+    }
     setIsDropdownOpen(false);
   };
 

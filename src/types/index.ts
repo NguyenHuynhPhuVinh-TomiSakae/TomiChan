@@ -10,4 +10,5 @@ export interface ChatHistory {
   messages: Message[];
   createdAt: Date;
   updatedAt: Date;
+  provider: string;
 }

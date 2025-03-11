@@ -22,13 +22,13 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
     )
   );
   const [temperature, setTemperature] = useState(() =>
-    Number(getLocalStorage("groq_temperature", "1"))
+    Number(getLocalStorage("groq_temperature", "0.6"))
   );
   const [topP, setTopP] = useState(() =>
-    Number(getLocalStorage("groq_top_p", "1"))
+    Number(getLocalStorage("groq_top_p", "0.95"))
   );
   const [maxOutputTokens, setMaxOutputTokens] = useState(() =>
-    Number(getLocalStorage("groq_max_output_tokens", "1024"))
+    Number(getLocalStorage("groq_max_output_tokens", "4096"))
   );
 
   // Xác định nhóm mô hình và cập nhật tham số mặc định

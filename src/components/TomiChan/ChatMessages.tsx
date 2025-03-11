@@ -3,14 +3,20 @@ import { Message } from "../../types";
 import { IconArrowDown } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import Markdown from "../Markdown";
+import { useMediaQuery } from "react-responsive";
 
 interface ChatMessagesProps {
   messages: Message[];
+  isLoading?: boolean;
 }
 
-export default function ChatMessages({ messages }: ChatMessagesProps) {
+export default function ChatMessages({
+  messages,
+  isLoading,
+}: ChatMessagesProps) {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const prevMessagesLengthRef = useRef(0);
+  const isMobile = useMediaQuery({ maxWidth: 768 });
 
   const scrollToBottom = () => {
     window.scrollTo({
@@ -76,12 +82,19 @@ export default function ChatMessages({ messages }: ChatMessagesProps) {
               }`}
             >
               <Markdown content={message.content} />
+              {isLoading && message === messages[messages.length - 1] && (
+                <motion.div
+                  className="w-4 h-4 border-2 border-black dark:border-white mt-2"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+              )}
             </div>
           </div>
         ))}
       </div>
 
-      {showScrollButton && (
+      {showScrollButton && !isMobile && (
         <motion.button
           onClick={scrollToBottom}
           className="fixed bottom-16 sm:bottom-24 right-4 sm:right-24 bg-white dark:bg-black p-2 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-900 border border-black dark:border-white transition-all z-[9999] cursor-pointer"

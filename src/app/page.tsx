@@ -16,7 +16,8 @@ export default function Home() {
   const [isCollapsed, setIsCollapsed] = React.useState(true);
   const { theme, setTheme } = useThemeContext();
   const [currentChatId, setCurrentChatId] = React.useState<string>(uuidv4());
-  const { messages, sendMessage, clearMessages } = useGemini(currentChatId);
+  const { messages, sendMessage, clearMessages, isLoading } =
+    useGemini(currentChatId);
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showLoading, setShowLoading] = React.useState(true);
 
@@ -103,7 +104,7 @@ export default function Home() {
               onToggleCollapse={handleToggleCollapse}
             />
             <div className="w-full max-w-4xl mx-auto flex-1 pb-126 pt-20">
-              <ChatMessages messages={messages} />
+              <ChatMessages messages={messages} isLoading={isLoading} />
             </div>
 
             <div

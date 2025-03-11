@@ -1,6 +1,7 @@
+/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from "react";
+import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -16,6 +17,7 @@ import {
   oneDark,
 } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { useThemeContext } from "../providers/ThemeProvider";
+import { ThinkBlock } from "./ThinkBlock";
 
 interface MarkdownProps {
   content: string;
@@ -28,6 +30,15 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     theme === "dark" ||
     (theme === "system" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  // Sửa lại cách xử lý thẻ think
+  const processedContent = content.replace(
+    /<think>([\s\S]*?)<\/think>/g,
+    (_, thinkContent) => {
+      // Thêm marker đặc biệt để nhận dạng nội dung think
+      return `:::think\n${thinkContent.trim()}\n:::`;
+    }
+  );
 
   const components: Components = {
     code({
@@ -205,6 +216,46 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
         </div>
       );
     },
+
+    p: ({ children, node }) => {
+      // Kiểm tra xem đoạn văn có nằm giữa :::think và ::: không
+      const currentLineNumber = node?.position?.start?.line;
+      const lines = processedContent.split("\n");
+      let isThinkContent = false;
+      let thinkContents: React.ReactNode[] = [];
+      let startLine = -1;
+
+      if (currentLineNumber) {
+        // Tìm marker :::think gần nhất phía trước
+        let searchIndex = currentLineNumber - 1;
+        while (searchIndex >= 0) {
+          const line = lines[searchIndex]?.trim();
+          if (line === ":::") break;
+          if (line === ":::think") {
+            isThinkContent = true;
+            startLine = searchIndex;
+            break;
+          }
+          searchIndex--;
+        }
+      }
+
+      // Nếu đây là dòng đầu tiên của think block, gom tất cả nội dung
+      if (isThinkContent && currentLineNumber === startLine + 1) {
+        let endLine = currentLineNumber;
+        while (endLine < lines.length && lines[endLine]?.trim() !== ":::") {
+          endLine++;
+        }
+
+        const thinkContent = lines.slice(currentLineNumber, endLine).join("\n");
+
+        return <ThinkBlock>{thinkContent}</ThinkBlock>;
+      } else if (isThinkContent) {
+        return null;
+      }
+
+      return <p className="my-2">{children}</p>;
+    },
   };
 
   return (
@@ -223,7 +274,7 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
         ]}
         components={components}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );

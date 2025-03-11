@@ -41,7 +41,7 @@ export default function Header({
 
   const providers = [
     { id: "google", name: "Google", icon: "/google-logo.svg" },
-    { id: "groq", name: "Groq", icon: "/groq-logo.svg", disabled: true },
+    { id: "groq", name: "Groq", icon: "/groq-logo.svg", disabled: false },
   ];
 
   const handleProviderSelect = (providerId: string) => {

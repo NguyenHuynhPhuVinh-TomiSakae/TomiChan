@@ -9,7 +9,8 @@ export const getGeminiResponse = async (
   message: string,
   history: { role: string; parts: { text: string }[] }[] = [],
   onChunk: (chunk: string) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  images?: { url: string; data: string }[]
 ) => {
   try {
     const apiKey = getLocalStorage("api_key");
@@ -108,12 +109,69 @@ export const getGeminiResponse = async (
       responseMimeType: "text/plain",
     };
 
-    const chatSession = model.startChat({
-      generationConfig,
-      history: history,
-    });
+    // Xử lý trường hợp không có hình ảnh
+    if (!images || images.length === 0) {
+      const chatSession = model.startChat({
+        generationConfig,
+        history: history,
+      });
 
-    const result = await chatSession.sendMessageStream(message, { signal });
+      const result = await chatSession.sendMessageStream(message, { signal });
+
+      let fullResponse = "";
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        fullResponse += chunkText;
+        onChunk(chunkText);
+      }
+
+      return fullResponse;
+    }
+
+    // Xử lý trường hợp có hình ảnh
+    const contentParts = [];
+
+    // Thêm các ảnh vào contentParts
+    for (const image of images) {
+      // Lấy phần dữ liệu base64 từ chuỗi data URI
+      const base64Data = image.data.split(",")[1] || image.data;
+
+      // Xác định MIME type chính xác từ chuỗi data URI
+      let mimeType = "image/jpeg"; // Mặc định
+      if (image.data.startsWith("data:")) {
+        const match = image.data.match(/data:([^;]+);/);
+        if (match && match[1]) {
+          const extractedType = match[1].toLowerCase();
+          // Chỉ chấp nhận các định dạng đã giới hạn
+          if (
+            [
+              "image/png",
+              "image/jpeg",
+              "image/webp",
+              "image/heic",
+              "image/heif",
+            ].includes(extractedType)
+          ) {
+            mimeType = extractedType;
+          }
+        }
+      }
+
+      contentParts.push({
+        inlineData: {
+          data: base64Data,
+          mimeType: mimeType,
+        },
+      });
+    }
+
+    // Thêm tin nhắn text vào cuối
+    contentParts.push(message);
+
+    // Gọi generateContentStream với đúng định dạng
+    const result = await model.generateContentStream(contentParts, {
+      signal,
+    });
 
     let fullResponse = "";
     for await (const chunk of result.stream) {

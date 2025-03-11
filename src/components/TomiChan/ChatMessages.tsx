@@ -4,6 +4,7 @@ import { IconArrowDown } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import Markdown from "../Markdown";
 import { useMediaQuery } from "react-responsive";
+import Image from "next/image";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -70,10 +71,43 @@ export default function ChatMessages({
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex ${
-              message.sender === "user" ? "justify-end" : "justify-start"
+            className={`flex flex-col ${
+              message.sender === "user" ? "items-end" : "items-start"
             }`}
           >
+            {message.images && message.images.length > 0 && (
+              <div
+                className={`w-full flex mx-4 sm:mx-8 ${
+                  message.sender === "user" ? "justify-end" : "justify-start"
+                } mb-2`}
+              >
+                <div
+                  className={`grid gap-y-1 sm:gap-1 w-fit border border-black dark:border-white rounded-lg p-1 ${
+                    message.images.length === 1
+                      ? "grid-cols-1"
+                      : message.images.length === 2
+                      ? "grid-cols-2"
+                      : message.images.length === 3
+                      ? "grid-cols-2 sm:grid-cols-3"
+                      : "grid-cols-2 sm:grid-cols-4"
+                  } justify-items-end`}
+                >
+                  {message.images.map((image, index) => (
+                    <div
+                      key={index}
+                      className="relative w-[120px] h-[120px] sm:w-[100px] sm:h-[100px] justify-self-end"
+                    >
+                      <Image
+                        src={image.data}
+                        alt={`Uploaded image ${index + 1}`}
+                        fill
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div
               className={`px-3 py-2 sm:px-6 sm:py-3 ${
                 message.sender === "user"

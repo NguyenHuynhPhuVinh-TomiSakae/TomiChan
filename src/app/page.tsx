@@ -123,6 +123,7 @@ export default function Home() {
                   onImagesUpload={handleImagesUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
+                  selectedProvider={selectedProvider}
                 />
               </div>
             </div>
@@ -157,6 +158,7 @@ export default function Home() {
                   onImagesUpload={handleImagesUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
+                  selectedProvider={selectedProvider}
                 />
               </div>
             </div>

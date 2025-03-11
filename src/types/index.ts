@@ -2,6 +2,10 @@ export interface Message {
   id: string;
   content: string;
   sender: "user" | "bot";
+  images?: {
+    url: string;
+    data: string; // Base64 string của ảnh
+  }[];
 }
 
 export interface ChatHistory {

@@ -19,7 +19,10 @@ export function useGeminiChat(chatId?: string) {
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
 
-  const sendMessage = async (message: string) => {
+  const sendMessage = async (
+    message: string,
+    imageData?: { url: string; data: string }[]
+  ) => {
     const apiKey = localStorage.getItem("api_key");
     const currentChatId = chatId;
     const currentMessages = [...messages];
@@ -31,6 +34,7 @@ export function useGeminiChat(chatId?: string) {
           id: Date.now().toString(),
           content: message,
           sender: "user",
+          images: imageData,
         },
         {
           id: (Date.now() + 1).toString(),
@@ -46,6 +50,7 @@ export function useGeminiChat(chatId?: string) {
       id: Date.now().toString(),
       content: message,
       sender: "user",
+      images: imageData,
     };
 
     const botMessageId = (Date.now() + 1).toString();
@@ -66,10 +71,12 @@ export function useGeminiChat(chatId?: string) {
         parts: [{ text: msg.content }],
       }));
 
-      chatHistory.push({
-        role: "user",
-        parts: [{ text: message }],
-      });
+      if (!imageData || imageData.length === 0) {
+        chatHistory.push({
+          role: "user",
+          parts: [{ text: message }],
+        });
+      }
 
       let accumulatedMessages = [...currentMessages, newMessage];
 
@@ -100,7 +107,8 @@ export function useGeminiChat(chatId?: string) {
         message,
         chatHistory,
         handleChunk,
-        controller.signal
+        controller.signal,
+        imageData
       );
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {

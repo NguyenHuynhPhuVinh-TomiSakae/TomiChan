@@ -6,11 +6,15 @@ import UploadFiles from "./UploadFiles";
 import { useImageUpload } from "@/hooks/useUploadFiles";
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (
+    message: string,
+    imageData?: { url: string; data: string }[]
+  ) => void;
   onPlusClick?: () => void;
   onStopGeneration?: () => void;
   isGenerating?: boolean;
   onImagesUpload?: (files: File[]) => void;
+  selectedProvider?: string;
 }
 
 export default function ChatInput({
@@ -19,6 +23,7 @@ export default function ChatInput({
   onStopGeneration,
   isGenerating = false,
   onImagesUpload,
+  selectedProvider = "google",
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [textareaHeight, setTextareaHeight] = useState(56);
@@ -31,13 +36,32 @@ export default function ChatInput({
   } = useImageUpload(onImagesUpload);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
-      onSendMessage(message);
+    if (message.trim() || selectedImages.length > 0) {
+      const imageData = await Promise.all(
+        selectedImages.map(async (image) => {
+          return {
+            url: image.preview,
+            data: await convertFileToBase64(image.file),
+          };
+        })
+      );
+
+      onSendMessage(message, imageData);
       setMessage("");
       setTextareaHeight(56);
+      handleClearAllImages();
     }
+  };
+
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -94,29 +118,31 @@ export default function ChatInput({
 
             <div className="h-10 sm:h-14">
               <AnimatePresence>
-                <motion.button
-                  type="button"
-                  className="absolute left-2 sm:left-3 bottom-8 sm:bottom-10 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 sm:p-2 transition-all duration-200 border border-black dark:border-white"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (isGenerating) return;
-                    if (onPlusClick) {
-                      onPlusClick();
-                    } else {
-                      fileInputRef.current?.click();
-                    }
-                  }}
-                  disabled={isGenerating}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <IconPlus
-                    size={18}
-                    className="text-black dark:text-white sm:w-[22px] sm:h-[22px]"
-                    stroke={1.5}
-                  />
-                </motion.button>
+                {selectedProvider === "google" && (
+                  <motion.button
+                    type="button"
+                    className="absolute left-2 sm:left-3 bottom-8 sm:bottom-10 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 sm:p-2 transition-all duration-200 border border-black dark:border-white"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (isGenerating) return;
+                      if (onPlusClick) {
+                        onPlusClick();
+                      } else {
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                    disabled={isGenerating}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <IconPlus
+                      size={18}
+                      className="text-black dark:text-white sm:w-[22px] sm:h-[22px]"
+                      stroke={1.5}
+                    />
+                  </motion.button>
+                )}
               </AnimatePresence>
 
               <AnimatePresence>
@@ -186,7 +212,7 @@ export default function ChatInput({
               ref={fileInputRef}
               onChange={handleFileInputChange}
               multiple
-              accept="image/*"
+              accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
               className="hidden"
             />
           </div>

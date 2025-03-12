@@ -14,6 +14,7 @@ import {
   IconTrash,
   IconCheck,
   IconRefresh,
+  IconDownload,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import Markdown from "../Markdown";
@@ -156,7 +157,10 @@ export default function ChatMessages({
           {!hasError && message.images ? (
             <div className="mt-4">
               {message.images.map((image, index) => (
-                <div key={index} className="relative w-full max-w-[512px] mb-2">
+                <div
+                  key={index}
+                  className="relative w-full max-w-[512px] mb-2 group"
+                >
                   <Image
                     src={image.data}
                     alt="AI Generated Image"
@@ -164,6 +168,19 @@ export default function ChatMessages({
                     height={512}
                     className="rounded-lg"
                   />
+                  <button
+                    onClick={() => {
+                      const link = document.createElement("a");
+                      link.href = image.data;
+                      link.download = `ai-image-${Date.now()}.png`;
+                      link.click();
+                    }}
+                    className="absolute bottom-2 right-2 p-2 bg-black bg-opacity-50 rounded-full 
+                               text-white hover:bg-opacity-70 transition-all duration-200 
+                               sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
+                  >
+                    <IconDownload size={20} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -417,10 +434,11 @@ export default function ChatMessages({
               )}
 
               {editingMessageId !== message.id &&
-                extractImagePrompt(message.content) &&
-                ((message.images && message.images.length > 0) ||
-                  message.content.includes("*Lỗi:")) &&
-                !isLoading && (
+                (message.sender === "user" ||
+                (extractImagePrompt(message.content) &&
+                  ((message.images && message.images.length > 0) ||
+                    message.content.includes("*Lỗi:")) &&
+                  !isLoading) ? (
                   <div
                     className={`absolute flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ${
                       message.sender === "user"
@@ -482,7 +500,7 @@ export default function ChatMessages({
                       />
                     </button>
                   </div>
-                )}
+                ) : null)}
 
               {isLoading && message === messages[messages.length - 1] && (
                 <motion.div

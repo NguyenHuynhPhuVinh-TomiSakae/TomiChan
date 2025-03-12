@@ -326,7 +326,7 @@ export function useGeminiChat(chatId?: string) {
 
   const regenerateMessage = async (messageId: string) => {
     const messageIndex = messages.findIndex((msg) => msg.id === messageId);
-    if (messageIndex === -1) return;
+    if (messageIndex === -1 || isGeneratingImage) return;
 
     const previousUserMessage = messages
       .slice(0, messageIndex)
@@ -354,7 +354,7 @@ export function useGeminiChat(chatId?: string) {
       updatedMessages[messageIndex] = {
         ...updatedMessages[messageIndex],
         content: "",
-        images: undefined, // Xóa ảnh cũ
+        images: undefined,
       };
       setMessages(updatedMessages);
       saveChat(updatedMessages, chatId, "google");
@@ -368,29 +368,72 @@ export function useGeminiChat(chatId?: string) {
             content: newContent,
           };
 
-          // Kiểm tra và tạo ảnh mới nếu có image prompt
           if (
             newContent.includes("[IMAGE_PROMPT]") &&
             newContent.includes("[/IMAGE_PROMPT]")
           ) {
             const imagePrompt = extractImagePrompt(newContent);
-            if (imagePrompt) {
-              generateImage(imagePrompt).then((imageBase64) => {
-                setMessages((prev) => {
-                  const updatedMessages = [...prev];
-                  updatedMessages[messageIndex] = {
-                    ...updatedMessages[messageIndex],
-                    images: [
-                      {
-                        url: "generated-image.png",
-                        data: `data:image/png;base64,${imageBase64}`,
-                      },
-                    ],
-                  };
-                  saveChat(updatedMessages, chatId, "google");
-                  return updatedMessages;
-                });
-              });
+            if (
+              imagePrompt &&
+              !isGeneratingImage &&
+              imagePrompt !== imagePromptRef.current
+            ) {
+              imagePromptRef.current = imagePrompt;
+              setIsGeneratingImage(true);
+
+              // Thêm timeout để tránh gọi API liên tục
+              if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+              }
+
+              timeoutRef.current = setTimeout(() => {
+                generateImage(imagePrompt)
+                  .then((imageBase64) => {
+                    setMessages((prev) => {
+                      const updatedMessages = [...prev];
+                      updatedMessages[messageIndex] = {
+                        ...updatedMessages[messageIndex],
+                        images: [
+                          {
+                            url: "generated-image.png",
+                            data: `data:image/png;base64,${imageBase64}`,
+                          },
+                        ],
+                      };
+                      saveChat(updatedMessages, chatId, "google");
+                      return updatedMessages;
+                    });
+                  })
+                  .catch((error) => {
+                    // Bỏ qua nếu là lỗi Too Many Requests
+                    if (
+                      error instanceof Error &&
+                      (error.message.includes("429") ||
+                        error.message.includes("Too Many Requests"))
+                    ) {
+                      return;
+                    }
+
+                    setMessages((prev) => {
+                      const updatedMessages = [...prev];
+                      const errorMessage =
+                        error instanceof Error
+                          ? error.message
+                          : "Lỗi không xác định khi tạo ảnh";
+                      updatedMessages[messageIndex] = {
+                        ...updatedMessages[messageIndex],
+                        content: newContent + `\n\n*Lỗi: ${errorMessage}*`,
+                        images: undefined,
+                      };
+                      saveChat(updatedMessages, chatId, "google");
+                      return updatedMessages;
+                    });
+                  })
+                  .finally(() => {
+                    setIsGeneratingImage(false);
+                    imagePromptRef.current = null;
+                  });
+              }, 1000);
             }
           }
 

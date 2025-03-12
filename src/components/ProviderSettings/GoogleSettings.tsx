@@ -12,7 +12,7 @@ export default function GoogleSettings({
   isOpen,
   onClose,
 }: GoogleSettingsProps) {
-  // Khởi tạo tất cả state từ localStorage
+  // Khởi tạo state từ localStorage
   const [apiKey, setApiKey] = useState(() => getLocalStorage("api_key", ""));
   const [model, setModel] = useState(() =>
     getLocalStorage("selected_model", "gemini-2.0-flash")
@@ -43,7 +43,7 @@ export default function GoogleSettings({
     civicIntegrity: getLocalStorage("safety_civic_integrity", "block_none"),
   }));
 
-  // Reset form khi mở modal
+  // Khi mở modal, reset các giá trị hiển thị từ localStorage
   useEffect(() => {
     if (isOpen) {
       setApiKey(getLocalStorage("api_key", ""));
@@ -74,7 +74,7 @@ export default function GoogleSettings({
     }
   }, [isOpen]);
 
-  // Hàm xử lý an toàn
+  // Hàm cập nhật cài đặt an toàn
   const handleSafetySettingsChange = (category: string, value: string) => {
     setSafetySettings((prev) => ({
       ...prev,
@@ -82,12 +82,9 @@ export default function GoogleSettings({
     }));
   };
 
-  // Hàm reset về giá trị mặc định
+  // Hàm reset về mặc định (giữ nguyên API Key)
   const handleReset = () => {
-    // Giữ nguyên API key
     const currentApiKey = apiKey;
-
-    // Reset các giá trị về mặc định
     setModel("gemini-2.0-flash");
     setSystemPrompt(
       "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
@@ -103,14 +100,11 @@ export default function GoogleSettings({
       dangerousContent: "block_none",
       civicIntegrity: "block_none",
     });
-
-    // Giữ nguyên API key
     setApiKey(currentApiKey);
   };
 
-  // Thay đổi handleSubmit thành handleClose
+  // Hàm lưu cài đặt và đóng modal
   const handleClose = () => {
-    // Lưu các cài đặt vào localStorage
     setLocalStorage("api_key", apiKey);
     setLocalStorage("selected_model", model);
     setLocalStorage("system_prompt", systemPrompt);
@@ -119,7 +113,6 @@ export default function GoogleSettings({
     setLocalStorage("top_k", topK.toString());
     setLocalStorage("max_output_tokens", maxOutputTokens.toString());
 
-    // Lưu cài đặt an toàn
     setLocalStorage("safety_harassment", safetySettings.harassment);
     setLocalStorage("safety_hate_speech", safetySettings.hateSpeech);
     setLocalStorage(
@@ -133,6 +126,117 @@ export default function GoogleSettings({
     setLocalStorage("safety_civic_integrity", safetySettings.civicIntegrity);
 
     onClose();
+  };
+
+  // Các đối tượng options sử dụng cho radio group và slider cài đặt an toàn
+  const modelOptions = [
+    { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
+    { value: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash Lite" },
+    { value: "gemini-2.0-pro-exp-02-05", label: "Gemini 2.0 Pro Exp 02-05" },
+    {
+      value: "gemini-2.0-flash-thinking-exp-01-21",
+      label: "Gemini 2.0 Flash Thinking Exp 01-21",
+    },
+    { value: "gemini-2.0-flash-exp", label: "Gemini 2.0 Flash Exp" },
+    { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
+    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
+    { value: "gemini-1.5-flash-8b", label: "Gemini 1.5 Flash 8B" },
+  ];
+
+  const safetyOptions = [
+    { value: "block_none", label: "Không chặn" },
+    {
+      value: "block_low_and_above",
+      label: "Chặn nội dung có hại cấp Thấp và cao hơn",
+    },
+    {
+      value: "block_medium_and_above",
+      label: "Chặn nội dung có hại cấp Trung bình và cao hơn",
+    },
+    {
+      value: "block_high_and_above",
+      label: "Chỉ chặn nội dung có hại cấp Cao",
+    },
+  ];
+
+  // Component tái sử dụng cho nhóm Radio (đối với phần chọn mô hình)
+  const RadioGroup = ({
+    label,
+    name,
+    options,
+    selectedValue,
+    onChange,
+  }: {
+    label: string;
+    name: string;
+    options: { value: string; label: string }[];
+    selectedValue: string;
+    onChange: (value: string) => void;
+  }) => {
+    return (
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          {label}
+        </label>
+        <div className="flex flex-col gap-2">
+          {options.map((option) => (
+            <label
+              key={option.value}
+              className="flex items-center p-2 border rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900"
+            >
+              <input
+                type="radio"
+                name={name}
+                value={option.value}
+                checked={selectedValue === option.value}
+                onChange={() => onChange(option.value)}
+                className="mr-2"
+              />
+              <span>{option.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Component tái sử dụng cho thanh kéo của cài đặt an toàn
+  const SafetySlider = ({
+    label,
+    value,
+    onChange,
+  }: {
+    label: string;
+    value: string;
+    onChange: (newValue: string) => void;
+  }) => {
+    const currentIndex = safetyOptions.findIndex((opt) => opt.value === value);
+    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newIndex = Number(e.target.value);
+      onChange(safetyOptions[newIndex].value);
+    };
+
+    return (
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          {label}
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="3"
+          step="1"
+          value={currentIndex === -1 ? 0 : currentIndex}
+          onChange={handleSliderChange}
+          className="w-full"
+        />
+        <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          {currentIndex !== -1
+            ? safetyOptions[currentIndex].label
+            : safetyOptions[0].label}
+        </div>
+      </div>
+    );
   };
 
   if (!isOpen) return null;
@@ -155,42 +259,9 @@ export default function GoogleSettings({
             <div className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2 scrollbar-hide">
               <form>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Cài đặt chung */}
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Chọn mô hình
-                      </label>
-                      <select
-                        value={model}
-                        onChange={(e) => setModel(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-                      >
-                        <option value="gemini-2.0-flash">
-                          Gemini 2.0 Flash
-                        </option>
-                        <option value="gemini-2.0-flash-lite">
-                          Gemini 2.0 Flash Lite
-                        </option>
-                        <option value="gemini-2.0-pro-exp-02-05">
-                          Gemini 2.0 Pro Exp 02-05
-                        </option>
-                        <option value="gemini-2.0-flash-thinking-exp-01-21">
-                          Gemini 2.0 Flash Thinking Exp 01-21
-                        </option>
-                        <option value="gemini-2.0-flash-exp">
-                          Gemini 2.0 Flash Exp
-                        </option>
-                        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                        <option value="gemini-1.5-flash">
-                          Gemini 1.5 Flash
-                        </option>
-                        <option value="gemini-1.5-flash-8b">
-                          Gemini 1.5 Flash 8B
-                        </option>
-                      </select>
-                    </div>
-
-                    <div>
+                    <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         API Key
                       </label>
@@ -213,6 +284,14 @@ export default function GoogleSettings({
                         </a>
                       </p>
                     </div>
+                    {/* Chọn mô hình bằng RadioGroup */}
+                    <RadioGroup
+                      label="Chọn mô hình"
+                      name="model"
+                      options={modelOptions}
+                      selectedValue={model}
+                      onChange={setModel}
+                    />
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -303,145 +382,51 @@ export default function GoogleSettings({
                     </div>
                   </div>
 
+                  {/* Cài đặt an toàn */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium mb-3">
                       Cài đặt an toàn
                     </h3>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Quấy rối (Harassment)
-                      </label>
-                      <select
-                        value={safetySettings.harassment}
-                        onChange={(e) =>
-                          handleSafetySettingsChange(
-                            "harassment",
-                            e.target.value
-                          )
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-                      >
-                        <option value="block_none">Không chặn</option>
-                        <option value="block_low_and_above">
-                          Chặn nội dung có hại cấp Thấp và cao hơn
-                        </option>
-                        <option value="block_medium_and_above">
-                          Chặn nội dung có hại cấp Trung bình và cao hơn
-                        </option>
-                        <option value="block_high_and_above">
-                          Chỉ chặn nội dung có hại cấp Cao
-                        </option>
-                      </select>
-                    </div>
+                    <SafetySlider
+                      label="Quấy rối (Harassment)"
+                      value={safetySettings.harassment}
+                      onChange={(value) =>
+                        handleSafetySettingsChange("harassment", value)
+                      }
+                    />
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Phát ngôn thù ghét (Hate Speech)
-                      </label>
-                      <select
-                        value={safetySettings.hateSpeech}
-                        onChange={(e) =>
-                          handleSafetySettingsChange(
-                            "hateSpeech",
-                            e.target.value
-                          )
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-                      >
-                        <option value="block_none">Không chặn</option>
-                        <option value="block_low_and_above">
-                          Chặn nội dung có hại cấp Thấp và cao hơn
-                        </option>
-                        <option value="block_medium_and_above">
-                          Chặn nội dung có hại cấp Trung bình và cao hơn
-                        </option>
-                        <option value="block_high_and_above">
-                          Chỉ chặn nội dung có hại cấp Cao
-                        </option>
-                      </select>
-                    </div>
+                    <SafetySlider
+                      label="Phát ngôn thù ghét (Hate Speech)"
+                      value={safetySettings.hateSpeech}
+                      onChange={(value) =>
+                        handleSafetySettingsChange("hateSpeech", value)
+                      }
+                    />
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Nội dung khiêu dâm (Sexually Explicit)
-                      </label>
-                      <select
-                        value={safetySettings.sexuallyExplicit}
-                        onChange={(e) =>
-                          handleSafetySettingsChange(
-                            "sexuallyExplicit",
-                            e.target.value
-                          )
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-                      >
-                        <option value="block_none">Không chặn</option>
-                        <option value="block_low_and_above">
-                          Chặn nội dung có hại cấp Thấp và cao hơn
-                        </option>
-                        <option value="block_medium_and_above">
-                          Chặn nội dung có hại cấp Trung bình và cao hơn
-                        </option>
-                        <option value="block_high_and_above">
-                          Chỉ chặn nội dung có hại cấp Cao
-                        </option>
-                      </select>
-                    </div>
+                    <SafetySlider
+                      label="Nội dung khiêu dâm (Sexually Explicit)"
+                      value={safetySettings.sexuallyExplicit}
+                      onChange={(value) =>
+                        handleSafetySettingsChange("sexuallyExplicit", value)
+                      }
+                    />
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Nội dung nguy hiểm (Dangerous Content)
-                      </label>
-                      <select
-                        value={safetySettings.dangerousContent}
-                        onChange={(e) =>
-                          handleSafetySettingsChange(
-                            "dangerousContent",
-                            e.target.value
-                          )
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-                      >
-                        <option value="block_none">Không chặn</option>
-                        <option value="block_low_and_above">
-                          Chặn nội dung có hại cấp Thấp và cao hơn
-                        </option>
-                        <option value="block_medium_and_above">
-                          Chặn nội dung có hại cấp Trung bình và cao hơn
-                        </option>
-                        <option value="block_high_and_above">
-                          Chỉ chặn nội dung có hại cấp Cao
-                        </option>
-                      </select>
-                    </div>
+                    <SafetySlider
+                      label="Nội dung nguy hiểm (Dangerous Content)"
+                      value={safetySettings.dangerousContent}
+                      onChange={(value) =>
+                        handleSafetySettingsChange("dangerousContent", value)
+                      }
+                    />
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Vi phạm tính toàn vẹn công dân (Civic Integrity)
-                      </label>
-                      <select
-                        value={safetySettings.civicIntegrity}
-                        onChange={(e) =>
-                          handleSafetySettingsChange(
-                            "civicIntegrity",
-                            e.target.value
-                          )
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-                      >
-                        <option value="block_none">Không chặn</option>
-                        <option value="block_low_and_above">
-                          Chặn nội dung có hại cấp Thấp và cao hơn
-                        </option>
-                        <option value="block_medium_and_above">
-                          Chặn nội dung có hại cấp Trung bình và cao hơn
-                        </option>
-                        <option value="block_high_and_above">
-                          Chỉ chặn nội dung có hại cấp Cao
-                        </option>
-                      </select>
-                    </div>
+                    <SafetySlider
+                      label="Vi phạm tính toàn vẹn công dân (Civic Integrity)"
+                      value={safetySettings.civicIntegrity}
+                      onChange={(value) =>
+                        handleSafetySettingsChange("civicIntegrity", value)
+                      }
+                    />
                   </div>
                 </div>
               </form>

@@ -108,10 +108,8 @@ export default function GoogleSettings({
     setApiKey(currentApiKey);
   };
 
-  // Lưu tất cả cài đặt
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  // Thay đổi handleSubmit thành handleClose
+  const handleClose = () => {
     // Lưu các cài đặt vào localStorage
     setLocalStorage("api_key", apiKey);
     setLocalStorage("selected_model", model);
@@ -146,14 +144,14 @@ export default function GoogleSettings({
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Cài đặt Google AI</h2>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
             >
               <IconX size={20} />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
@@ -441,16 +439,10 @@ export default function GoogleSettings({
               </button>
               <button
                 type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
+                onClick={handleClose}
                 className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors cursor-pointer"
               >
-                Lưu
+                Xong
               </button>
             </div>
           </form>

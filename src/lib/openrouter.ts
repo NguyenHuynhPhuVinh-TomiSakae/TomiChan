@@ -15,7 +15,7 @@ export const getOpenRouterResponse = async (
 
     const selectedModel = getLocalStorage(
       "openrouter_model",
-      "google/gemma-3-27b-it:free"
+      "deepseek/deepseek-r1:free"
     );
     const temperature = Number(
       getLocalStorage("openrouter_temperature", "0.7")

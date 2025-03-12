@@ -16,7 +16,7 @@ export default function OpenRouterSettings({
     getLocalStorage("openrouter_api_key", "")
   );
   const [model, setModel] = useState(() =>
-    getLocalStorage("openrouter_model", "google/gemma-3-27b-it:free")
+    getLocalStorage("openrouter_model", "deepseek/deepseek-r1:free")
   );
   const [systemPrompt, setSystemPrompt] = useState(() =>
     getLocalStorage(
@@ -163,7 +163,7 @@ export default function OpenRouterSettings({
       setApiKey(getLocalStorage("openrouter_api_key", ""));
       const savedModel = getLocalStorage(
         "openrouter_model",
-        "google/gemma-3-27b-it:free"
+        "deepseek/deepseek-r1:free"
       );
       setModel(savedModel);
       setSystemPrompt(
@@ -230,7 +230,7 @@ export default function OpenRouterSettings({
 
   const handleReset = () => {
     const currentApiKey = apiKey;
-    setModel("google/gemma-3-27b-it:free");
+    setModel("deepseek/deepseek-r1:free");
     setSystemPrompt(
       "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
     );

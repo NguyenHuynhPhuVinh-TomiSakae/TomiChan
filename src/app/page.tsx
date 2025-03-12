@@ -73,6 +73,10 @@ export default function Home() {
   };
 
   const handleImagesUpload = (files: File[]) => {
+    console.log("Uploaded images:", files);
+  };
+
+  const handleFilesUpload = (files: File[]) => {
     console.log("Uploaded files:", files);
   };
 
@@ -121,6 +125,7 @@ export default function Home() {
                 <ChatInput
                   onSendMessage={sendMessage}
                   onImagesUpload={handleImagesUpload}
+                  onFilesUpload={handleFilesUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}
@@ -156,6 +161,7 @@ export default function Home() {
                 <ChatInput
                   onSendMessage={sendMessage}
                   onImagesUpload={handleImagesUpload}
+                  onFilesUpload={handleFilesUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}

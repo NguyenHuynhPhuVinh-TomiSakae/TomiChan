@@ -6,6 +6,11 @@ export interface Message {
     url: string;
     data: string; // Base64 string của ảnh
   }[];
+  files?: {
+    name: string;
+    type: string;
+    data: string; // Base64 string của file
+  }[];
 }
 
 export interface ChatHistory {

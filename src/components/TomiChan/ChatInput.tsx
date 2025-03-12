@@ -57,42 +57,60 @@ export default function ChatInput({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (
-      message.trim() ||
-      selectedImages.length > 0 ||
-      selectedFiles.length > 0
-    ) {
-      const imageData = await Promise.all(
+      (!message.trim() &&
+        selectedImages.length === 0 &&
+        selectedFiles.length === 0) ||
+      isGenerating
+    )
+      return;
+
+    // Xử lý hình ảnh đọc trực tiếp thành base64 thay vì dùng URL
+    let imageDataArray: { url: string; data: string }[] | undefined;
+    if (selectedImages.length > 0) {
+      imageDataArray = await Promise.all(
         selectedImages.map(async (image) => {
+          // Đọc file ảnh thành base64 string
+          const base64Data = await readFileAsDataURL(image.file);
           return {
-            url: image.preview,
-            data: await convertFileToBase64(image.file),
+            url: URL.createObjectURL(image.file),
+            data: base64Data,
           };
         })
       );
-
-      const fileData = await Promise.all(
-        selectedFiles.map(async (file: { file: File; type: string }) => {
-          return {
-            name: file.file.name,
-            type: file.type,
-            data: await convertFileToBase64(file.file),
-          };
-        })
-      );
-
-      onSendMessage(message, imageData, fileData);
-      setMessage("");
-      setTextareaHeight(56);
-      handleClearAllImages();
-      handleClearAllFiles();
     }
+
+    // Xử lý file nếu có
+    let fileDataArray:
+      | { name: string; type: string; data: string }[]
+      | undefined;
+    if (selectedFiles.length > 0) {
+      fileDataArray = await Promise.all(
+        selectedFiles.map(async (fileObj) => {
+          return {
+            name: fileObj.file.name,
+            type: fileObj.file.type,
+            data: await readFileAsDataURL(fileObj.file),
+          };
+        })
+      );
+    }
+
+    onSendMessage(message, imageDataArray, fileDataArray);
+    setMessage("");
+    setTextareaHeight(56);
+    handleClearAllImages();
+    handleClearAllFiles();
   };
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
+  const readFileAsDataURL = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result);
+      };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
@@ -150,17 +168,22 @@ export default function ChatInput({
           <div className="w-full h-full flex flex-col">
             <UploadFiles
               selectedImages={selectedImages}
+              selectedFiles={selectedFiles}
               onRemoveImage={handleRemoveImage}
+              onRemoveFile={handleRemoveFile}
               onClearAllImages={handleClearAllImages}
+              onClearAllFiles={handleClearAllFiles}
               fileType="image"
             />
 
-            <UploadFiles
-              selectedFiles={selectedFiles}
-              onRemoveFile={handleRemoveFile}
-              onClearAllFiles={handleClearAllFiles}
-              fileType="document"
-            />
+            {selectedFiles.length > 0 && (
+              <UploadFiles
+                selectedFiles={selectedFiles}
+                onRemoveFile={handleRemoveFile}
+                onClearAllFiles={handleClearAllFiles}
+                fileType="document"
+              />
+            )}
 
             <textarea
               ref={textareaRef}

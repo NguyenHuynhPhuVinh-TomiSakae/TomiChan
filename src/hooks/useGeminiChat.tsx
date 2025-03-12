@@ -21,7 +21,8 @@ export function useGeminiChat(chatId?: string) {
 
   const sendMessage = async (
     message: string,
-    imageData?: { url: string; data: string }[]
+    imageData?: { url: string; data: string }[],
+    fileData?: { name: string; type: string; data: string }[]
   ) => {
     const apiKey = localStorage.getItem("api_key");
     const currentChatId = chatId;
@@ -35,6 +36,7 @@ export function useGeminiChat(chatId?: string) {
           content: message,
           sender: "user",
           images: imageData,
+          files: fileData,
         },
         {
           id: (Date.now() + 1).toString(),
@@ -51,6 +53,7 @@ export function useGeminiChat(chatId?: string) {
       content: message,
       sender: "user",
       images: imageData,
+      files: fileData,
     };
 
     const botMessageId = (Date.now() + 1).toString();
@@ -103,18 +106,45 @@ export function useGeminiChat(chatId?: string) {
       const controller = new AbortController();
       setAbortController(controller);
 
-      await getGeminiResponse(
+      const botResponse = await getGeminiResponse(
         message,
         chatHistory,
         handleChunk,
         controller.signal,
-        imageData
+        imageData,
+        fileData
       );
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         return;
       }
-      setError("Đã xảy ra lỗi khi xử lý yêu cầu");
+
+      let errorMessage = "Đã xảy ra lỗi khi xử lý yêu cầu";
+
+      // Kiểm tra và hiển thị lỗi cụ thể hơn từ API
+      if (error instanceof Error) {
+        console.error("Gemini API error:", error.message);
+
+        if (
+          error.message.includes("400") ||
+          error.message.includes("Bad Request")
+        ) {
+          if (error.message.includes("SAFETY")) {
+            errorMessage = "Nội dung bị chặn bởi bộ lọc an toàn của Gemini.";
+          } else if (error.message.includes("BLOCKED_REASON")) {
+            errorMessage =
+              "Nội dung bị từ chối do vi phạm chính sách của Gemini.";
+          } else if (error.message.includes("API key")) {
+            errorMessage =
+              "API key không hợp lệ. Vui lòng kiểm tra lại trong phần cài đặt.";
+          } else {
+            errorMessage =
+              "Lỗi yêu cầu không hợp lệ (400). Vui lòng thử cách diễn đạt khác.";
+          }
+        }
+      }
+
+      setError(errorMessage);
       setMessages((prev) => {
         const updatedMessages = [...prev];
         const botMessageIndex = updatedMessages.findIndex(
@@ -124,8 +154,7 @@ export function useGeminiChat(chatId?: string) {
         if (botMessageIndex !== -1) {
           updatedMessages[botMessageIndex] = {
             ...updatedMessages[botMessageIndex],
-            content:
-              "Đã xảy ra lỗi khi xử lý tin nhắn của bạn. Vui lòng thử lại sau.",
+            content: errorMessage,
           };
         }
 

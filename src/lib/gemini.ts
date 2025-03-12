@@ -10,7 +10,8 @@ export const getGeminiResponse = async (
   history: { role: string; parts: { text: string }[] }[] = [],
   onChunk: (chunk: string) => void,
   signal?: AbortSignal,
-  images?: { url: string; data: string }[]
+  images?: { url: string; data: string }[],
+  files?: { name: string; type: string; data: string }[]
 ) => {
   try {
     const apiKey = getLocalStorage("api_key");
@@ -109,8 +110,12 @@ export const getGeminiResponse = async (
       responseMimeType: "text/plain",
     };
 
-    // Xử lý trường hợp không có hình ảnh
-    if (!images || images.length === 0) {
+    // Kiểm tra xem có hình ảnh hoặc tài liệu không
+    const hasAttachments =
+      (images && images.length > 0) || (files && files.length > 0);
+
+    // Xử lý trường hợp không có tài liệu đính kèm
+    if (!hasAttachments) {
       const chatSession = model.startChat({
         generationConfig,
         history: history,
@@ -128,45 +133,87 @@ export const getGeminiResponse = async (
       return fullResponse;
     }
 
-    // Xử lý trường hợp có hình ảnh
+    // Xử lý trường hợp có hình ảnh và/hoặc tài liệu
     const contentParts = [];
 
-    // Thêm các ảnh vào contentParts
-    for (const image of images) {
-      // Lấy phần dữ liệu base64 từ chuỗi data URI
-      const base64Data = image.data.split(",")[1] || image.data;
+    // Thêm các ảnh vào contentParts nếu có
+    if (images && images.length > 0) {
+      for (const image of images) {
+        try {
+          // Lấy phần dữ liệu base64 từ chuỗi data URI
+          let base64Data = "";
+          let mimeType = "image/jpeg"; // Mặc định ban đầu
 
-      // Xác định MIME type chính xác từ chuỗi data URI
-      let mimeType = "image/jpeg"; // Mặc định
-      if (image.data.startsWith("data:")) {
-        const match = image.data.match(/data:([^;]+);/);
-        if (match && match[1]) {
-          const extractedType = match[1].toLowerCase();
-          // Chỉ chấp nhận các định dạng đã giới hạn
-          if (
-            [
-              "image/png",
-              "image/jpeg",
-              "image/webp",
-              "image/heic",
-              "image/heif",
-            ].includes(extractedType)
-          ) {
-            mimeType = extractedType;
+          if (image.data.startsWith("data:")) {
+            // Trích xuất MIME type trực tiếp từ data URI
+            const mimeMatch = image.data.match(/data:([^;]+);/);
+            if (mimeMatch && mimeMatch[1]) {
+              mimeType = mimeMatch[1].toLowerCase();
+              console.log("Đã phát hiện MIME type:", mimeType);
+            }
+
+            // Trích xuất phần base64
+            const parts = image.data.split(",");
+            if (parts.length > 1) {
+              base64Data = parts[1];
+            }
+          } else {
+            // Nếu không phải data URI, giả sử là base64 thuần
+            base64Data = image.data;
           }
+
+          if (!base64Data) {
+            console.error("Không thể trích xuất dữ liệu base64 từ ảnh");
+            continue;
+          }
+
+          // Kiểm tra nếu base64 hợp lệ (có thể dùng regex đơn giản)
+          if (!/^[A-Za-z0-9+/=]+$/.test(base64Data)) {
+            // Cố gắng làm sạch chuỗi base64
+            base64Data = base64Data.replace(/[^A-Za-z0-9+/=]/g, "");
+            console.warn("Đã làm sạch chuỗi base64 do có ký tự không hợp lệ");
+          }
+
+          // Thêm vào parts
+          contentParts.push({
+            inlineData: {
+              data: base64Data,
+              mimeType: mimeType,
+            },
+          });
+
+          console.log(
+            "Đã thêm ảnh với MIME:",
+            mimeType,
+            "và độ dài base64:",
+            base64Data.length
+          );
+        } catch (error) {
+          console.error("Lỗi khi xử lý ảnh:", error);
+          continue;
         }
       }
-
-      contentParts.push({
-        inlineData: {
-          data: base64Data,
-          mimeType: mimeType,
-        },
-      });
     }
 
-    // Thêm tin nhắn text vào cuối
-    contentParts.push(message);
+    // Thêm các tệp tin vào contentParts nếu có
+    if (files && files.length > 0) {
+      for (const file of files) {
+        // Lấy phần dữ liệu base64 từ chuỗi data URI
+        const base64Data = file.data.split(",")[1] || file.data;
+
+        contentParts.push({
+          inlineData: {
+            data: base64Data,
+            mimeType: file.type,
+          },
+        });
+      }
+    }
+
+    // Thêm nội dung tin nhắn
+    if (message) {
+      contentParts.push({ text: message });
+    }
 
     // Gọi generateContentStream với đúng định dạng
     const result = await model.generateContentStream(contentParts, {
@@ -186,6 +233,6 @@ export const getGeminiResponse = async (
       throw error;
     }
     console.error("Lỗi khi gọi API Gemini:", error);
-    return "Đã xảy ra lỗi khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.";
+    throw error;
   }
 };

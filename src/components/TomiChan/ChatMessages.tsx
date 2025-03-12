@@ -1,6 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Message } from "../../types";
-import { IconArrowDown } from "@tabler/icons-react";
+import {
+  IconArrowDown,
+  IconFile,
+  IconPdf,
+  IconCode,
+  IconFileText,
+} from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import Markdown from "../Markdown";
 import { useMediaQuery } from "react-responsive";
@@ -65,6 +71,20 @@ export default function ChatMessages({
     prevMessagesLengthRef.current = messages.length;
   }, [messages]);
 
+  // Hàm để xác định biểu tượng theo loại file
+  const getFileIcon = (type: string) => {
+    if (type.includes("pdf")) return <IconPdf size={20} />;
+    if (
+      type.includes("javascript") ||
+      type.includes("python") ||
+      type.includes("xml")
+    )
+      return <IconCode size={20} />;
+    if (type.includes("text/plain") || type.includes("rtf"))
+      return <IconFileText size={20} />;
+    return <IconFile size={20} />;
+  };
+
   return (
     <div className="w-full relative">
       <div className="w-full space-y-4 py-4">
@@ -103,6 +123,29 @@ export default function ChatMessages({
                         fill
                         className="object-cover rounded-lg"
                       />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {message.files && message.files.length > 0 && (
+              <div
+                className={`w-full flex mx-4 sm:mx-8 ${
+                  message.sender === "user" ? "justify-end" : "justify-start"
+                } mb-2`}
+              >
+                <div className="flex flex-col gap-1 w-fit border border-black dark:border-white rounded-lg p-2">
+                  {message.files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 bg-gray-100 dark:bg-gray-900 rounded p-2"
+                    >
+                      <span className="text-gray-700 dark:text-gray-300">
+                        {getFileIcon(file.type)}
+                      </span>
+                      <span className="text-xs sm:text-sm truncate max-w-[200px]">
+                        {file.name}
+                      </span>
                     </div>
                   ))}
                 </div>

@@ -100,16 +100,44 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
         setTimeout(() => setCopied(false), 2000);
       };
 
-      return !inline && match ? (
-        <div className="relative max-w-full">
-          <div
-            className="overflow-x-auto"
-            style={{
-              maxWidth: "100%",
-              width: "100%",
-            }}
-          >
-            <div className="absolute top-2 right-2">
+      if (!inline && match) {
+        const language = match[1];
+
+        return (
+          <div className="max-w-full border rounded-lg overflow-hidden">
+            {/* Header: Hiển thị tên ngôn ngữ */}
+            <div
+              className={`px-4 py-2 text-sm font-medium ${
+                isDarkMode
+                  ? "bg-gray-700 text-gray-200"
+                  : "bg-gray-200 text-gray-800"
+              }`}
+            >
+              {language.toUpperCase()}
+            </div>
+            <div className="overflow-x-auto" style={{ width: "100%" }}>
+              <SyntaxHighlighter
+                style={isDarkMode ? oneDark : oneLight}
+                language={language}
+                PreTag="div"
+                className="rounded-none"
+                wrapLongLines={false}
+                customStyle={{
+                  margin: 0,
+                  padding: "1rem",
+                  background: isDarkMode ? "#282c34" : "#f8f9fa",
+                  width: "100%",
+                  minWidth: "fit-content",
+                }}
+              >
+                {codeContent.replace(/\n$/, "")}
+              </SyntaxHighlighter>
+            </div>
+            {/* Footer: Nút sao chép */}
+            <div
+              className="flex justify-end items-center px-4 py-2 border-t"
+              style={{ background: isDarkMode ? "#282c34" : "#f8f9fa" }}
+            >
               <button
                 onClick={handleCopy}
                 className={`p-2 rounded-md transition-colors cursor-pointer ${
@@ -137,25 +165,12 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
                 )}
               </button>
             </div>
-            <SyntaxHighlighter
-              style={isDarkMode ? oneDark : oneLight}
-              language={match[1]}
-              PreTag="div"
-              className="rounded-lg"
-              wrapLongLines={false}
-              customStyle={{
-                margin: 0,
-                padding: "1rem",
-                background: isDarkMode ? "#282c34" : "#f8f9fa",
-                width: "100%",
-                minWidth: "fit-content",
-              }}
-            >
-              {codeContent.replace(/\n$/, "")}
-            </SyntaxHighlighter>
           </div>
-        </div>
-      ) : (
+        );
+      }
+
+      // Trường hợp inline code hoặc không có language
+      return (
         <code
           className={`${
             isDarkMode

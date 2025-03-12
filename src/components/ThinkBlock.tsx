@@ -15,8 +15,9 @@ export const ThinkBlock = ({ children, id }: ThinkBlockProps) => {
   const blockId = useRef(
     id || `think-${Math.random().toString(36).substring(2, 9)}`
   ).current;
+  // Khởi tạo mở by mặc định (true) nếu chưa được lưu trạng thái
   const [isExpanded, setIsExpanded] = useState(
-    expandedStates[blockId] || false
+    expandedStates[blockId] !== undefined ? expandedStates[blockId] : true
   );
   const { theme } = useThemeContext();
   const isDarkMode =

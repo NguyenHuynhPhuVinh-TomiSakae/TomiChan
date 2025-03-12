@@ -63,6 +63,7 @@ export const getOpenRouterResponse = async (
 
     const decoder = new TextDecoder();
     let buffer = "";
+    let isReasoning = false;
 
     try {
       while (true) {
@@ -85,11 +86,25 @@ export const getOpenRouterResponse = async (
             try {
               const parsed = JSON.parse(data);
               const content = parsed.choices[0].delta.content;
+              const reasoning = parsed.choices[0].delta.reasoning;
+
+              if (reasoning) {
+                if (!isReasoning) {
+                  isReasoning = true;
+                  onChunk("<think>");
+                }
+                onChunk(reasoning);
+              }
+
               if (content) {
+                if (isReasoning) {
+                  isReasoning = false;
+                  onChunk("</think>\n");
+                }
                 onChunk(content);
               }
             } catch (e) {
-              // Bỏ qua JSON không hợp lệ
+              console.error("Lỗi khi parse JSON chunk:", e);
             }
           }
         }

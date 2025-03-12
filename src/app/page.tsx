@@ -164,7 +164,7 @@ export default function Home() {
               selectedProvider={selectedProvider}
             />
             {messages.length > 0 ? (
-              <div className="w-full max-w-4xl mx-auto flex-1 pb-42 sm:pb-126 pt-20">
+              <div className="w-full max-w-4xl mx-auto flex-1 pb-42 sm:pb-118 pt-20">
                 <ChatMessages
                   messages={messages}
                   isLoading={isLoading}

@@ -3,6 +3,7 @@ import { useChat } from "./useChat";
 import { getGroqResponse } from "../lib/groq";
 import { Message } from "../types";
 import { useState } from "react";
+import { useSystemPrompt } from "./useSystemPrompt";
 
 export function useGroqChat(chatId?: string) {
   const {
@@ -19,6 +20,8 @@ export function useGroqChat(chatId?: string) {
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
 
+  const { getEnhancedSystemPrompt } = useSystemPrompt();
+
   const stopGeneration = () => {
     if (abortController) {
       abortController.abort();
@@ -30,6 +33,9 @@ export function useGroqChat(chatId?: string) {
     const apiKey = localStorage.getItem("groq_api_key");
     const currentChatId = chatId;
     const currentMessages = [...messages];
+
+    // Kiểm tra xem có phải là lệnh tạo ảnh không
+    const isImageCreationCommand = /^\/(?:create\s+)?image\s+/i.test(message);
 
     if (!apiKey) {
       setMessages((prev) => [
@@ -72,6 +78,12 @@ export function useGroqChat(chatId?: string) {
         role: msg.sender === "user" ? "user" : "assistant",
         content: msg.content,
       }));
+
+      // Thêm system prompt vào đầu chat history
+      chatHistory.unshift({
+        role: "system",
+        content: getEnhancedSystemPrompt("groq"),
+      });
 
       let accumulatedMessages = [...currentMessages, newMessage];
 

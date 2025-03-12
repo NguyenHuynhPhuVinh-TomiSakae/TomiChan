@@ -3,6 +3,7 @@ import { useChat } from "./useChat";
 import { getGeminiResponse } from "../lib/gemini";
 import { Message } from "../types";
 import { useState } from "react";
+import { useSystemPrompt } from "./useSystemPrompt";
 
 export function useGeminiChat(chatId?: string) {
   const {
@@ -15,6 +16,8 @@ export function useGeminiChat(chatId?: string) {
     saveChat,
     clearMessages,
   } = useChat(chatId);
+
+  const { getEnhancedSystemPrompt } = useSystemPrompt();
 
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
@@ -51,6 +54,8 @@ export function useGeminiChat(chatId?: string) {
       return;
     }
 
+    const isImageCreationCommand = /^\/(?:create\s+)?image\s+/i.test(message);
+
     const newMessage: Message = {
       id: Date.now().toString(),
       content: message,
@@ -78,6 +83,8 @@ export function useGeminiChat(chatId?: string) {
         role: msg.sender === "user" ? "user" : "model",
         parts: [{ text: msg.content }],
       }));
+
+      const systemPrompt = getEnhancedSystemPrompt("google");
 
       if (
         !imageData?.length &&
@@ -121,6 +128,7 @@ export function useGeminiChat(chatId?: string) {
         chatHistory,
         handleChunk,
         controller.signal,
+        systemPrompt,
         imageData,
         fileData,
         videoData,
@@ -205,6 +213,8 @@ export function useGeminiChat(chatId?: string) {
         parts: [{ text: msg.content }],
       }));
 
+      const systemPrompt = getEnhancedSystemPrompt("google");
+
       const controller = new AbortController();
       setAbortController(controller);
 
@@ -234,6 +244,7 @@ export function useGeminiChat(chatId?: string) {
         chatHistory,
         handleChunk,
         controller.signal,
+        systemPrompt,
         previousUserMessage.images,
         previousUserMessage.files,
         previousUserMessage.videos,

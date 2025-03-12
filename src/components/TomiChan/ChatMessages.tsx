@@ -13,6 +13,7 @@ import {
   IconEdit,
   IconTrash,
   IconCheck,
+  IconRefresh,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import Markdown from "../Markdown";
@@ -26,6 +27,7 @@ interface ChatMessagesProps {
   isLoading?: boolean;
   chatId?: string;
   setMessages: (messages: Message[]) => void;
+  onRegenerate?: (messageId: string) => void;
 }
 
 export default function ChatMessages({
@@ -33,6 +35,7 @@ export default function ChatMessages({
   isLoading,
   chatId,
   setMessages,
+  onRegenerate,
 }: ChatMessagesProps) {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const prevMessagesLengthRef = useRef(0);
@@ -46,8 +49,13 @@ export default function ChatMessages({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
 
-  const { copiedMessageId, handleCopy, handleEdit, handleDelete } =
-    useMessageActions(messages, setMessages, chatId);
+  const {
+    copiedMessageId,
+    handleCopy,
+    handleEdit,
+    handleDelete,
+    handleRegenerate,
+  } = useMessageActions(messages, setMessages, chatId, onRegenerate);
 
   const scrollToBottom = () => {
     window.scrollTo({
@@ -337,7 +345,7 @@ export default function ChatMessages({
                   <div className="flex gap-2 justify-end">
                     <button
                       onClick={() => setEditingMessageId(null)}
-                      className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                      className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors cursor-pointer"
                     >
                       Hủy
                     </button>
@@ -346,7 +354,7 @@ export default function ChatMessages({
                         handleEdit(message.id, editContent);
                         setEditingMessageId(null);
                       }}
-                      className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                      className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors cursor-pointer"
                     >
                       Lưu
                     </button>
@@ -370,6 +378,17 @@ export default function ChatMessages({
                       : "left-4 -bottom-2"
                   }`}
                 >
+                  {message.sender !== "user" && (
+                    <button
+                      className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      onClick={() => handleRegenerate(message.id)}
+                    >
+                      <IconRefresh
+                        size={16}
+                        className="text-gray-600 dark:text-gray-400"
+                      />
+                    </button>
+                  )}
                   <button
                     className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                     onClick={() => handleCopy(message.content, message.id)}

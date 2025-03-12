@@ -130,6 +130,75 @@ export function useGroqChat(chatId?: string) {
     }
   };
 
+  const regenerateMessage = async (messageId: string) => {
+    const messageIndex = messages.findIndex((msg) => msg.id === messageId);
+    if (messageIndex === -1) return;
+
+    // Tìm tin nhắn user gần nhất phía trước
+    const previousUserMessage = messages
+      .slice(0, messageIndex)
+      .reverse()
+      .find((msg) => msg.sender === "user");
+
+    if (!previousUserMessage) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const chatHistory = messages.slice(0, messageIndex).map((msg) => ({
+        role: msg.sender === "user" ? "user" : "assistant",
+        content: msg.content,
+      }));
+
+      const controller = new AbortController();
+      setAbortController(controller);
+
+      // Cập nhật tin nhắn tại vị trí cũ
+      const updatedMessages = [...messages];
+      updatedMessages[messageIndex] = {
+        ...updatedMessages[messageIndex],
+        content: "",
+      };
+      setMessages(updatedMessages);
+
+      const handleChunk = (chunk: string) => {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          newMessages[messageIndex] = {
+            ...newMessages[messageIndex],
+            content: newMessages[messageIndex].content + chunk,
+          };
+          saveChat(newMessages, chatId, "groq");
+          return newMessages;
+        });
+      };
+
+      await getGroqResponse(
+        previousUserMessage.content,
+        chatHistory,
+        handleChunk,
+        controller.signal
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
+      setError("Đã xảy ra lỗi khi tạo lại phản hồi");
+      setMessages((prev) => {
+        const updatedMessages = [...prev];
+        updatedMessages[messageIndex] = {
+          ...updatedMessages[messageIndex],
+          content: "Đã xảy ra lỗi khi tạo lại phản hồi. Vui lòng thử lại sau.",
+        };
+        return updatedMessages;
+      });
+    } finally {
+      setIsLoading(false);
+      setAbortController(null);
+    }
+  };
+
   return {
     messages,
     isLoading,
@@ -138,5 +207,6 @@ export function useGroqChat(chatId?: string) {
     clearMessages,
     stopGeneration,
     setMessages,
+    regenerateMessage,
   };
 }

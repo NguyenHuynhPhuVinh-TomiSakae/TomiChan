@@ -5,7 +5,8 @@ import { chatDB } from "../utils/db";
 export function useMessageActions(
   messages: Message[],
   setMessages: (messages: Message[]) => void,
-  chatId?: string
+  chatId?: string,
+  onRegenerate?: (messageId: string) => void
 ) {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
 
@@ -60,10 +61,34 @@ export function useMessageActions(
     }
   };
 
+  const handleRegenerate = async (messageId: string) => {
+    // Tìm vị trí tin nhắn cần tạo lại
+    const messageIndex = messages.findIndex((msg) => msg.id === messageId);
+    if (messageIndex === -1) return;
+
+    // Xóa tin nhắn hiện tại và tất cả tin nhắn sau đó
+    const updatedMessages = messages.slice(0, messageIndex);
+    setMessages(updatedMessages);
+
+    // Cập nhật trong IndexedDB
+    if (chatId) {
+      const chat = await chatDB.getChat(chatId);
+      if (chat) {
+        chat.messages = updatedMessages;
+        chat.updatedAt = new Date();
+        await chatDB.saveChat(chat);
+      }
+    }
+
+    // Gọi callback để tạo lại phản hồi
+    onRegenerate?.(messageId);
+  };
+
   return {
     copiedMessageId,
     handleCopy,
     handleEdit,
     handleDelete,
+    handleRegenerate,
   };
 }

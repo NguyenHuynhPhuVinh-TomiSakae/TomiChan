@@ -27,6 +27,7 @@ export default function Home() {
     isLoading,
     stopGeneration,
     setMessages,
+    regenerateMessage,
   } = useChatProvider(currentChatId, selectedProvider);
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showLoading, setShowLoading] = React.useState(true);
@@ -92,6 +93,10 @@ export default function Home() {
 
   const handleAudiosUpload = (files: File[]) => {
     console.log("Uploaded audios:", files);
+  };
+
+  const handleRegenerate = async (messageId: string) => {
+    await regenerateMessage(messageId);
   };
 
   if (showLoading) {
@@ -165,6 +170,7 @@ export default function Home() {
                   isLoading={isLoading}
                   chatId={currentChatId}
                   setMessages={setMessages}
+                  onRegenerate={handleRegenerate}
                 />
               </div>
             ) : (

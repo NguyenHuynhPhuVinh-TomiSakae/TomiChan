@@ -185,6 +185,85 @@ export function useGeminiChat(chatId?: string) {
     }
   };
 
+  const regenerateMessage = async (messageId: string) => {
+    const messageIndex = messages.findIndex((msg) => msg.id === messageId);
+    if (messageIndex === -1) return;
+
+    // Tìm tin nhắn user gần nhất phía trước
+    const previousUserMessage = messages
+      .slice(0, messageIndex)
+      .reverse()
+      .find((msg) => msg.sender === "user");
+
+    if (!previousUserMessage) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Lấy lịch sử chat đến tin nhắn user trước đó
+      const chatHistory = messages.slice(0, messageIndex).map((msg) => ({
+        role: msg.sender === "user" ? "user" : "model",
+        parts: [{ text: msg.content }],
+      }));
+
+      const controller = new AbortController();
+      setAbortController(controller);
+
+      // Cập nhật tin nhắn tại vị trí cũ
+      const updatedMessages = [...messages];
+      updatedMessages[messageIndex] = {
+        ...updatedMessages[messageIndex],
+        content: "",
+      };
+      setMessages(updatedMessages);
+
+      const handleChunk = (chunk: string) => {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          newMessages[messageIndex] = {
+            ...newMessages[messageIndex],
+            content: newMessages[messageIndex].content + chunk,
+          };
+          saveChat(newMessages, chatId, "google");
+          return newMessages;
+        });
+      };
+
+      await getGeminiResponse(
+        previousUserMessage.content,
+        chatHistory,
+        handleChunk,
+        controller.signal,
+        previousUserMessage.images,
+        previousUserMessage.files,
+        previousUserMessage.videos,
+        previousUserMessage.audios
+      );
+    } catch (error) {
+      // Xử lý lỗi tương tự như trong sendMessage
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
+
+      const errorMessage = "Đã xảy ra lỗi khi tạo lại phản hồi";
+      // ... xử lý error message tương tự như trong sendMessage ...
+
+      setError(errorMessage);
+      setMessages((prev) => {
+        const updatedMessages = [...prev];
+        updatedMessages[messageIndex] = {
+          ...updatedMessages[messageIndex],
+          content: errorMessage,
+        };
+        return updatedMessages;
+      });
+    } finally {
+      setIsLoading(false);
+      setAbortController(null);
+    }
+  };
+
   return {
     messages,
     isLoading,
@@ -193,5 +272,6 @@ export function useGeminiChat(chatId?: string) {
     clearMessages,
     stopGeneration,
     setMessages,
+    regenerateMessage,
   };
 }

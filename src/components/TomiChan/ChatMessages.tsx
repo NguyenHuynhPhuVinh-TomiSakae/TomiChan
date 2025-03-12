@@ -8,6 +8,7 @@ import {
   IconFileText,
   IconPlayerPlay,
   IconVideo,
+  IconMusic,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import Markdown from "../Markdown";
@@ -224,6 +225,35 @@ export default function ChatMessages({
                             : `Video ${index + 1}`}
                         </span>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {message.audios && message.audios.length > 0 && (
+              <div
+                className={`w-full flex mx-4 sm:mx-8 ${
+                  message.sender === "user" ? "justify-end" : "justify-start"
+                } mb-2`}
+              >
+                <div className="flex flex-col gap-2 w-fit border border-black dark:border-white rounded-lg p-2">
+                  {message.audios.map((audio, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-col gap-1 bg-gray-100 dark:bg-gray-900 rounded p-2 max-w-[350px]"
+                    >
+                      <div className="flex items-center gap-2">
+                        <IconMusic
+                          size={16}
+                          className="text-gray-700 dark:text-gray-300"
+                        />
+                        <span className="text-xs sm:text-sm truncate">
+                          {audio.url
+                            ? audio.url.split("/").pop() || `Audio ${index + 1}`
+                            : `Audio ${index + 1}`}
+                        </span>
+                      </div>
+                      <audio src={audio.data} controls className="w-full h-8" />
                     </div>
                   ))}
                 </div>

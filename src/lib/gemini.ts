@@ -12,7 +12,8 @@ export const getGeminiResponse = async (
   signal?: AbortSignal,
   images?: { url: string; data: string }[],
   files?: { name: string; type: string; data: string }[],
-  videos?: { url: string; data: string }[]
+  videos?: { url: string; data: string }[],
+  audios?: { url: string; data: string }[]
 ) => {
   try {
     const apiKey = getLocalStorage("api_key");
@@ -111,11 +112,12 @@ export const getGeminiResponse = async (
       responseMimeType: "text/plain",
     };
 
-    // Kiểm tra xem có hình ảnh, tài liệu hoặc video không
+    // Kiểm tra xem có hình ảnh, tài liệu, video hoặc âm thanh không
     const hasAttachments =
       (images && images.length > 0) ||
       (files && files.length > 0) ||
-      (videos && videos.length > 0);
+      (videos && videos.length > 0) ||
+      (audios && audios.length > 0);
 
     // Xử lý trường hợp không có tài liệu đính kèm
     if (!hasAttachments) {
@@ -269,6 +271,67 @@ export const getGeminiResponse = async (
           );
         } catch (error) {
           console.error("Lỗi khi xử lý video:", error);
+          continue;
+        }
+      }
+    }
+
+    // Thêm các audio vào contentParts nếu có
+    if (audios && audios.length > 0) {
+      for (const audio of audios) {
+        try {
+          // Lấy phần dữ liệu base64 từ chuỗi data URI
+          let base64Data = "";
+          let mimeType = "audio/mp3"; // Mặc định ban đầu
+
+          if (audio.data.startsWith("data:")) {
+            // Trích xuất MIME type trực tiếp từ data URI
+            const mimeMatch = audio.data.match(/data:([^;]+);/);
+            if (mimeMatch && mimeMatch[1]) {
+              mimeType = mimeMatch[1].toLowerCase();
+              console.log("Đã phát hiện MIME type audio:", mimeType);
+            }
+
+            // Trích xuất phần base64
+            const parts = audio.data.split(",");
+            if (parts.length > 1) {
+              base64Data = parts[1];
+            }
+          } else {
+            // Nếu không phải data URI, giả sử là base64 thuần
+            base64Data = audio.data;
+          }
+
+          if (!base64Data) {
+            console.error("Không thể trích xuất dữ liệu base64 từ audio");
+            continue;
+          }
+
+          // Kiểm tra nếu base64 hợp lệ
+          if (!/^[A-Za-z0-9+/=]+$/.test(base64Data)) {
+            // Cố gắng làm sạch chuỗi base64
+            base64Data = base64Data.replace(/[^A-Za-z0-9+/=]/g, "");
+            console.warn(
+              "Đã làm sạch chuỗi base64 audio do có ký tự không hợp lệ"
+            );
+          }
+
+          // Thêm vào parts
+          contentParts.push({
+            inlineData: {
+              data: base64Data,
+              mimeType: mimeType,
+            },
+          });
+
+          console.log(
+            "Đã thêm audio với MIME:",
+            mimeType,
+            "và độ dài base64:",
+            base64Data.length
+          );
+        } catch (error) {
+          console.error("Lỗi khi xử lý audio:", error);
           continue;
         }
       }

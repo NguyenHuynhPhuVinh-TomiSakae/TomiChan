@@ -23,7 +23,8 @@ export function useGeminiChat(chatId?: string) {
     message: string,
     imageData?: { url: string; data: string }[],
     fileData?: { name: string; type: string; data: string }[],
-    videoData?: { url: string; data: string }[]
+    videoData?: { url: string; data: string }[],
+    audioData?: { url: string; data: string }[]
   ) => {
     const apiKey = localStorage.getItem("api_key");
     const currentChatId = chatId;
@@ -57,6 +58,7 @@ export function useGeminiChat(chatId?: string) {
       images: imageData,
       files: fileData,
       videos: videoData,
+      audios: audioData,
     };
 
     const botMessageId = (Date.now() + 1).toString();
@@ -77,7 +79,12 @@ export function useGeminiChat(chatId?: string) {
         parts: [{ text: msg.content }],
       }));
 
-      if (!imageData?.length && !fileData?.length && !videoData?.length) {
+      if (
+        !imageData?.length &&
+        !fileData?.length &&
+        !videoData?.length &&
+        !audioData?.length
+      ) {
         chatHistory.push({
           role: "user",
           parts: [{ text: message }],
@@ -116,7 +123,8 @@ export function useGeminiChat(chatId?: string) {
         controller.signal,
         imageData,
         fileData,
-        videoData
+        videoData,
+        audioData
       );
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {

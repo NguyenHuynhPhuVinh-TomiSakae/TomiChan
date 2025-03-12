@@ -1,15 +1,14 @@
 /* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
-import ReactMarkdown from "react-markdown";
+import React, { JSX, useState } from "react";
+import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeRaw from "rehype-raw";
-import rehypeSanitize from "rehype-sanitize";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
-import { Components } from "react-markdown";
 import Image from "next/image";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
@@ -25,6 +24,24 @@ interface MarkdownProps {
   className?: string;
 }
 
+// Mở rộng schema để cho phép tag <think> không bị loại bỏ
+const customSchema = {
+  ...defaultSchema,
+  // Cho phép các tag đã có và thêm tag "think"
+  tagNames: [...(defaultSchema.tagNames || []), "think"],
+};
+
+// Định nghĩa interface mở rộng cho ReactMarkdown components để xử lý tag <think>
+interface CustomComponents extends Components {
+  think: ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+}
+
 export default function Markdown({ content, className = "" }: MarkdownProps) {
   const { theme } = useThemeContext();
   const [copied, setCopied] = useState(false);
@@ -33,16 +50,15 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     (theme === "system" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-  // Sửa lại cách xử lý thẻ think
-  const processedContent = content.replace(
-    /<think>([\s\S]*?)<\/think>/g,
-    (_, thinkContent) => {
-      // Thêm marker đặc biệt để nhận dạng nội dung think
-      return `:::think\n${thinkContent.trim()}\n:::`;
-    }
-  );
+  // Không thực hiện thay thế <think>...</think> nữa, truyền content trực tiếp.
+  // VN: Nội dung bao gồm thẻ <think>... sẽ được xử lý bởi rehypeRaw ở bước sau
 
-  const components: Components = {
+  const components: CustomComponents = {
+    // Mapping tag "think" thành component ThinkBlock
+    think: ({ node, children }) => {
+      return <ThinkBlock>{children}</ThinkBlock>;
+    },
+
     code({
       node,
       inline,
@@ -60,8 +76,6 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
       const getStringContent = (child: any): string => {
         if (typeof child === "string") return child;
         if (!child) return "";
-
-        // Xử lý đặc biệt cho các phần tử HTML
         if (typeof child === "object") {
           if (child.props?.children) {
             if (Array.isArray(child.props.children)) {
@@ -69,7 +83,6 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
             }
             return getStringContent(child.props.children);
           }
-          // Xử lý trường hợp object có type và value
           if ("type" in child && "value" in child) {
             return child.value;
           }
@@ -253,50 +266,7 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
       );
     },
 
-    p: ({ children, node }) => {
-      // Kiểm tra xem đoạn văn có nằm giữa :::think và ::: không
-      const currentLineNumber = node?.position?.start?.line;
-      const lines = processedContent.split("\n");
-      let isThinkContent = false;
-      let thinkContents: React.ReactNode[] = [];
-      let startLine = -1;
-
-      if (currentLineNumber) {
-        // Tìm marker :::think gần nhất phía trước
-        let searchIndex = currentLineNumber - 1;
-        while (searchIndex >= 0) {
-          const line = lines[searchIndex]?.trim();
-          if (line === ":::") break;
-          if (line === ":::think") {
-            isThinkContent = true;
-            startLine = searchIndex;
-            break;
-          }
-          searchIndex--;
-        }
-      }
-
-      // Nếu đây là dòng đầu tiên của think block, gom tất cả nội dung
-      if (isThinkContent && currentLineNumber === startLine + 1) {
-        let endLine = currentLineNumber;
-        while (endLine < lines.length && lines[endLine]?.trim() !== ":::") {
-          endLine++;
-        }
-
-        const thinkContent = lines.slice(currentLineNumber, endLine).join("\n");
-
-        // Tạo ID duy nhất dựa trên nội dung
-        const thinkId = `think-${Buffer.from(
-          thinkContent.substring(0, 50)
-        ).toString("base64")}`;
-
-        return <ThinkBlock id={thinkId}>{thinkContent}</ThinkBlock>;
-      } else if (isThinkContent) {
-        return null;
-      }
-
-      return <p className="my-2">{children}</p>;
-    },
+    p: ({ children }) => <p className="my-2">{children}</p>,
   };
 
   return (
@@ -307,15 +277,16 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
+        // Cho phép raw HTML (rehypeRaw) và sử dụng customSchema chứa tag think
         rehypePlugins={[
           rehypeRaw,
-          rehypeSanitize,
+          [rehypeSanitize, customSchema],
           rehypeHighlight,
           rehypeKatex,
         ]}
         components={components}
       >
-        {processedContent}
+        {content}
       </ReactMarkdown>
     </div>
   );

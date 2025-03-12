@@ -109,6 +109,8 @@ function ChatGroup({
         return "/google-logo.svg";
       case "groq":
         return "/groq-logo.svg";
+      case "openrouter":
+        return "/openrouter-logo.png";
       default:
         return "/google-logo.svg"; // Default icon
     }

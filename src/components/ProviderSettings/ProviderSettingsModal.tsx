@@ -1,6 +1,7 @@
 import React from "react";
 import GoogleSettings from "./GoogleSettings";
 import GroqSettings from "./GroqSettings";
+import OpenRouterSettings from "./OpenRouterSettings";
 
 interface ProviderSettingsModalProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ export default function ProviderSettingsModal({
     return <GoogleSettings isOpen={isOpen} onClose={onClose} />;
   } else if (selectedProvider === "groq") {
     return <GroqSettings isOpen={isOpen} onClose={onClose} />;
+  } else if (selectedProvider === "openrouter") {
+    return <OpenRouterSettings isOpen={isOpen} onClose={onClose} />;
   }
 
   return null;

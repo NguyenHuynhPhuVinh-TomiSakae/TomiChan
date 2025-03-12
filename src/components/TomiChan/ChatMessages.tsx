@@ -434,73 +434,70 @@ export default function ChatMessages({
               )}
 
               {editingMessageId !== message.id &&
-                (message.sender === "user" ||
-                (extractImagePrompt(message.content) &&
-                  ((message.images && message.images.length > 0) ||
-                    message.content.includes("*Lỗi:")) &&
-                  !isLoading) ? (
-                  <div
-                    className={`absolute flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ${
-                      message.sender === "user"
-                        ? "right-0 -bottom-8"
-                        : isMobile
-                        ? "left-2 -bottom-2"
-                        : "left-4 -bottom-2"
-                    }`}
+              (message.sender === "user" ||
+                (message.sender === "bot" && !isLoading)) ? (
+                <div
+                  className={`absolute flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ${
+                    message.sender === "user"
+                      ? "right-0 -bottom-8"
+                      : isMobile
+                      ? "left-2 -bottom-2"
+                      : "left-4 -bottom-2"
+                  }`}
+                >
+                  {message.sender !== "user" && (
+                    <button
+                      className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      onClick={() => handleRegenerate(message.id)}
+                    >
+                      <IconRefresh
+                        size={16}
+                        className="text-gray-600 dark:text-gray-400"
+                      />
+                    </button>
+                  )}
+                  <button
+                    className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    onClick={() => handleCopy(message.content, message.id)}
                   >
-                    {message.sender !== "user" && (
-                      <button
-                        className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                        onClick={() => handleRegenerate(message.id)}
-                      >
-                        <IconRefresh
-                          size={16}
-                          className="text-gray-600 dark:text-gray-400"
-                        />
-                      </button>
+                    {copiedMessageId === message.id ? (
+                      <IconCheck
+                        size={16}
+                        className="text-green-600 dark:text-green-400"
+                      />
+                    ) : (
+                      <IconCopy
+                        size={16}
+                        className="text-gray-600 dark:text-gray-400"
+                      />
                     )}
-                    <button
-                      className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                      onClick={() => handleCopy(message.content, message.id)}
-                    >
-                      {copiedMessageId === message.id ? (
-                        <IconCheck
-                          size={16}
-                          className="text-green-600 dark:text-green-400"
-                        />
-                      ) : (
-                        <IconCopy
-                          size={16}
-                          className="text-gray-600 dark:text-gray-400"
-                        />
-                      )}
-                    </button>
-                    <button
-                      className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                      onClick={() => {
-                        setEditContent(message.content);
-                        setEditingMessageId(message.id);
-                      }}
-                    >
-                      <IconEdit
-                        size={16}
-                        className="text-gray-600 dark:text-gray-400"
-                      />
-                    </button>
-                    <button
-                      className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                      onClick={() => {
-                        setMessageToDelete(message.id);
-                        setDeleteModalOpen(true);
-                      }}
-                    >
-                      <IconTrash
-                        size={16}
-                        className="text-gray-600 dark:text-gray-400"
-                      />
-                    </button>
-                  </div>
-                ) : null)}
+                  </button>
+                  <button
+                    className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    onClick={() => {
+                      setEditContent(message.content);
+                      setEditingMessageId(message.id);
+                    }}
+                  >
+                    <IconEdit
+                      size={16}
+                      className="text-gray-600 dark:text-gray-400"
+                    />
+                  </button>
+                  <button
+                    className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    onClick={() => {
+                      setMessageToDelete(message.id);
+                      setDeleteModalOpen(true);
+                    }}
+                  >
+                    <IconTrash
+                      size={16}
+                      className="text-gray-600 dark:text-gray-400"
+                    />
+                  </button>
+                </div>
+              ) : null}
 
               {isLoading && message === messages[messages.length - 1] && (
                 <motion.div

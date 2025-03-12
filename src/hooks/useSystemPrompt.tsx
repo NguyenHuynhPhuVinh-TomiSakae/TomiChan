@@ -21,6 +21,10 @@ export function useSystemPrompt() {
       getLocalStorage("image_config", "{}") || "{}"
     );
 
+    if (imageConfig.togetherApiKey === "") {
+      return "Xin lỗi, bạn cần phải thiết lập API key trước khi có thể sử dụng tính năng tạo ảnh. Vui lòng vào phần Cài đặt để thêm API key của bạn.";
+    }
+
     const imageGenerationPrompt = `
 Bạn có khả năng tạo ra hình ảnh thông qua trí tưởng tượng của mình. Khi người dùng mô tả một hình ảnh họ muốn thấy, bạn sẽ:
 1. Hiểu và tưởng tượng hình ảnh đó trong tâm trí

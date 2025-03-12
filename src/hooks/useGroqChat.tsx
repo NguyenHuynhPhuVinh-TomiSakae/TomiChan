@@ -131,16 +131,13 @@ export function useGroqChat(chatId?: string) {
         const imagePrompt = extractImagePrompt(content);
 
         if (imagePrompt && !isGeneratingImage) {
-          // Nếu prompt khác với prompt trước đó
           if (imagePrompt !== imagePromptRef.current) {
             imagePromptRef.current = imagePrompt;
 
-            // Clear timeout cũ nếu có
             if (timeoutRef.current) {
               clearTimeout(timeoutRef.current);
             }
 
-            // Đặt timeout mới
             timeoutRef.current = setTimeout(async () => {
               try {
                 setIsGeneratingImage(true);
@@ -170,9 +167,37 @@ export function useGroqChat(chatId?: string) {
                 });
               } catch (error) {
                 console.error("Lỗi khi tạo ảnh:", error);
-                setError(
-                  error instanceof Error ? error.message : "Lỗi khi tạo ảnh"
-                );
+
+                // Bỏ qua nếu là lỗi Too Many Requests
+                if (
+                  error instanceof Error &&
+                  (error.message.includes("429") ||
+                    error.message.includes("Too Many Requests"))
+                ) {
+                  return;
+                }
+
+                setMessages((prev) => {
+                  const newMessages = [...prev];
+                  const botMessageIndex = newMessages.findIndex(
+                    (msg) => msg.id === botMessageId
+                  );
+
+                  if (botMessageIndex !== -1) {
+                    const errorMessage =
+                      error instanceof Error
+                        ? error.message
+                        : "Lỗi không xác định khi tạo ảnh";
+
+                    newMessages[botMessageIndex] = {
+                      ...newMessages[botMessageIndex],
+                      content: content + `\n\n*Lỗi: ${errorMessage}*`,
+                      images: undefined, // Xóa placeholder
+                    };
+                    saveChat(newMessages, chatId, "groq");
+                  }
+                  return newMessages;
+                });
               } finally {
                 setIsGeneratingImage(false);
                 imagePromptRef.current = null;
@@ -251,7 +276,6 @@ export function useGroqChat(chatId?: string) {
     const messageIndex = messages.findIndex((msg) => msg.id === messageId);
     if (messageIndex === -1) return;
 
-    // Tìm tin nhắn user gần nhất phía trước
     const previousUserMessage = messages
       .slice(0, messageIndex)
       .reverse()
@@ -271,11 +295,12 @@ export function useGroqChat(chatId?: string) {
       const controller = new AbortController();
       setAbortController(controller);
 
-      // Cắt bỏ tất cả tin nhắn sau vị trí đang tạo lại
+      // Reset message content và images
       const updatedMessages = messages.slice(0, messageIndex + 1);
       updatedMessages[messageIndex] = {
         ...updatedMessages[messageIndex],
         content: "",
+        images: undefined, // Xóa ảnh cũ
       };
       setMessages(updatedMessages);
       saveChat(updatedMessages, chatId, "groq");
@@ -283,10 +308,38 @@ export function useGroqChat(chatId?: string) {
       const handleChunk = (chunk: string) => {
         setMessages((prev) => {
           const newMessages = [...prev];
+          const newContent = newMessages[messageIndex].content + chunk;
           newMessages[messageIndex] = {
             ...newMessages[messageIndex],
-            content: newMessages[messageIndex].content + chunk,
+            content: newContent,
           };
+
+          // Kiểm tra và tạo ảnh mới nếu có image prompt
+          if (
+            newContent.includes("[IMAGE_PROMPT]") &&
+            newContent.includes("[/IMAGE_PROMPT]")
+          ) {
+            const imagePrompt = extractImagePrompt(newContent);
+            if (imagePrompt) {
+              generateImage(imagePrompt).then((imageBase64) => {
+                setMessages((prev) => {
+                  const updatedMessages = [...prev];
+                  updatedMessages[messageIndex] = {
+                    ...updatedMessages[messageIndex],
+                    images: [
+                      {
+                        url: "generated-image.png",
+                        data: `data:image/png;base64,${imageBase64}`,
+                      },
+                    ],
+                  };
+                  saveChat(updatedMessages, chatId, "groq");
+                  return updatedMessages;
+                });
+              });
+            }
+          }
+
           saveChat(newMessages, chatId, "groq");
           return newMessages;
         });

@@ -361,7 +361,7 @@ export default function ChatMessages({
                   </div>
                 </div>
               ) : (
-                <div className="p-3 sm:p-6">
+                <div className="py-3 px-4">
                   <div className="break-words">
                     <Markdown content={message.content} />
                   </div>

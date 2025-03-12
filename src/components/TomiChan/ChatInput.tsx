@@ -7,6 +7,7 @@ import {
   IconPhoto,
   IconFile,
   IconVideo,
+  IconMusicUp,
 } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UploadFiles from "./UploadFiles";
@@ -14,6 +15,7 @@ import {
   useImageUpload,
   useFileUpload,
   useVideoUpload,
+  useAudioUpload,
 } from "@/hooks/useUploadFiles";
 
 interface ChatInputProps {
@@ -21,7 +23,8 @@ interface ChatInputProps {
     message: string,
     imageData?: { url: string; data: string }[],
     fileData?: { name: string; type: string; data: string }[],
-    videoData?: { url: string; data: string }[]
+    videoData?: { url: string; data: string }[],
+    audioData?: { url: string; data: string }[]
   ) => void;
   onPlusClick?: () => void;
   onStopGeneration?: () => void;
@@ -29,6 +32,7 @@ interface ChatInputProps {
   onImagesUpload?: (files: File[]) => void;
   onFilesUpload?: (files: File[]) => void;
   onVideosUpload?: (files: File[]) => void;
+  onAudiosUpload?: (files: File[]) => void;
   selectedProvider?: string;
 }
 
@@ -39,6 +43,7 @@ export default function ChatInput({
   onImagesUpload,
   onFilesUpload,
   onVideosUpload,
+  onAudiosUpload,
   selectedProvider = "google",
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
@@ -67,6 +72,14 @@ export default function ChatInput({
     handleClearAllVideos,
   } = useVideoUpload(onVideosUpload);
 
+  const {
+    selectedAudios,
+    fileInputRef: audioInputRef,
+    handleFileInputChange: handleAudioInputChange,
+    handleRemoveAudio,
+    handleClearAllAudios,
+  } = useAudioUpload(onAudiosUpload);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
@@ -78,7 +91,8 @@ export default function ChatInput({
       (!message.trim() &&
         selectedImages.length === 0 &&
         selectedFiles.length === 0 &&
-        selectedVideos.length === 0) ||
+        selectedVideos.length === 0 &&
+        selectedAudios.length === 0) ||
       isGenerating
     )
       return;
@@ -129,12 +143,34 @@ export default function ChatInput({
       );
     }
 
-    onSendMessage(message, imageDataArray, fileDataArray, videoDataArray);
+    // Xử lý audio nếu có
+    let audioDataArray: { url: string; data: string }[] | undefined;
+    if (selectedAudios.length > 0) {
+      audioDataArray = await Promise.all(
+        selectedAudios.map(async (audio) => {
+          // Đọc file audio thành base64 string
+          const base64Data = await readFileAsDataURL(audio.file);
+          return {
+            url: URL.createObjectURL(audio.file),
+            data: base64Data,
+          };
+        })
+      );
+    }
+
+    onSendMessage(
+      message,
+      imageDataArray,
+      fileDataArray,
+      videoDataArray,
+      audioDataArray
+    );
     setMessage("");
     setTextareaHeight(56);
     handleClearAllImages();
     handleClearAllFiles();
     handleClearAllVideos();
+    handleClearAllAudios();
   };
 
   const readFileAsDataURL = (file: File): Promise<string> => {
@@ -215,6 +251,15 @@ export default function ChatInput({
                 onRemoveVideo={handleRemoveVideo}
                 onClearAllVideos={handleClearAllVideos}
                 fileType="video"
+              />
+            )}
+
+            {selectedAudios.length > 0 && (
+              <UploadFiles
+                selectedAudios={selectedAudios}
+                onRemoveAudio={handleRemoveAudio}
+                onClearAllAudios={handleClearAllAudios}
+                fileType="audio"
               />
             )}
 
@@ -365,6 +410,15 @@ export default function ChatInput({
               accept="video/mp4,video/mpeg,video/mov,video/avi,video/x-flv,video/mpg,video/webm,video/wmv,video/3gpp"
               className="hidden"
             />
+
+            <input
+              type="file"
+              ref={audioInputRef}
+              onChange={handleAudioInputChange}
+              multiple
+              accept="audio/wav,audio/mp3,audio/mpeg,audio/aiff,audio/aac,audio/ogg,audio/flac"
+              className="hidden"
+            />
           </div>
         </div>
         <div className="text-center mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
@@ -439,6 +493,21 @@ export default function ChatInput({
                   className="text-gray-600 dark:text-gray-300"
                 />
                 <span className="text-sm">Tải file lên</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  audioInputRef.current?.click();
+                  setShowPopup(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md transition-colors cursor-pointer"
+              >
+                <IconMusicUp
+                  size={18}
+                  className="text-gray-600 dark:text-gray-300"
+                />
+                <span className="text-sm">Tải âm thanh lên</span>
               </button>
             </div>
           </motion.div>

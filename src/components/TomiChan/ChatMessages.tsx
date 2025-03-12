@@ -205,7 +205,7 @@ export default function ChatMessages({
                                 playsInline
                               />
                             </div>
-                            <div className="absolute inset-0 flex items-center justify-center z-10">
+                            <div className="absolute inset-0 flex items-center justify-center z-1">
                               <div className="bg-black bg-opacity-60 rounded-full p-3">
                                 <IconPlayerPlay
                                   size={24}

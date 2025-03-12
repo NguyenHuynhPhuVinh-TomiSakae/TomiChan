@@ -179,3 +179,64 @@ export function useVideoUpload(onVideosUpload?: (files: File[]) => void) {
     handleClearAllVideos,
   };
 }
+
+export function useAudioUpload(onAudiosUpload?: (files: File[]) => void) {
+  const [selectedAudios, setSelectedAudios] = useState<
+    { file: File; preview: string }[]
+  >([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = Array.from(e.target.files || []);
+
+    if (files.length === 0) return;
+
+    const audioFiles = files.filter((file) => file.type.startsWith("audio/"));
+
+    if (audioFiles.length === 0) return;
+
+    // Chuyển đổi audio thành base64 strings
+    const newAudioPreviews = await Promise.all(
+      audioFiles.map(async (file) => {
+        // Đọc file thành base64
+        const reader = new FileReader();
+        const preview = await new Promise<string>((resolve) => {
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+
+        return { file, preview };
+      })
+    );
+
+    setSelectedAudios((prev) => [...prev, ...newAudioPreviews]);
+
+    if (onAudiosUpload) {
+      onAudiosUpload(audioFiles);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveAudio = (index: number) => {
+    setSelectedAudios((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClearAllAudios = () => {
+    setSelectedAudios([]);
+  };
+
+  return {
+    selectedAudios,
+    fileInputRef,
+    handleFileInputChange,
+    handleRemoveAudio,
+    handleClearAllAudios,
+  };
+}

@@ -12,41 +12,51 @@ import {
   IconBrandCss3,
   IconVideo,
   IconPlayerPlay,
+  IconMusic,
 } from "@tabler/icons-react";
 
 interface UploadFilesProps {
   onImagesUpload?: (files: File[]) => void;
   onFilesUpload?: (files: File[]) => void;
   onVideosUpload?: (files: File[]) => void;
+  onAudiosUpload?: (files: File[]) => void;
   selectedImages?: { file: File; preview: string }[];
   selectedFiles?: { file: File; type: string }[];
   selectedVideos?: { file: File; preview: string }[];
+  selectedAudios?: { file: File; preview: string }[];
   onRemoveImage?: (index: number) => void;
   onRemoveFile?: (index: number) => void;
   onRemoveVideo?: (index: number) => void;
+  onRemoveAudio?: (index: number) => void;
   onClearAllImages?: () => void;
   onClearAllFiles?: () => void;
   onClearAllVideos?: () => void;
-  fileType?: "image" | "document" | "video";
+  onClearAllAudios?: () => void;
+  fileType?: "image" | "document" | "video" | "audio";
 }
 
 export default function UploadFiles({
   onImagesUpload,
   onFilesUpload,
   onVideosUpload,
+  onAudiosUpload,
   selectedImages = [],
   selectedFiles = [],
   selectedVideos = [],
+  selectedAudios = [],
   onRemoveImage = () => {},
   onRemoveFile = () => {},
   onRemoveVideo = () => {},
+  onRemoveAudio = () => {},
   onClearAllImages = () => {},
   onClearAllFiles = () => {},
   onClearAllVideos = () => {},
+  onClearAllAudios = () => {},
   fileType = "image",
 }: UploadFilesProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [playingVideo, setPlayingVideo] = useState<number | null>(null);
+  const audioRefs = useRef<(HTMLAudioElement | null)[]>([]);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -57,6 +67,8 @@ export default function UploadFiles({
       onFilesUpload(files);
     } else if (fileType === "video" && onVideosUpload) {
       onVideosUpload(files);
+    } else if (fileType === "audio" && onAudiosUpload) {
+      onAudiosUpload(files);
     }
 
     if (fileInputRef.current) {
@@ -103,6 +115,8 @@ export default function UploadFiles({
             ? "image/*"
             : fileType === "video"
             ? "video/mp4,video/mpeg,video/mov,video/avi,video/x-flv,video/mpg,video/webm,video/wmv,video/3gpp"
+            : fileType === "audio"
+            ? "audio/wav,audio/mp3,audio/mpeg,audio/aiff,audio/aac,audio/ogg,audio/flac"
             : "application/pdf,application/x-javascript,text/javascript,application/x-python,text/x-python,text/plain,text/html,text/css,text/md,text/csv,text/xml,text/rtf"
         }
         className="hidden"
@@ -174,7 +188,7 @@ export default function UploadFiles({
                           playsInline
                         />
                       </div>
-                      <div className="absolute inset-0 flex items-center justify-center z-10">
+                      <div className="absolute inset-0 flex items-center justify-center z-1">
                         <div className="bg-black bg-opacity-60 rounded-full p-3">
                           <IconPlayerPlay size={24} className="text-white" />
                         </div>
@@ -225,6 +239,50 @@ export default function UploadFiles({
                 >
                   <IconX size={12} stroke={2} />
                 </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {fileType === "audio" && selectedAudios.length > 0 && (
+        <div className="relative border-b border-black dark:border-white">
+          <button
+            type="button"
+            onClick={onClearAllAudios}
+            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
+          >
+            <IconTrash size={14} stroke={1.5} />
+          </button>
+          <div className="flex flex-wrap gap-3 p-3 max-h-[200px] overflow-y-auto">
+            {selectedAudios.map((audio, index) => (
+              <div
+                key={index}
+                className="relative p-2 bg-gray-100 dark:bg-gray-800 rounded flex items-center gap-2 w-full max-w-[400px]"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="text-gray-700 dark:text-gray-300">
+                      <IconMusic size={20} />
+                    </div>
+                    <div className="truncate text-xs">{audio.file.name}</div>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveAudio(index)}
+                      className="bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      <IconX size={12} stroke={2} />
+                    </button>
+                  </div>
+                  <audio
+                    ref={(el) => {
+                      audioRefs.current[index] = el;
+                    }}
+                    src={audio.preview}
+                    className="w-full h-8"
+                    controls
+                  />
+                </div>
               </div>
             ))}
           </div>

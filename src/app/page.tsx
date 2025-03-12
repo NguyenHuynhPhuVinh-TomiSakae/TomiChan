@@ -84,6 +84,10 @@ export default function Home() {
     console.log("Uploaded videos:", files);
   };
 
+  const handleAudiosUpload = (files: File[]) => {
+    console.log("Uploaded audios:", files);
+  };
+
   if (showLoading) {
     return <LoadingScreen onLoadingComplete={() => setShowLoading(false)} />;
   }
@@ -131,6 +135,7 @@ export default function Home() {
                   onImagesUpload={handleImagesUpload}
                   onFilesUpload={handleFilesUpload}
                   onVideosUpload={handleVideosUpload}
+                  onAudiosUpload={handleAudiosUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}
@@ -168,6 +173,7 @@ export default function Home() {
                   onImagesUpload={handleImagesUpload}
                   onFilesUpload={handleFilesUpload}
                   onVideosUpload={handleVideosUpload}
+                  onAudiosUpload={handleAudiosUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}

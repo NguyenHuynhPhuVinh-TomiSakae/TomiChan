@@ -10,6 +10,7 @@ export const getGeminiResponse = async (
   history: { role: string; parts: { text: string }[] }[] = [],
   onChunk: (chunk: string) => void,
   signal?: AbortSignal,
+  systemPrompt?: string,
   images?: { url: string; data: string }[],
   files?: { name: string; type: string; data: string }[],
   videos?: { url: string; data: string }[],
@@ -23,10 +24,6 @@ export const getGeminiResponse = async (
     }
 
     const selectedModel = getLocalStorage("selected_model", "gemini-2.0-flash");
-    const systemPrompt = getLocalStorage(
-      "system_prompt",
-      "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
-    );
     const temperature = Number(getLocalStorage("temperature", "1"));
     const topP = Number(getLocalStorage("top_p", "0.95"));
     const topK = Number(getLocalStorage("top_k", "40"));

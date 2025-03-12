@@ -10,6 +10,7 @@ import SettingsModal from "./SettingsModal";
 import { chatDB } from "../../../utils/db";
 import ChatHistoryList from "./ChatHistoryList";
 import { useMediaQuery } from "react-responsive";
+import { getLocalStorage, setLocalStorage } from "../../../utils/localStorage";
 
 interface SidebarProps {
   onNewChat: () => void;
@@ -40,6 +41,20 @@ export default function Sidebar({
   const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
   const [chatHistory, setChatHistory] = React.useState<ChatHistory[]>([]);
   const [updateTrigger, setUpdateTrigger] = useState(0);
+  const [imageGeneration, setImageGeneration] = React.useState(() => {
+    return getLocalStorage("image_generation", false) === "true";
+  });
+  const [imageConfig, setImageConfig] = React.useState(() => {
+    const savedConfig = getLocalStorage("image_config", null);
+    return savedConfig
+      ? JSON.parse(savedConfig)
+      : {
+          width: 1024,
+          height: 768,
+          steps: 4,
+          togetherApiKey: "",
+        };
+  });
 
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
@@ -86,6 +101,21 @@ export default function Sidebar({
     if (isMobile) {
       onToggleCollapse(); // Tự động thu gọn sidebar trên mobile
     }
+  };
+
+  // Thêm handlers để cập nhật localStorage khi thay đổi cài đặt
+  const handleImageGenerationChange = (enabled: boolean) => {
+    setImageGeneration(enabled);
+    setLocalStorage("image_generation", enabled.toString());
+  };
+
+  const handleImageConfigChange = (config: {
+    width: number;
+    height: number;
+    steps: number;
+  }) => {
+    setImageConfig(config);
+    setLocalStorage("image_config", JSON.stringify(config));
   };
 
   return (
@@ -213,6 +243,10 @@ export default function Sidebar({
           onClose={() => setIsSettingsModalOpen(false)}
           theme={theme}
           onThemeChange={onThemeChange}
+          imageGeneration={imageGeneration}
+          onImageGenerationChange={handleImageGenerationChange}
+          imageConfig={imageConfig}
+          onImageConfigChange={handleImageConfigChange}
         />
       </div>
     </>

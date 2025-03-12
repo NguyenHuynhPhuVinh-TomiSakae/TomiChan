@@ -88,8 +88,7 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
     }
   }, [isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleClose = () => {
     setLocalStorage("groq_api_key", apiKey);
     setLocalStorage("groq_model", model);
     setLocalStorage("groq_system_prompt", systemPrompt);
@@ -126,14 +125,14 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Cài đặt Groq</h2>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
             >
               <IconX size={20} />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -283,16 +282,10 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
               </button>
               <button
                 type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
+                onClick={handleClose}
                 className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors cursor-pointer"
               >
-                Lưu
+                Xong
               </button>
             </div>
           </form>

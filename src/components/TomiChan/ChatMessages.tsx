@@ -9,6 +9,10 @@ import {
   IconPlayerPlay,
   IconVideo,
   IconMusic,
+  IconCopy,
+  IconEdit,
+  IconTrash,
+  IconCheck,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import Markdown from "../Markdown";
@@ -31,6 +35,7 @@ export default function ChatMessages({
     messageId: string;
     videoIndex: number;
   } | null>(null);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     window.scrollTo({
@@ -92,9 +97,21 @@ export default function ChatMessages({
     return <IconFile size={20} />;
   };
 
+  const handleCopy = async (content: string, messageId: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMessageId(messageId);
+      setTimeout(() => {
+        setCopiedMessageId(null);
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
   return (
     <div className="w-full relative">
-      <div className="w-full space-y-4 py-4">
+      <div className="w-full space-y-12 py-4">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -284,7 +301,7 @@ export default function ChatMessages({
               </div>
             )}
             <div
-              className={`px-3 py-2 sm:px-6 sm:py-3 ${
+              className={`px-3 py-2 sm:px-6 sm:py-3 relative group ${
                 message.sender === "user"
                   ? "bg-gray-100 dark:bg-gray-900 text-black dark:text-white mx-4 sm:mx-8 rounded-tl-2xl rounded-bl-2xl rounded-br-2xl sm:rounded-tl-3xl sm:rounded-bl-3xl sm:rounded-br-3xl max-w-[85%] sm:max-w-[70%]"
                   : "text-black dark:text-white w-full max-w-full"
@@ -295,6 +312,42 @@ export default function ChatMessages({
                   <Markdown content={message.content} />
                 </div>
               </div>
+
+              <div
+                className={`absolute -bottom-8 flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ${
+                  message.sender === "user" ? "right-0" : "left-0"
+                }`}
+              >
+                <button
+                  className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  onClick={() => handleCopy(message.content, message.id)}
+                >
+                  {copiedMessageId === message.id ? (
+                    <IconCheck
+                      size={16}
+                      className="text-green-600 dark:text-green-400"
+                    />
+                  ) : (
+                    <IconCopy
+                      size={16}
+                      className="text-gray-600 dark:text-gray-400"
+                    />
+                  )}
+                </button>
+                <button className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+                  <IconEdit
+                    size={16}
+                    className="text-gray-600 dark:text-gray-400"
+                  />
+                </button>
+                <button className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+                  <IconTrash
+                    size={16}
+                    className="text-gray-600 dark:text-gray-400"
+                  />
+                </button>
+              </div>
+
               {isLoading && message === messages[messages.length - 1] && (
                 <motion.div
                   className="w-4 h-4 border-2 border-black dark:border-white mt-2"

@@ -137,5 +137,6 @@ export function useGroqChat(chatId?: string) {
     sendMessage,
     clearMessages,
     stopGeneration,
+    setMessages,
   };
 }

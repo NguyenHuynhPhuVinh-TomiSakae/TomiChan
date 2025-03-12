@@ -192,5 +192,6 @@ export function useGeminiChat(chatId?: string) {
     sendMessage,
     clearMessages,
     stopGeneration,
+    setMessages,
   };
 }

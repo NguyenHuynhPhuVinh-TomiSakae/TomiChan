@@ -64,7 +64,6 @@ export default function UploadFiles({
             className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
           >
             <IconTrash size={14} stroke={1.5} />
-            Xóa tất cả
           </button>
           <div className="flex flex-wrap gap-2 p-2 max-h-[200px] overflow-y-auto">
             {selectedImages.map((image, index) => (

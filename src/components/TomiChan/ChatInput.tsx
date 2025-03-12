@@ -1,6 +1,12 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import { IconSend2, IconPlus, IconSquare } from "@tabler/icons-react";
+import {
+  IconSend2,
+  IconPlus,
+  IconSquare,
+  IconPhoto,
+  IconFile,
+} from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UploadFiles from "./UploadFiles";
 import { useImageUpload } from "@/hooks/useUploadFiles";
@@ -35,6 +41,8 @@ export default function ChatInput({
     handleClearAllImages,
   } = useImageUpload(onImagesUpload);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +90,27 @@ export default function ChatInput({
     };
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      const popup = document.querySelector("[data-popup]");
+      const plusButton = document.querySelector("[data-plus-button]");
+
+      if (
+        showPopup &&
+        !popup?.contains(target) &&
+        !plusButton?.contains(target)
+      ) {
+        setShowPopup(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showPopup]);
+
   return (
     <motion.form
       onSubmit={handleSubmit}
@@ -120,16 +149,20 @@ export default function ChatInput({
               <AnimatePresence>
                 {selectedProvider === "google" && (
                   <motion.button
+                    data-plus-button
                     type="button"
                     className="absolute left-2 sm:left-3 bottom-8 sm:bottom-10 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 sm:p-2 transition-all duration-200 border border-black dark:border-white"
                     onClick={(e) => {
                       e.preventDefault();
                       if (isGenerating) return;
-                      if (onPlusClick) {
-                        onPlusClick();
-                      } else {
-                        fileInputRef.current?.click();
-                      }
+
+                      const button = e.currentTarget;
+                      const rect = button.getBoundingClientRect();
+                      setPopupPosition({
+                        x: rect.left,
+                        y: rect.top - 5,
+                      });
+                      setShowPopup(!showPopup);
                     }}
                     disabled={isGenerating}
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -229,6 +262,54 @@ export default function ChatInput({
           </a>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showPopup && (
+          <motion.div
+            data-popup
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.1 }}
+            className="fixed bg-white dark:bg-black rounded-lg shadow-lg border border-black dark:border-white p-2 z-50"
+            style={{
+              left: popupPosition.x,
+              bottom: `calc(100vh - ${popupPosition.y}px)`,
+            }}
+          >
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  fileInputRef.current?.click();
+                  setShowPopup(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md transition-colors cursor-pointer"
+              >
+                <IconPhoto
+                  size={18}
+                  className="text-gray-600 dark:text-gray-300"
+                />
+                <span className="text-sm">Tải ảnh lên</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (onPlusClick) {
+                    onPlusClick();
+                    setShowPopup(false);
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md transition-colors cursor-pointer"
+              >
+                <IconFile
+                  size={18}
+                  className="text-gray-600 dark:text-gray-300"
+                />
+                <span className="text-sm">Tải file lên</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.form>
   );
 }

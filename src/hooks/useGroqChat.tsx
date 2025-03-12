@@ -88,7 +88,7 @@ export function useGroqChat(chatId?: string) {
               content: newMessages[botMessageIndex].content + chunk,
             };
             accumulatedMessages = newMessages;
-            saveChat(accumulatedMessages, currentChatId);
+            saveChat(accumulatedMessages, currentChatId, "groq");
           }
 
           return newMessages;

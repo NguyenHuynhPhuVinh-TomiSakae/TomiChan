@@ -18,6 +18,7 @@ import {
 } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { useThemeContext } from "../providers/ThemeProvider";
 import { ThinkBlock } from "./ThinkBlock";
+import { IconCopy, IconCheck } from "@tabler/icons-react";
 
 interface MarkdownProps {
   content: string;
@@ -26,6 +27,7 @@ interface MarkdownProps {
 
 export default function Markdown({ content, className = "" }: MarkdownProps) {
   const { theme } = useThemeContext();
+  const [copied, setCopied] = useState(false);
   const isDarkMode =
     theme === "dark" ||
     (theme === "system" &&
@@ -79,6 +81,12 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
         ? children.map(getStringContent).join("")
         : getStringContent(children);
 
+      const handleCopy = () => {
+        navigator.clipboard.writeText(codeContent.replace(/\n$/, ""));
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      };
+
       return !inline && match ? (
         <div className="relative max-w-full">
           <div
@@ -88,6 +96,34 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
               width: "100%",
             }}
           >
+            <div className="absolute top-2 right-2">
+              <button
+                onClick={handleCopy}
+                className={`p-2 rounded-md transition-colors cursor-pointer ${
+                  isDarkMode
+                    ? "bg-gray-700 hover:bg-gray-600"
+                    : "bg-gray-200 hover:bg-gray-300"
+                }`}
+                aria-label="Copy code"
+              >
+                {copied ? (
+                  <div className="flex items-center">
+                    <IconCheck
+                      size={18}
+                      className={
+                        isDarkMode ? "text-green-400" : "text-green-600"
+                      }
+                    />
+                    <span className="ml-1 text-sm">Đã sao chép!</span>
+                  </div>
+                ) : (
+                  <IconCopy
+                    size={18}
+                    className={isDarkMode ? "text-gray-300" : "text-gray-700"}
+                  />
+                )}
+              </button>
+            </div>
             <SyntaxHighlighter
               style={isDarkMode ? oneDark : oneLight}
               language={match[1]}

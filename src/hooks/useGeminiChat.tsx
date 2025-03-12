@@ -106,7 +106,7 @@ export function useGeminiChat(chatId?: string) {
               content: newMessages[botMessageIndex].content + chunk,
             };
             accumulatedMessages = newMessages;
-            saveChat(accumulatedMessages, currentChatId);
+            saveChat(accumulatedMessages, currentChatId, "google");
           }
 
           return newMessages;

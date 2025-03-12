@@ -11,7 +11,8 @@ export const getGeminiResponse = async (
   onChunk: (chunk: string) => void,
   signal?: AbortSignal,
   images?: { url: string; data: string }[],
-  files?: { name: string; type: string; data: string }[]
+  files?: { name: string; type: string; data: string }[],
+  videos?: { url: string; data: string }[]
 ) => {
   try {
     const apiKey = getLocalStorage("api_key");
@@ -110,9 +111,11 @@ export const getGeminiResponse = async (
       responseMimeType: "text/plain",
     };
 
-    // Kiểm tra xem có hình ảnh hoặc tài liệu không
+    // Kiểm tra xem có hình ảnh, tài liệu hoặc video không
     const hasAttachments =
-      (images && images.length > 0) || (files && files.length > 0);
+      (images && images.length > 0) ||
+      (files && files.length > 0) ||
+      (videos && videos.length > 0);
 
     // Xử lý trường hợp không có tài liệu đính kèm
     if (!hasAttachments) {
@@ -133,7 +136,7 @@ export const getGeminiResponse = async (
       return fullResponse;
     }
 
-    // Xử lý trường hợp có hình ảnh và/hoặc tài liệu
+    // Xử lý trường hợp có hình ảnh, tài liệu và/hoặc video
     const contentParts = [];
 
     // Thêm các ảnh vào contentParts nếu có
@@ -207,6 +210,67 @@ export const getGeminiResponse = async (
             mimeType: file.type,
           },
         });
+      }
+    }
+
+    // Thêm các video vào contentParts nếu có
+    if (videos && videos.length > 0) {
+      for (const video of videos) {
+        try {
+          // Lấy phần dữ liệu base64 từ chuỗi data URI
+          let base64Data = "";
+          let mimeType = "video/mp4"; // Mặc định ban đầu
+
+          if (video.data.startsWith("data:")) {
+            // Trích xuất MIME type trực tiếp từ data URI
+            const mimeMatch = video.data.match(/data:([^;]+);/);
+            if (mimeMatch && mimeMatch[1]) {
+              mimeType = mimeMatch[1].toLowerCase();
+              console.log("Đã phát hiện MIME type video:", mimeType);
+            }
+
+            // Trích xuất phần base64
+            const parts = video.data.split(",");
+            if (parts.length > 1) {
+              base64Data = parts[1];
+            }
+          } else {
+            // Nếu không phải data URI, giả sử là base64 thuần
+            base64Data = video.data;
+          }
+
+          if (!base64Data) {
+            console.error("Không thể trích xuất dữ liệu base64 từ video");
+            continue;
+          }
+
+          // Kiểm tra nếu base64 hợp lệ
+          if (!/^[A-Za-z0-9+/=]+$/.test(base64Data)) {
+            // Cố gắng làm sạch chuỗi base64
+            base64Data = base64Data.replace(/[^A-Za-z0-9+/=]/g, "");
+            console.warn(
+              "Đã làm sạch chuỗi base64 video do có ký tự không hợp lệ"
+            );
+          }
+
+          // Thêm vào parts
+          contentParts.push({
+            inlineData: {
+              data: base64Data,
+              mimeType: mimeType,
+            },
+          });
+
+          console.log(
+            "Đã thêm video với MIME:",
+            mimeType,
+            "và độ dài base64:",
+            base64Data.length
+          );
+        } catch (error) {
+          console.error("Lỗi khi xử lý video:", error);
+          continue;
+        }
       }
     }
 

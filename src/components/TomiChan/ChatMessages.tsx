@@ -6,6 +6,8 @@ import {
   IconPdf,
   IconCode,
   IconFileText,
+  IconPlayerPlay,
+  IconVideo,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import Markdown from "../Markdown";
@@ -24,6 +26,10 @@ export default function ChatMessages({
   const [showScrollButton, setShowScrollButton] = useState(false);
   const prevMessagesLengthRef = useRef(0);
   const isMobile = useMediaQuery({ maxWidth: 768 });
+  const [playingVideo, setPlayingVideo] = useState<{
+    messageId: string;
+    videoIndex: number;
+  } | null>(null);
 
   const scrollToBottom = () => {
     window.scrollTo({
@@ -146,6 +152,78 @@ export default function ChatMessages({
                       <span className="text-xs sm:text-sm truncate max-w-[200px]">
                         {file.name}
                       </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {message.videos && message.videos.length > 0 && (
+              <div
+                className={`w-full flex mx-4 sm:mx-8 ${
+                  message.sender === "user" ? "justify-end" : "justify-start"
+                } mb-2`}
+              >
+                <div
+                  className={`grid gap-3 w-fit border border-black dark:border-white rounded-lg p-2 ${
+                    message.videos.length === 1
+                      ? "grid-cols-1"
+                      : message.videos.length === 2
+                      ? "grid-cols-2"
+                      : "grid-cols-2 sm:grid-cols-3"
+                  }`}
+                >
+                  {message.videos.map((video, index) => (
+                    <div
+                      key={index}
+                      className="relative w-[200px] flex flex-col"
+                    >
+                      <div className="h-[150px] rounded overflow-hidden relative">
+                        {playingVideo?.messageId === message.id &&
+                        playingVideo?.videoIndex === index ? (
+                          <video
+                            src={video.data}
+                            className="w-full h-full object-contain bg-gray-200 dark:bg-gray-800"
+                            controls
+                            autoPlay
+                            onEnded={() => setPlayingVideo(null)}
+                          />
+                        ) : (
+                          <div
+                            className="w-full h-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center cursor-pointer relative"
+                            onClick={() =>
+                              setPlayingVideo({
+                                messageId: message.id,
+                                videoIndex: index,
+                              })
+                            }
+                          >
+                            <div className="absolute inset-0">
+                              <video
+                                src={video.data}
+                                className="w-full h-full object-cover opacity-70"
+                                muted
+                                playsInline
+                              />
+                            </div>
+                            <div className="absolute inset-0 flex items-center justify-center z-10">
+                              <div className="bg-black bg-opacity-60 rounded-full p-3">
+                                <IconPlayerPlay
+                                  size={24}
+                                  className="text-white"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs py-1 px-1 truncate text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                        <IconVideo size={14} />
+                        <span>
+                          {video.url
+                            ? video.url.split("/").pop() || `Video ${index + 1}`
+                            : `Video ${index + 1}`}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>

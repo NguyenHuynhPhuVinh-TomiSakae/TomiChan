@@ -11,6 +11,10 @@ export interface Message {
     type: string;
     data: string; // Base64 string của file
   }[];
+  videos?: {
+    url: string;
+    data: string; // Base64 string của video
+  }[];
 }
 
 export interface ChatHistory {

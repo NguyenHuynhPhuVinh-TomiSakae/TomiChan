@@ -151,43 +151,48 @@ export default function UploadFiles({
           </button>
           <div className="flex flex-wrap gap-3 p-3 max-h-[300px] overflow-y-auto">
             {selectedVideos.map((video, index) => (
-              <div key={index} className="relative w-48 h-40">
-                {playingVideo === index ? (
-                  <video
-                    src={video.preview}
-                    className="w-full h-full object-contain rounded"
-                    controls
-                    autoPlay
-                    onEnded={() => setPlayingVideo(null)}
-                  />
-                ) : (
-                  <div
-                    className="w-full h-full rounded bg-gray-200 dark:bg-gray-800 flex items-center justify-center cursor-pointer relative"
-                    onClick={() => setPlayingVideo(index)}
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="bg-black bg-opacity-40 rounded-full p-3">
-                        <IconPlayerPlay size={24} className="text-white" />
-                      </div>
-                    </div>
+              <div key={index} className="relative w-[200px] flex flex-col">
+                <div className="h-[150px] rounded overflow-hidden relative">
+                  {playingVideo === index ? (
                     <video
                       src={video.preview}
-                      className="w-full h-full object-contain rounded opacity-70"
-                      muted
-                      playsInline
+                      className="w-full h-full object-contain bg-gray-200 dark:bg-gray-800"
+                      controls
+                      autoPlay
+                      onEnded={() => setPlayingVideo(null)}
                     />
-                  </div>
-                )}
-                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs px-2 py-1 truncate">
-                  {video.file.name}
+                  ) : (
+                    <div
+                      className="w-full h-full rounded bg-gray-200 dark:bg-gray-800 flex items-center justify-center cursor-pointer relative"
+                      onClick={() => setPlayingVideo(index)}
+                    >
+                      <div className="absolute inset-0">
+                        <video
+                          src={video.preview}
+                          className="w-full h-full object-cover opacity-70"
+                          muted
+                          playsInline
+                        />
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center z-10">
+                        <div className="bg-black bg-opacity-60 rounded-full p-3">
+                          <IconPlayerPlay size={24} className="text-white" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onRemoveVideo(index)}
+                    className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors cursor-pointer z-20"
+                  >
+                    <IconX size={14} stroke={2} />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveVideo(index)}
-                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <IconX size={14} stroke={2} />
-                </button>
+                <div className="text-xs py-1 px-1 truncate text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                  <IconVideo size={14} />
+                  <span>{video.file.name}</span>
+                </div>
               </div>
             ))}
           </div>

@@ -10,8 +10,13 @@ export function useSystemPrompt() {
             "system_prompt",
             "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
           )
-        : getLocalStorage(
+        : provider === "groq"
+        ? getLocalStorage(
             "groq_system_prompt",
+            "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
+          )
+        : getLocalStorage(
+            "openrouter_system_prompt",
             "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
           );
 

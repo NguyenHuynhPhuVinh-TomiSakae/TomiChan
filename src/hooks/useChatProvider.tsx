@@ -3,6 +3,7 @@ import { useGeminiChat } from "./useGeminiChat";
 import { useGroqChat } from "./useGroqChat";
 import { getLocalStorage } from "../utils/localStorage";
 import { Message } from "../types";
+import { useOpenRouterChat } from "./useOpenRouterChat";
 
 interface ChatProviderReturn {
   messages: Message[];
@@ -23,6 +24,16 @@ export function useChatProvider(
     provider || getLocalStorage("selected_provider", "google");
   const geminiChat = useGeminiChat(chatId);
   const groqChat = useGroqChat(chatId);
+  const openRouterChat = useOpenRouterChat(chatId);
 
-  return selectedProvider === "google" ? geminiChat : groqChat;
+  switch (selectedProvider) {
+    case "google":
+      return geminiChat;
+    case "groq":
+      return groqChat;
+    case "openrouter":
+      return openRouterChat;
+    default:
+      return geminiChat;
+  }
 }

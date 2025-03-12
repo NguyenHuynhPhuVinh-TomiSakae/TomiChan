@@ -18,6 +18,24 @@ export default function OpenRouterSettings({
   const [model, setModel] = useState(() =>
     getLocalStorage("openrouter_model", "google/gemma-3-27b-it:free")
   );
+  const [systemPrompt, setSystemPrompt] = useState(() =>
+    getLocalStorage(
+      "openrouter_system_prompt",
+      "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
+    )
+  );
+  const [temperature, setTemperature] = useState(() =>
+    Number(getLocalStorage("openrouter_temperature", "0.7"))
+  );
+  const [maxTokens, setMaxTokens] = useState(() =>
+    Number(getLocalStorage("openrouter_max_tokens", "4096"))
+  );
+  const [topP, setTopP] = useState(() =>
+    Number(getLocalStorage("openrouter_top_p", "0.95"))
+  );
+  const [topK, setTopK] = useState(() =>
+    Number(getLocalStorage("openrouter_top_k", "40"))
+  );
 
   // Reset form khi mở modal
   useEffect(() => {
@@ -26,18 +44,40 @@ export default function OpenRouterSettings({
       setModel(
         getLocalStorage("openrouter_model", "google/gemma-3-27b-it:free")
       );
+      setSystemPrompt(
+        getLocalStorage(
+          "openrouter_system_prompt",
+          "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
+        )
+      );
+      setTemperature(Number(getLocalStorage("openrouter_temperature", "0.7")));
+      setMaxTokens(Number(getLocalStorage("openrouter_max_tokens", "4096")));
+      setTopP(Number(getLocalStorage("openrouter_top_p", "0.95")));
+      setTopK(Number(getLocalStorage("openrouter_top_k", "40")));
     }
   }, [isOpen]);
 
   const handleClose = () => {
     setLocalStorage("openrouter_api_key", apiKey);
     setLocalStorage("openrouter_model", model);
+    setLocalStorage("openrouter_system_prompt", systemPrompt);
+    setLocalStorage("openrouter_temperature", temperature.toString());
+    setLocalStorage("openrouter_max_tokens", maxTokens.toString());
+    setLocalStorage("openrouter_top_p", topP.toString());
+    setLocalStorage("openrouter_top_k", topK.toString());
     onClose();
   };
 
   const handleReset = () => {
     const currentApiKey = apiKey;
     setModel("google/gemma-3-27b-it:free");
+    setSystemPrompt(
+      "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
+    );
+    setTemperature(0.7);
+    setMaxTokens(4096);
+    setTopP(0.95);
+    setTopK(40);
     setApiKey(currentApiKey);
   };
 
@@ -46,19 +86,19 @@ export default function OpenRouterSettings({
   return (
     <Portal>
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-        <div className="bg-white dark:bg-black sm:rounded-lg w-full max-w-md p-6 relative text-black dark:text-white dark:border dark:border-white">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Cài đặt OpenRouter</h2>
-            <button
-              onClick={handleClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
-            >
-              <IconX size={20} />
-            </button>
-          </div>
+        <div className="min-h-screen w-full py-8 px-4 flex items-center justify-center">
+          <div className="bg-white dark:bg-black sm:rounded-lg w-full max-w-md p-6 relative text-black dark:text-white dark:border dark:border-white">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Cài đặt OpenRouter</h2>
+              <button
+                onClick={handleClose}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
+              >
+                <IconX size={20} />
+              </button>
+            </div>
 
-          <form>
-            <div className="space-y-4">
+            <div className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2 scrollbar-hide">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Chọn mô hình
@@ -171,32 +211,104 @@ export default function OpenRouterSettings({
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  API Key
-                </label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-                  placeholder="sk-or-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                />
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  Bạn có thể lấy API Key tại{" "}
-                  <a
-                    href="https://openrouter.ai/keys"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    OpenRouter Dashboard
-                  </a>
-                </p>
-              </div>
+              <form className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    API Key
+                  </label>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+                    placeholder="sk-or-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  />
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    Lấy API Key tại{" "}
+                    <a
+                      href="https://openrouter.ai/keys"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      OpenRouter Dashboard
+                    </a>
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    System Prompt
+                  </label>
+                  <textarea
+                    value={systemPrompt}
+                    onChange={(e) => setSystemPrompt(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Temperature ({temperature})
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value={temperature}
+                    onChange={(e) => setTemperature(Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Max Tokens
+                  </label>
+                  <input
+                    type="number"
+                    value={maxTokens}
+                    onChange={(e) => setMaxTokens(Number(e.target.value))}
+                    min="1"
+                    max="32768"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Top P ({topP})
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={topP}
+                    onChange={(e) => setTopP(Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Top K
+                  </label>
+                  <input
+                    type="number"
+                    value={topK}
+                    onChange={(e) => setTopK(Number(e.target.value))}
+                    min="1"
+                    max="100"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+                  />
+                </div>
+              </form>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
               <button
                 type="button"
                 onClick={handleReset}
@@ -212,7 +324,7 @@ export default function OpenRouterSettings({
                 Xong
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </Portal>

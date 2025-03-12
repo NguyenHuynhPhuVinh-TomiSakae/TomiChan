@@ -9,44 +9,59 @@ import {
 } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UploadFiles from "./UploadFiles";
-import { useImageUpload } from "@/hooks/useUploadFiles";
+import { useImageUpload, useFileUpload } from "@/hooks/useUploadFiles";
 
 interface ChatInputProps {
   onSendMessage: (
     message: string,
-    imageData?: { url: string; data: string }[]
+    imageData?: { url: string; data: string }[],
+    fileData?: { name: string; type: string; data: string }[]
   ) => void;
   onPlusClick?: () => void;
   onStopGeneration?: () => void;
   isGenerating?: boolean;
   onImagesUpload?: (files: File[]) => void;
+  onFilesUpload?: (files: File[]) => void;
   selectedProvider?: string;
 }
 
 export default function ChatInput({
   onSendMessage,
-  onPlusClick,
   onStopGeneration,
   isGenerating = false,
   onImagesUpload,
+  onFilesUpload,
   selectedProvider = "google",
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [textareaHeight, setTextareaHeight] = useState(56);
   const {
     selectedImages,
-    fileInputRef,
-    handleFileInputChange,
+    fileInputRef: imageInputRef,
+    handleFileInputChange: handleImageInputChange,
     handleRemoveImage,
     handleClearAllImages,
   } = useImageUpload(onImagesUpload);
+
+  const {
+    selectedFiles,
+    fileInputRef: fileInputRef,
+    handleFileInputChange: handleFileInputChange,
+    handleRemoveFile,
+    handleClearAllFiles,
+  } = useFileUpload(onFilesUpload);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() || selectedImages.length > 0) {
+    if (
+      message.trim() ||
+      selectedImages.length > 0 ||
+      selectedFiles.length > 0
+    ) {
       const imageData = await Promise.all(
         selectedImages.map(async (image) => {
           return {
@@ -56,10 +71,21 @@ export default function ChatInput({
         })
       );
 
-      onSendMessage(message, imageData);
+      const fileData = await Promise.all(
+        selectedFiles.map(async (file: { file: File; type: string }) => {
+          return {
+            name: file.file.name,
+            type: file.type,
+            data: await convertFileToBase64(file.file),
+          };
+        })
+      );
+
+      onSendMessage(message, imageData, fileData);
       setMessage("");
       setTextareaHeight(56);
       handleClearAllImages();
+      handleClearAllFiles();
     }
   };
 
@@ -126,6 +152,14 @@ export default function ChatInput({
               selectedImages={selectedImages}
               onRemoveImage={handleRemoveImage}
               onClearAllImages={handleClearAllImages}
+              fileType="image"
+            />
+
+            <UploadFiles
+              selectedFiles={selectedFiles}
+              onRemoveFile={handleRemoveFile}
+              onClearAllFiles={handleClearAllFiles}
+              fileType="document"
             />
 
             <textarea
@@ -242,10 +276,19 @@ export default function ChatInput({
 
             <input
               type="file"
+              ref={imageInputRef}
+              onChange={handleImageInputChange}
+              multiple
+              accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
+              className="hidden"
+            />
+
+            <input
+              type="file"
               ref={fileInputRef}
               onChange={handleFileInputChange}
               multiple
-              accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
+              accept="application/pdf,application/x-javascript,text/javascript,application/x-python,text/x-python,text/plain,text/html,text/css,text/md,text/csv,text/xml,text/rtf"
               className="hidden"
             />
           </div>
@@ -279,8 +322,10 @@ export default function ChatInput({
           >
             <div className="flex flex-col gap-2">
               <button
-                onClick={() => {
-                  fileInputRef.current?.click();
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  imageInputRef.current?.click();
                   setShowPopup(false);
                 }}
                 className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md transition-colors cursor-pointer"
@@ -292,11 +337,11 @@ export default function ChatInput({
                 <span className="text-sm">Tải ảnh lên</span>
               </button>
               <button
-                onClick={() => {
-                  if (onPlusClick) {
-                    onPlusClick();
-                    setShowPopup(false);
-                  }
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                  setShowPopup(false);
                 }}
                 className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md transition-colors cursor-pointer"
               >

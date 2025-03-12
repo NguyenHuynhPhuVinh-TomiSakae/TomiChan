@@ -172,7 +172,7 @@ function ChatGroup({
                         e.stopPropagation();
                         setOpenMenuId(openMenuId === chat.id ? null : chat.id);
                       }}
-                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                     >
                       <IconDotsVertical size={16} />
                     </button>

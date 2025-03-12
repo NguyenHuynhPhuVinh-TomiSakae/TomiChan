@@ -249,7 +249,12 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
 
         const thinkContent = lines.slice(currentLineNumber, endLine).join("\n");
 
-        return <ThinkBlock>{thinkContent}</ThinkBlock>;
+        // Tạo ID duy nhất dựa trên nội dung
+        const thinkId = `think-${Buffer.from(
+          thinkContent.substring(0, 50)
+        ).toString("base64")}`;
+
+        return <ThinkBlock id={thinkId}>{thinkContent}</ThinkBlock>;
       } else if (isThinkContent) {
         return null;
       }

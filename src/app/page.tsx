@@ -33,6 +33,9 @@ export default function Home() {
     const newChatId = uuidv4();
     setCurrentChatId(newChatId);
     clearMessages();
+    if (isMobile) {
+      handleToggleCollapse();
+    }
   };
 
   const handleSelectChat = async (chatId: string) => {
@@ -67,6 +70,22 @@ export default function Home() {
     const newChatId = uuidv4();
     setCurrentChatId(newChatId);
     clearMessages();
+  };
+
+  const handleImagesUpload = (files: File[]) => {
+    console.log("Uploaded images:", files);
+  };
+
+  const handleFilesUpload = (files: File[]) => {
+    console.log("Uploaded files:", files);
+  };
+
+  const handleVideosUpload = (files: File[]) => {
+    console.log("Uploaded videos:", files);
+  };
+
+  const handleAudiosUpload = (files: File[]) => {
+    console.log("Uploaded audios:", files);
   };
 
   if (showLoading) {
@@ -113,9 +132,13 @@ export default function Home() {
               <div className="w-full max-w-4xl mx-auto p-4">
                 <ChatInput
                   onSendMessage={sendMessage}
-                  onPlusClick={handleNewChat}
+                  onImagesUpload={handleImagesUpload}
+                  onFilesUpload={handleFilesUpload}
+                  onVideosUpload={handleVideosUpload}
+                  onAudiosUpload={handleAudiosUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
+                  selectedProvider={selectedProvider}
                 />
               </div>
             </div>
@@ -147,9 +170,13 @@ export default function Home() {
               <div className="w-full max-w-4xl mx-auto p-2 sm:p-4">
                 <ChatInput
                   onSendMessage={sendMessage}
-                  onPlusClick={handleNewChat}
+                  onImagesUpload={handleImagesUpload}
+                  onFilesUpload={handleFilesUpload}
+                  onVideosUpload={handleVideosUpload}
+                  onAudiosUpload={handleAudiosUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
+                  selectedProvider={selectedProvider}
                 />
               </div>
             </div>

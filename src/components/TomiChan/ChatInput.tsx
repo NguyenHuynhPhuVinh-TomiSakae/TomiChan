@@ -1,32 +1,188 @@
 "use client";
-import React, { useState, useRef } from "react";
-import { IconSend2, IconPlus, IconSquare } from "@tabler/icons-react";
+import React, { useState, useRef, useEffect } from "react";
+import {
+  IconSend2,
+  IconPlus,
+  IconSquare,
+  IconPhoto,
+  IconFile,
+  IconVideo,
+  IconMusicUp,
+} from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
+import UploadFiles from "./UploadFiles";
+import {
+  useImageUpload,
+  useFileUpload,
+  useVideoUpload,
+  useAudioUpload,
+} from "@/hooks/useUploadFiles";
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (
+    message: string,
+    imageData?: { url: string; data: string }[],
+    fileData?: { name: string; type: string; data: string }[],
+    videoData?: { url: string; data: string }[],
+    audioData?: { url: string; data: string }[]
+  ) => void;
   onPlusClick?: () => void;
   onStopGeneration?: () => void;
   isGenerating?: boolean;
+  onImagesUpload?: (files: File[]) => void;
+  onFilesUpload?: (files: File[]) => void;
+  onVideosUpload?: (files: File[]) => void;
+  onAudiosUpload?: (files: File[]) => void;
+  selectedProvider?: string;
 }
 
 export default function ChatInput({
   onSendMessage,
-  onPlusClick,
   onStopGeneration,
   isGenerating = false,
+  onImagesUpload,
+  onFilesUpload,
+  onVideosUpload,
+  onAudiosUpload,
+  selectedProvider = "google",
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [textareaHeight, setTextareaHeight] = useState(56);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const {
+    selectedImages,
+    fileInputRef: imageInputRef,
+    handleFileInputChange: handleImageInputChange,
+    handleRemoveImage,
+    handleClearAllImages,
+  } = useImageUpload(onImagesUpload);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const {
+    selectedFiles,
+    fileInputRef: fileInputRef,
+    handleFileInputChange: handleFileInputChange,
+    handleRemoveFile,
+    handleClearAllFiles,
+  } = useFileUpload(onFilesUpload);
+
+  const {
+    selectedVideos,
+    fileInputRef: videoInputRef,
+    handleFileInputChange: handleVideoInputChange,
+    handleRemoveVideo,
+    handleClearAllVideos,
+  } = useVideoUpload(onVideosUpload);
+
+  const {
+    selectedAudios,
+    fileInputRef: audioInputRef,
+    handleFileInputChange: handleAudioInputChange,
+    handleRemoveAudio,
+    handleClearAllAudios,
+  } = useAudioUpload(onAudiosUpload);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
-      onSendMessage(message);
-      setMessage("");
-      setTextareaHeight(56);
+
+    if (
+      (!message.trim() &&
+        selectedImages.length === 0 &&
+        selectedFiles.length === 0 &&
+        selectedVideos.length === 0 &&
+        selectedAudios.length === 0) ||
+      isGenerating
+    )
+      return;
+
+    // Xử lý hình ảnh đọc trực tiếp thành base64 thay vì dùng URL
+    let imageDataArray: { url: string; data: string }[] | undefined;
+    if (selectedImages.length > 0) {
+      imageDataArray = await Promise.all(
+        selectedImages.map(async (image) => {
+          // Đọc file ảnh thành base64 string
+          const base64Data = await readFileAsDataURL(image.file);
+          return {
+            url: URL.createObjectURL(image.file),
+            data: base64Data,
+          };
+        })
+      );
     }
+
+    // Xử lý file nếu có
+    let fileDataArray:
+      | { name: string; type: string; data: string }[]
+      | undefined;
+    if (selectedFiles.length > 0) {
+      fileDataArray = await Promise.all(
+        selectedFiles.map(async (fileObj) => {
+          return {
+            name: fileObj.file.name,
+            type: fileObj.file.type,
+            data: await readFileAsDataURL(fileObj.file),
+          };
+        })
+      );
+    }
+
+    // Xử lý video nếu có
+    let videoDataArray: { url: string; data: string }[] | undefined;
+    if (selectedVideos.length > 0) {
+      videoDataArray = await Promise.all(
+        selectedVideos.map(async (video) => {
+          // Đọc file video thành base64 string
+          const base64Data = await readFileAsDataURL(video.file);
+          return {
+            url: URL.createObjectURL(video.file),
+            data: base64Data,
+          };
+        })
+      );
+    }
+
+    // Xử lý audio nếu có
+    let audioDataArray: { url: string; data: string }[] | undefined;
+    if (selectedAudios.length > 0) {
+      audioDataArray = await Promise.all(
+        selectedAudios.map(async (audio) => {
+          // Đọc file audio thành base64 string
+          const base64Data = await readFileAsDataURL(audio.file);
+          return {
+            url: URL.createObjectURL(audio.file),
+            data: base64Data,
+          };
+        })
+      );
+    }
+
+    onSendMessage(
+      message,
+      imageDataArray,
+      fileDataArray,
+      videoDataArray,
+      audioDataArray
+    );
+    setMessage("");
+    setTextareaHeight(56);
+    handleClearAllImages();
+    handleClearAllFiles();
+    handleClearAllVideos();
+    handleClearAllAudios();
+  };
+
+  const readFileAsDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -39,6 +195,35 @@ export default function ChatInput({
     setTextareaHeight(newHeight);
   };
 
+  useEffect(() => {
+    return () => {
+      selectedImages.forEach((image) => {
+        URL.revokeObjectURL(image.preview);
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      const popup = document.querySelector("[data-popup]");
+      const plusButton = document.querySelector("[data-plus-button]");
+
+      if (
+        showPopup &&
+        !popup?.contains(target) &&
+        !plusButton?.contains(target)
+      ) {
+        setShowPopup(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showPopup]);
+
   return (
     <motion.form
       onSubmit={handleSubmit}
@@ -50,6 +235,45 @@ export default function ChatInput({
       <div className="flex flex-col w-full">
         <div className="w-full overflow-hidden bg-white dark:bg-black rounded-2xl border border-black dark:border-white">
           <div className="w-full h-full flex flex-col">
+            <div className="max-h-[300px] overflow-y-auto">
+              <UploadFiles
+                selectedImages={selectedImages}
+                selectedFiles={selectedFiles}
+                onRemoveImage={handleRemoveImage}
+                onRemoveFile={handleRemoveFile}
+                onClearAllImages={handleClearAllImages}
+                onClearAllFiles={handleClearAllFiles}
+                fileType="image"
+              />
+
+              {selectedVideos.length > 0 && (
+                <UploadFiles
+                  selectedVideos={selectedVideos}
+                  onRemoveVideo={handleRemoveVideo}
+                  onClearAllVideos={handleClearAllVideos}
+                  fileType="video"
+                />
+              )}
+
+              {selectedAudios.length > 0 && (
+                <UploadFiles
+                  selectedAudios={selectedAudios}
+                  onRemoveAudio={handleRemoveAudio}
+                  onClearAllAudios={handleClearAllAudios}
+                  fileType="audio"
+                />
+              )}
+
+              {selectedFiles.length > 0 && (
+                <UploadFiles
+                  selectedFiles={selectedFiles}
+                  onRemoveFile={handleRemoveFile}
+                  onClearAllFiles={handleClearAllFiles}
+                  fileType="document"
+                />
+              )}
+            </div>
+
             <textarea
               ref={textareaRef}
               value={message}
@@ -67,27 +291,37 @@ export default function ChatInput({
               }}
             />
 
-            {/* Layout cho các nút */}
             <div className="h-10 sm:h-14">
               <AnimatePresence>
-                <motion.button
-                  type="button"
-                  className="absolute left-2 sm:left-3 bottom-8 sm:bottom-10 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 sm:p-2 transition-all duration-200 border border-black dark:border-white"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (onPlusClick && !isGenerating) onPlusClick();
-                  }}
-                  disabled={isGenerating}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <IconPlus
-                    size={18}
-                    className="text-black dark:text-white sm:w-[22px] sm:h-[22px]"
-                    stroke={1.5}
-                  />
-                </motion.button>
+                {selectedProvider === "google" && (
+                  <motion.button
+                    data-plus-button
+                    type="button"
+                    className="absolute left-2 sm:left-3 bottom-8 sm:bottom-10 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 sm:p-2 transition-all duration-200 border border-black dark:border-white"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (isGenerating) return;
+
+                      const button = e.currentTarget;
+                      const rect = button.getBoundingClientRect();
+                      setPopupPosition({
+                        x: rect.left,
+                        y: rect.top - 5,
+                      });
+                      setShowPopup(!showPopup);
+                    }}
+                    disabled={isGenerating}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <IconPlus
+                      size={18}
+                      className="text-black dark:text-white sm:w-[22px] sm:h-[22px]"
+                      stroke={1.5}
+                    />
+                  </motion.button>
+                )}
               </AnimatePresence>
 
               <AnimatePresence>
@@ -151,6 +385,42 @@ export default function ChatInput({
                 )}
               </AnimatePresence>
             </div>
+
+            <input
+              type="file"
+              ref={imageInputRef}
+              onChange={handleImageInputChange}
+              multiple
+              accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
+              className="hidden"
+            />
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileInputChange}
+              multiple
+              accept="application/pdf,application/x-javascript,text/javascript,application/x-python,text/x-python,text/plain,text/html,text/css,text/md,text/csv,text/xml,text/rtf"
+              className="hidden"
+            />
+
+            <input
+              type="file"
+              ref={videoInputRef}
+              onChange={handleVideoInputChange}
+              multiple
+              accept="video/mp4,video/mpeg,video/mov,video/avi,video/x-flv,video/mpg,video/webm,video/wmv,video/3gpp"
+              className="hidden"
+            />
+
+            <input
+              type="file"
+              ref={audioInputRef}
+              onChange={handleAudioInputChange}
+              multiple
+              accept="audio/wav,audio/mp3,audio/mpeg,audio/aiff,audio/aac,audio/ogg,audio/flac"
+              className="hidden"
+            />
           </div>
         </div>
         <div className="text-center mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
@@ -165,6 +435,86 @@ export default function ChatInput({
           </a>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showPopup && (
+          <motion.div
+            data-popup
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.1 }}
+            className="fixed bg-white dark:bg-black rounded-lg shadow-lg border border-black dark:border-white p-2 z-50"
+            style={{
+              left: popupPosition.x,
+              bottom: `calc(100vh - ${popupPosition.y}px)`,
+            }}
+          >
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  imageInputRef.current?.click();
+                  setShowPopup(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md transition-colors cursor-pointer"
+              >
+                <IconPhoto
+                  size={18}
+                  className="text-gray-600 dark:text-gray-300"
+                />
+                <span className="text-sm">Tải ảnh lên</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  videoInputRef.current?.click();
+                  setShowPopup(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md transition-colors cursor-pointer"
+              >
+                <IconVideo
+                  size={18}
+                  className="text-gray-600 dark:text-gray-300"
+                />
+                <span className="text-sm">Tải video lên</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                  setShowPopup(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md transition-colors cursor-pointer"
+              >
+                <IconFile
+                  size={18}
+                  className="text-gray-600 dark:text-gray-300"
+                />
+                <span className="text-sm">Tải file lên</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  audioInputRef.current?.click();
+                  setShowPopup(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md transition-colors cursor-pointer"
+              >
+                <IconMusicUp
+                  size={18}
+                  className="text-gray-600 dark:text-gray-300"
+                />
+                <span className="text-sm">Tải âm thanh lên</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.form>
   );
 }

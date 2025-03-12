@@ -124,10 +124,13 @@ export default function UploadFiles({
 
       {fileType === "image" && selectedImages.length > 0 && (
         <div className="relative border-b border-black dark:border-white">
+          <div className="font-medium text-sm py-1 px-2 bg-gray-100 dark:bg-gray-800 border-b border-black dark:border-white">
+            Hình ảnh đã tải lên
+          </div>
           <button
             type="button"
             onClick={onClearAllImages}
-            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
+            className="absolute top-1 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
           >
             <IconTrash size={14} stroke={1.5} />
           </button>
@@ -156,10 +159,13 @@ export default function UploadFiles({
 
       {fileType === "video" && selectedVideos.length > 0 && (
         <div className="relative border-b border-black dark:border-white">
+          <div className="font-medium text-sm py-1 px-2 bg-gray-100 dark:bg-gray-800 border-b border-black dark:border-white">
+            Video đã tải lên
+          </div>
           <button
             type="button"
             onClick={onClearAllVideos}
-            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
+            className="absolute top-1 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
           >
             <IconTrash size={14} stroke={1.5} />
           </button>
@@ -215,10 +221,13 @@ export default function UploadFiles({
 
       {fileType === "document" && selectedFiles.length > 0 && (
         <div className="relative border-b border-black dark:border-white">
+          <div className="font-medium text-sm py-1 px-2 bg-gray-100 dark:bg-gray-800 border-b border-black dark:border-white">
+            Tài liệu đã tải lên
+          </div>
           <button
             type="button"
             onClick={onClearAllFiles}
-            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
+            className="absolute top-1 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
           >
             <IconTrash size={14} stroke={1.5} />
           </button>
@@ -247,10 +256,13 @@ export default function UploadFiles({
 
       {fileType === "audio" && selectedAudios.length > 0 && (
         <div className="relative border-b border-black dark:border-white">
+          <div className="font-medium text-sm py-1 px-2 bg-gray-100 dark:bg-gray-800 border-b border-black dark:border-white">
+            Âm thanh đã tải lên
+          </div>
           <button
             type="button"
             onClick={onClearAllAudios}
-            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
+            className="absolute top-1 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
           >
             <IconTrash size={14} stroke={1.5} />
           </button>

@@ -109,7 +109,7 @@ export default function ChatMessages({
                 } mb-2`}
               >
                 <div
-                  className={`grid gap-y-1 sm:gap-1 w-fit border border-black dark:border-white rounded-lg p-1 ${
+                  className={`grid gap-y-1 sm:gap-1 w-fit border border-black dark:border-white rounded-lg overflow-hidden${
                     message.images.length === 1
                       ? "grid-cols-1"
                       : message.images.length === 2
@@ -119,10 +119,13 @@ export default function ChatMessages({
                       : "grid-cols-2 sm:grid-cols-4"
                   } justify-items-end`}
                 >
+                  <div className="col-span-full font-medium text-sm py-1 px-2 bg-gray-100 dark:bg-gray-800 border-b border-black dark:border-white w-full">
+                    Hình ảnh
+                  </div>
                   {message.images.map((image, index) => (
                     <div
                       key={index}
-                      className="relative w-[120px] h-[120px] sm:w-[100px] sm:h-[100px] justify-self-end"
+                      className="relative w-[120px] h-[120px] sm:w-[100px] sm:h-[100px] justify-self-end m-1"
                     >
                       <Image
                         src={image.data}
@@ -141,20 +144,25 @@ export default function ChatMessages({
                   message.sender === "user" ? "justify-end" : "justify-start"
                 } mb-2`}
               >
-                <div className="flex flex-col gap-1 w-fit border border-black dark:border-white rounded-lg p-2">
-                  {message.files.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 bg-gray-100 dark:bg-gray-900 rounded p-2"
-                    >
-                      <span className="text-gray-700 dark:text-gray-300">
-                        {getFileIcon(file.type)}
-                      </span>
-                      <span className="text-xs sm:text-sm truncate max-w-[200px]">
-                        {file.name}
-                      </span>
-                    </div>
-                  ))}
+                <div className="flex flex-col gap-1 w-fit border border-black dark:border-white rounded-lg overflow-hidden">
+                  <div className="font-medium text-sm py-1 px-2 bg-gray-100 dark:bg-gray-800 border-b border-black dark:border-white w-full">
+                    Tài liệu
+                  </div>
+                  <div className="p-2">
+                    {message.files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 bg-gray-100 dark:bg-gray-900 rounded p-2"
+                      >
+                        <span className="text-gray-700 dark:text-gray-300">
+                          {getFileIcon(file.type)}
+                        </span>
+                        <span className="text-xs sm:text-sm truncate max-w-[200px]">
+                          {file.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -164,69 +172,75 @@ export default function ChatMessages({
                   message.sender === "user" ? "justify-end" : "justify-start"
                 } mb-2`}
               >
-                <div
-                  className={`grid gap-3 w-fit border border-black dark:border-white rounded-lg p-2 ${
-                    message.videos.length === 1
-                      ? "grid-cols-1"
-                      : message.videos.length === 2
-                      ? "grid-cols-2"
-                      : "grid-cols-2 sm:grid-cols-3"
-                  }`}
-                >
-                  {message.videos.map((video, index) => (
-                    <div
-                      key={index}
-                      className="relative w-[200px] flex flex-col"
-                    >
-                      <div className="h-[150px] rounded overflow-hidden relative">
-                        {playingVideo?.messageId === message.id &&
-                        playingVideo?.videoIndex === index ? (
-                          <video
-                            src={video.data}
-                            className="w-full h-full object-contain bg-gray-200 dark:bg-gray-800"
-                            controls
-                            autoPlay
-                            onEnded={() => setPlayingVideo(null)}
-                          />
-                        ) : (
-                          <div
-                            className="w-full h-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center cursor-pointer relative"
-                            onClick={() =>
-                              setPlayingVideo({
-                                messageId: message.id,
-                                videoIndex: index,
-                              })
-                            }
-                          >
-                            <div className="absolute inset-0">
-                              <video
-                                src={video.data}
-                                className="w-full h-full object-cover opacity-70"
-                                muted
-                                playsInline
-                              />
-                            </div>
-                            <div className="absolute inset-0 flex items-center justify-center z-1">
-                              <div className="bg-black bg-opacity-60 rounded-full p-3">
-                                <IconPlayerPlay
-                                  size={24}
-                                  className="text-white"
+                <div className="w-fit border border-black dark:border-white rounded-lg overflow-hidden">
+                  <div className="font-medium text-sm py-1 px-2 bg-gray-100 dark:bg-gray-800 border-b border-black dark:border-white">
+                    Video
+                  </div>
+                  <div
+                    className={`p-2 grid gap-3 ${
+                      message.videos.length === 1
+                        ? "grid-cols-1"
+                        : message.videos.length === 2
+                        ? "grid-cols-2"
+                        : "grid-cols-2 sm:grid-cols-3"
+                    }`}
+                  >
+                    {message.videos.map((video, index) => (
+                      <div
+                        key={index}
+                        className="relative w-[200px] flex flex-col"
+                      >
+                        <div className="h-[150px] rounded overflow-hidden relative">
+                          {playingVideo?.messageId === message.id &&
+                          playingVideo?.videoIndex === index ? (
+                            <video
+                              src={video.data}
+                              className="w-full h-full object-contain bg-gray-200 dark:bg-gray-800"
+                              controls
+                              autoPlay
+                              onEnded={() => setPlayingVideo(null)}
+                            />
+                          ) : (
+                            <div
+                              className="w-full h-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center cursor-pointer relative"
+                              onClick={() =>
+                                setPlayingVideo({
+                                  messageId: message.id,
+                                  videoIndex: index,
+                                })
+                              }
+                            >
+                              <div className="absolute inset-0">
+                                <video
+                                  src={video.data}
+                                  className="w-full h-full object-cover opacity-70"
+                                  muted
+                                  playsInline
                                 />
                               </div>
+                              <div className="absolute inset-0 flex items-center justify-center z-1">
+                                <div className="bg-black bg-opacity-60 rounded-full p-3">
+                                  <IconPlayerPlay
+                                    size={24}
+                                    className="text-white"
+                                  />
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
+                        <div className="text-xs py-1 px-1 truncate text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                          <IconVideo size={14} />
+                          <span>
+                            {video.url
+                              ? video.url.split("/").pop() ||
+                                `Video ${index + 1}`
+                              : `Video ${index + 1}`}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-xs py-1 px-1 truncate text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                        <IconVideo size={14} />
-                        <span>
-                          {video.url
-                            ? video.url.split("/").pop() || `Video ${index + 1}`
-                            : `Video ${index + 1}`}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -236,26 +250,36 @@ export default function ChatMessages({
                   message.sender === "user" ? "justify-end" : "justify-start"
                 } mb-2`}
               >
-                <div className="flex flex-col gap-2 w-fit border border-black dark:border-white rounded-lg p-2">
-                  {message.audios.map((audio, index) => (
-                    <div
-                      key={index}
-                      className="flex flex-col gap-1 bg-gray-100 dark:bg-gray-900 rounded p-2 max-w-[350px]"
-                    >
-                      <div className="flex items-center gap-2">
-                        <IconMusic
-                          size={16}
-                          className="text-gray-700 dark:text-gray-300"
+                <div className="flex flex-col w-fit border border-black dark:border-white rounded-lg overflow-hidden">
+                  <div className="font-medium text-sm py-1 px-2 bg-gray-100 dark:bg-gray-800 border-b border-black dark:border-white">
+                    Âm thanh
+                  </div>
+                  <div className="p-2 flex flex-col gap-2">
+                    {message.audios.map((audio, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-col gap-1 bg-gray-100 dark:bg-gray-900 rounded p-2 max-w-[350px]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <IconMusic
+                            size={16}
+                            className="text-gray-700 dark:text-gray-300"
+                          />
+                          <span className="text-xs sm:text-sm truncate">
+                            {audio.url
+                              ? audio.url.split("/").pop() ||
+                                `Audio ${index + 1}`
+                              : `Audio ${index + 1}`}
+                          </span>
+                        </div>
+                        <audio
+                          src={audio.data}
+                          controls
+                          className="w-full h-8"
                         />
-                        <span className="text-xs sm:text-sm truncate">
-                          {audio.url
-                            ? audio.url.split("/").pop() || `Audio ${index + 1}`
-                            : `Audio ${index + 1}`}
-                        </span>
                       </div>
-                      <audio src={audio.data} controls className="w-full h-8" />
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

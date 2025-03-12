@@ -154,13 +154,14 @@ export function useGroqChat(chatId?: string) {
       const controller = new AbortController();
       setAbortController(controller);
 
-      // Cập nhật tin nhắn tại vị trí cũ
-      const updatedMessages = [...messages];
+      // Cắt bỏ tất cả tin nhắn sau vị trí đang tạo lại
+      const updatedMessages = messages.slice(0, messageIndex + 1);
       updatedMessages[messageIndex] = {
         ...updatedMessages[messageIndex],
         content: "",
       };
       setMessages(updatedMessages);
+      saveChat(updatedMessages, chatId, "groq");
 
       const handleChunk = (chunk: string) => {
         setMessages((prev) => {

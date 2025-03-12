@@ -189,7 +189,6 @@ export function useGeminiChat(chatId?: string) {
     const messageIndex = messages.findIndex((msg) => msg.id === messageId);
     if (messageIndex === -1) return;
 
-    // Tìm tin nhắn user gần nhất phía trước
     const previousUserMessage = messages
       .slice(0, messageIndex)
       .reverse()
@@ -201,7 +200,6 @@ export function useGeminiChat(chatId?: string) {
     setError(null);
 
     try {
-      // Lấy lịch sử chat đến tin nhắn user trước đó
       const chatHistory = messages.slice(0, messageIndex).map((msg) => ({
         role: msg.sender === "user" ? "user" : "model",
         parts: [{ text: msg.content }],
@@ -210,13 +208,14 @@ export function useGeminiChat(chatId?: string) {
       const controller = new AbortController();
       setAbortController(controller);
 
-      // Cập nhật tin nhắn tại vị trí cũ
-      const updatedMessages = [...messages];
+      // Cắt bỏ tất cả tin nhắn sau vị trí đang tạo lại
+      const updatedMessages = messages.slice(0, messageIndex + 1);
       updatedMessages[messageIndex] = {
         ...updatedMessages[messageIndex],
         content: "",
       };
       setMessages(updatedMessages);
+      saveChat(updatedMessages, chatId, "google");
 
       const handleChunk = (chunk: string) => {
         setMessages((prev) => {
@@ -241,20 +240,15 @@ export function useGeminiChat(chatId?: string) {
         previousUserMessage.audios
       );
     } catch (error) {
-      // Xử lý lỗi tương tự như trong sendMessage
       if (error instanceof Error && error.name === "AbortError") {
         return;
       }
-
-      const errorMessage = "Đã xảy ra lỗi khi tạo lại phản hồi";
-      // ... xử lý error message tương tự như trong sendMessage ...
-
-      setError(errorMessage);
+      setError("Đã xảy ra lỗi khi tạo lại phản hồi");
       setMessages((prev) => {
         const updatedMessages = [...prev];
         updatedMessages[messageIndex] = {
           ...updatedMessages[messageIndex],
-          content: errorMessage,
+          content: "Đã xảy ra lỗi khi tạo lại phản hồi. Vui lòng thử lại sau.",
         };
         return updatedMessages;
       });

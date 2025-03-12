@@ -235,42 +235,44 @@ export default function ChatInput({
       <div className="flex flex-col w-full">
         <div className="w-full overflow-hidden bg-white dark:bg-black rounded-2xl border border-black dark:border-white">
           <div className="w-full h-full flex flex-col">
-            <UploadFiles
-              selectedImages={selectedImages}
-              selectedFiles={selectedFiles}
-              onRemoveImage={handleRemoveImage}
-              onRemoveFile={handleRemoveFile}
-              onClearAllImages={handleClearAllImages}
-              onClearAllFiles={handleClearAllFiles}
-              fileType="image"
-            />
-
-            {selectedVideos.length > 0 && (
+            <div className="max-h-[300px] overflow-y-auto">
               <UploadFiles
-                selectedVideos={selectedVideos}
-                onRemoveVideo={handleRemoveVideo}
-                onClearAllVideos={handleClearAllVideos}
-                fileType="video"
-              />
-            )}
-
-            {selectedAudios.length > 0 && (
-              <UploadFiles
-                selectedAudios={selectedAudios}
-                onRemoveAudio={handleRemoveAudio}
-                onClearAllAudios={handleClearAllAudios}
-                fileType="audio"
-              />
-            )}
-
-            {selectedFiles.length > 0 && (
-              <UploadFiles
+                selectedImages={selectedImages}
                 selectedFiles={selectedFiles}
+                onRemoveImage={handleRemoveImage}
                 onRemoveFile={handleRemoveFile}
+                onClearAllImages={handleClearAllImages}
                 onClearAllFiles={handleClearAllFiles}
-                fileType="document"
+                fileType="image"
               />
-            )}
+
+              {selectedVideos.length > 0 && (
+                <UploadFiles
+                  selectedVideos={selectedVideos}
+                  onRemoveVideo={handleRemoveVideo}
+                  onClearAllVideos={handleClearAllVideos}
+                  fileType="video"
+                />
+              )}
+
+              {selectedAudios.length > 0 && (
+                <UploadFiles
+                  selectedAudios={selectedAudios}
+                  onRemoveAudio={handleRemoveAudio}
+                  onClearAllAudios={handleClearAllAudios}
+                  fileType="audio"
+                />
+              )}
+
+              {selectedFiles.length > 0 && (
+                <UploadFiles
+                  selectedFiles={selectedFiles}
+                  onRemoveFile={handleRemoveFile}
+                  onClearAllFiles={handleClearAllFiles}
+                  fileType="document"
+                />
+              )}
+            </div>
 
             <textarea
               ref={textareaRef}

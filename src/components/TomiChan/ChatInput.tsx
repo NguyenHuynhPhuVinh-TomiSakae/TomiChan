@@ -6,22 +6,29 @@ import {
   IconSquare,
   IconPhoto,
   IconFile,
+  IconVideo,
 } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UploadFiles from "./UploadFiles";
-import { useImageUpload, useFileUpload } from "@/hooks/useUploadFiles";
+import {
+  useImageUpload,
+  useFileUpload,
+  useVideoUpload,
+} from "@/hooks/useUploadFiles";
 
 interface ChatInputProps {
   onSendMessage: (
     message: string,
     imageData?: { url: string; data: string }[],
-    fileData?: { name: string; type: string; data: string }[]
+    fileData?: { name: string; type: string; data: string }[],
+    videoData?: { url: string; data: string }[]
   ) => void;
   onPlusClick?: () => void;
   onStopGeneration?: () => void;
   isGenerating?: boolean;
   onImagesUpload?: (files: File[]) => void;
   onFilesUpload?: (files: File[]) => void;
+  onVideosUpload?: (files: File[]) => void;
   selectedProvider?: string;
 }
 
@@ -31,6 +38,7 @@ export default function ChatInput({
   isGenerating = false,
   onImagesUpload,
   onFilesUpload,
+  onVideosUpload,
   selectedProvider = "google",
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
@@ -51,6 +59,14 @@ export default function ChatInput({
     handleClearAllFiles,
   } = useFileUpload(onFilesUpload);
 
+  const {
+    selectedVideos,
+    fileInputRef: videoInputRef,
+    handleFileInputChange: handleVideoInputChange,
+    handleRemoveVideo,
+    handleClearAllVideos,
+  } = useVideoUpload(onVideosUpload);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
@@ -61,7 +77,8 @@ export default function ChatInput({
     if (
       (!message.trim() &&
         selectedImages.length === 0 &&
-        selectedFiles.length === 0) ||
+        selectedFiles.length === 0 &&
+        selectedVideos.length === 0) ||
       isGenerating
     )
       return;
@@ -97,11 +114,27 @@ export default function ChatInput({
       );
     }
 
-    onSendMessage(message, imageDataArray, fileDataArray);
+    // Xử lý video nếu có
+    let videoDataArray: { url: string; data: string }[] | undefined;
+    if (selectedVideos.length > 0) {
+      videoDataArray = await Promise.all(
+        selectedVideos.map(async (video) => {
+          // Đọc file video thành base64 string
+          const base64Data = await readFileAsDataURL(video.file);
+          return {
+            url: URL.createObjectURL(video.file),
+            data: base64Data,
+          };
+        })
+      );
+    }
+
+    onSendMessage(message, imageDataArray, fileDataArray, videoDataArray);
     setMessage("");
     setTextareaHeight(56);
     handleClearAllImages();
     handleClearAllFiles();
+    handleClearAllVideos();
   };
 
   const readFileAsDataURL = (file: File): Promise<string> => {
@@ -175,6 +208,15 @@ export default function ChatInput({
               onClearAllFiles={handleClearAllFiles}
               fileType="image"
             />
+
+            {selectedVideos.length > 0 && (
+              <UploadFiles
+                selectedVideos={selectedVideos}
+                onRemoveVideo={handleRemoveVideo}
+                onClearAllVideos={handleClearAllVideos}
+                fileType="video"
+              />
+            )}
 
             {selectedFiles.length > 0 && (
               <UploadFiles
@@ -314,6 +356,15 @@ export default function ChatInput({
               accept="application/pdf,application/x-javascript,text/javascript,application/x-python,text/x-python,text/plain,text/html,text/css,text/md,text/csv,text/xml,text/rtf"
               className="hidden"
             />
+
+            <input
+              type="file"
+              ref={videoInputRef}
+              onChange={handleVideoInputChange}
+              multiple
+              accept="video/mp4,video/mpeg,video/mov,video/avi,video/x-flv,video/mpg,video/webm,video/wmv,video/3gpp"
+              className="hidden"
+            />
           </div>
         </div>
         <div className="text-center mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
@@ -358,6 +409,21 @@ export default function ChatInput({
                   className="text-gray-600 dark:text-gray-300"
                 />
                 <span className="text-sm">Tải ảnh lên</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  videoInputRef.current?.click();
+                  setShowPopup(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md transition-colors cursor-pointer"
+              >
+                <IconVideo
+                  size={18}
+                  className="text-gray-600 dark:text-gray-300"
+                />
+                <span className="text-sm">Tải video lên</span>
               </button>
               <button
                 type="button"

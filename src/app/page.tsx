@@ -80,6 +80,10 @@ export default function Home() {
     console.log("Uploaded files:", files);
   };
 
+  const handleVideosUpload = (files: File[]) => {
+    console.log("Uploaded videos:", files);
+  };
+
   if (showLoading) {
     return <LoadingScreen onLoadingComplete={() => setShowLoading(false)} />;
   }
@@ -126,6 +130,7 @@ export default function Home() {
                   onSendMessage={sendMessage}
                   onImagesUpload={handleImagesUpload}
                   onFilesUpload={handleFilesUpload}
+                  onVideosUpload={handleVideosUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}
@@ -162,6 +167,7 @@ export default function Home() {
                   onSendMessage={sendMessage}
                   onImagesUpload={handleImagesUpload}
                   onFilesUpload={handleFilesUpload}
+                  onVideosUpload={handleVideosUpload}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}

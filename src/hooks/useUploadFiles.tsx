@@ -116,3 +116,66 @@ export function useFileUpload(onFilesUpload?: (files: File[]) => void) {
     handleClearAllFiles,
   };
 }
+
+export function useVideoUpload(onVideosUpload?: (files: File[]) => void) {
+  const [selectedVideos, setSelectedVideos] = useState<
+    { file: File; preview: string }[]
+  >([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = Array.from(e.target.files || []);
+
+    if (files.length === 0) return;
+
+    const videoFiles = files.filter((file) => file.type.startsWith("video/"));
+
+    if (videoFiles.length === 0) return;
+
+    // Chuyển đổi video thành base64 strings
+    const newVideoPreviews = await Promise.all(
+      videoFiles.map(async (file) => {
+        // Đọc file thành base64
+        const reader = new FileReader();
+        const preview = await new Promise<string>((resolve) => {
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+
+        return { file, preview };
+      })
+    );
+
+    setSelectedVideos((prev) => [...prev, ...newVideoPreviews]);
+
+    if (onVideosUpload) {
+      onVideosUpload(videoFiles);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveVideo = (index: number) => {
+    // Không cần gọi URL.revokeObjectURL vì chúng ta dùng base64
+    setSelectedVideos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClearAllVideos = () => {
+    // Không cần gọi URL.revokeObjectURL vì chúng ta dùng base64
+    setSelectedVideos([]);
+  };
+
+  return {
+    selectedVideos,
+    fileInputRef,
+    handleFileInputChange,
+    handleRemoveVideo,
+    handleClearAllVideos,
+  };
+}

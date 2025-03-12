@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   IconX,
@@ -10,40 +10,53 @@ import {
   IconTable,
   IconBrandHtml5,
   IconBrandCss3,
+  IconVideo,
+  IconPlayerPlay,
 } from "@tabler/icons-react";
 
 interface UploadFilesProps {
   onImagesUpload?: (files: File[]) => void;
   onFilesUpload?: (files: File[]) => void;
+  onVideosUpload?: (files: File[]) => void;
   selectedImages?: { file: File; preview: string }[];
   selectedFiles?: { file: File; type: string }[];
+  selectedVideos?: { file: File; preview: string }[];
   onRemoveImage?: (index: number) => void;
   onRemoveFile?: (index: number) => void;
+  onRemoveVideo?: (index: number) => void;
   onClearAllImages?: () => void;
   onClearAllFiles?: () => void;
-  fileType?: "image" | "document";
+  onClearAllVideos?: () => void;
+  fileType?: "image" | "document" | "video";
 }
 
 export default function UploadFiles({
   onImagesUpload,
   onFilesUpload,
+  onVideosUpload,
   selectedImages = [],
   selectedFiles = [],
+  selectedVideos = [],
   onRemoveImage = () => {},
   onRemoveFile = () => {},
+  onRemoveVideo = () => {},
   onClearAllImages = () => {},
   onClearAllFiles = () => {},
+  onClearAllVideos = () => {},
   fileType = "image",
 }: UploadFilesProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [playingVideo, setPlayingVideo] = useState<number | null>(null);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
 
     if (fileType === "image" && onImagesUpload) {
       onImagesUpload(files);
     } else if (fileType === "document" && onFilesUpload) {
       onFilesUpload(files);
+    } else if (fileType === "video" && onVideosUpload) {
+      onVideosUpload(files);
     }
 
     if (fileInputRef.current) {
@@ -62,6 +75,7 @@ export default function UploadFiles({
     if (type.includes("csv")) return <IconTable size={24} />;
     if (type.includes("xml")) return <IconCode size={24} />;
     if (type.includes("rtf")) return <IconFileText size={24} />;
+    if (type.includes("video")) return <IconVideo size={24} />;
     return <IconFile size={24} />;
   };
 
@@ -69,6 +83,10 @@ export default function UploadFiles({
     return () => {
       selectedImages.forEach((image) => {
         URL.revokeObjectURL(image.preview);
+      });
+
+      selectedVideos.forEach((video) => {
+        URL.revokeObjectURL(video.preview);
       });
     };
   }, []);
@@ -78,11 +96,13 @@ export default function UploadFiles({
       <input
         type="file"
         ref={fileInputRef}
-        onChange={handleImageUpload}
+        onChange={handleUpload}
         multiple
         accept={
           fileType === "image"
             ? "image/*"
+            : fileType === "video"
+            ? "video/mp4,video/mpeg,video/mov,video/avi,video/x-flv,video/mpg,video/webm,video/wmv,video/3gpp"
             : "application/pdf,application/x-javascript,text/javascript,application/x-python,text/x-python,text/plain,text/html,text/css,text/md,text/csv,text/xml,text/rtf"
         }
         className="hidden"
@@ -113,6 +133,60 @@ export default function UploadFiles({
                   className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center transition-colors cursor-pointer"
                 >
                   <IconX size={12} stroke={2} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {fileType === "video" && selectedVideos.length > 0 && (
+        <div className="relative border-b border-black dark:border-white">
+          <button
+            type="button"
+            onClick={onClearAllVideos}
+            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
+          >
+            <IconTrash size={14} stroke={1.5} />
+          </button>
+          <div className="flex flex-wrap gap-3 p-3 max-h-[300px] overflow-y-auto">
+            {selectedVideos.map((video, index) => (
+              <div key={index} className="relative w-48 h-40">
+                {playingVideo === index ? (
+                  <video
+                    src={video.preview}
+                    className="w-full h-full object-contain rounded"
+                    controls
+                    autoPlay
+                    onEnded={() => setPlayingVideo(null)}
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full rounded bg-gray-200 dark:bg-gray-800 flex items-center justify-center cursor-pointer relative"
+                    onClick={() => setPlayingVideo(index)}
+                  >
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-black bg-opacity-40 rounded-full p-3">
+                        <IconPlayerPlay size={24} className="text-white" />
+                      </div>
+                    </div>
+                    <video
+                      src={video.preview}
+                      className="w-full h-full object-contain rounded opacity-70"
+                      muted
+                      playsInline
+                    />
+                  </div>
+                )}
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs px-2 py-1 truncate">
+                  {video.file.name}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onRemoveVideo(index)}
+                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <IconX size={14} stroke={2} />
                 </button>
               </div>
             ))}

@@ -2,8 +2,9 @@
 import { useChat } from "./useChat";
 import { getGeminiResponse } from "../lib/gemini";
 import { Message } from "../types";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSystemPrompt } from "./useSystemPrompt";
+import { generateImage, extractImagePrompt } from "../lib/together";
 
 export function useGeminiChat(chatId?: string) {
   const {
@@ -21,6 +22,9 @@ export function useGeminiChat(chatId?: string) {
 
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const imagePromptRef = useRef<string | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const sendMessage = async (
     message: string,
@@ -55,6 +59,39 @@ export function useGeminiChat(chatId?: string) {
     }
 
     const isImageCreationCommand = /^\/(?:create\s+)?image\s+/i.test(message);
+
+    if (isImageCreationCommand) {
+      try {
+        const prompt = message.replace(/^\/(?:create\s+)?image\s+/i, "");
+        const imageBase64 = await generateImage(prompt);
+
+        // Thêm ảnh được tạo vào tin nhắn bot
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const botMessageIndex = newMessages.findIndex(
+            (msg) => msg.id === botMessageId
+          );
+
+          if (botMessageIndex !== -1) {
+            newMessages[botMessageIndex] = {
+              ...newMessages[botMessageIndex],
+              content: "Đã tạo ảnh theo yêu cầu của bạn:",
+              images: [
+                {
+                  url: "generated-image.png",
+                  data: `data:image/png;base64,${imageBase64}`,
+                },
+              ],
+            };
+          }
+          return newMessages;
+        });
+        return;
+      } catch (error) {
+        setError(error instanceof Error ? error.message : "Lỗi khi tạo ảnh");
+        return;
+      }
+    }
 
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -100,6 +137,64 @@ export function useGeminiChat(chatId?: string) {
 
       let accumulatedMessages = [...currentMessages, newMessage];
 
+      const handleBotResponse = async (
+        content: string,
+        botMessageId: string
+      ) => {
+        const imagePrompt = extractImagePrompt(content);
+
+        if (imagePrompt && !isGeneratingImage) {
+          // Nếu prompt khác với prompt trước đó
+          if (imagePrompt !== imagePromptRef.current) {
+            imagePromptRef.current = imagePrompt;
+
+            // Clear timeout cũ nếu có
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+            }
+
+            // Đặt timeout mới
+            timeoutRef.current = setTimeout(async () => {
+              try {
+                setIsGeneratingImage(true);
+                console.log("Đang tạo ảnh với prompt:", imagePrompt);
+                const imageBase64 = await generateImage(imagePrompt);
+
+                setMessages((prev) => {
+                  const newMessages = [...prev];
+                  const botMessageIndex = newMessages.findIndex(
+                    (msg) => msg.id === botMessageId
+                  );
+
+                  if (botMessageIndex !== -1) {
+                    newMessages[botMessageIndex] = {
+                      ...newMessages[botMessageIndex],
+                      content: content,
+                      images: [
+                        {
+                          url: "generated-image.png",
+                          data: `data:image/png;base64,${imageBase64}`,
+                        },
+                      ],
+                    };
+                    saveChat(newMessages, chatId, "google");
+                  }
+                  return newMessages;
+                });
+              } catch (error) {
+                console.error("Lỗi khi tạo ảnh:", error);
+                setError(
+                  error instanceof Error ? error.message : "Lỗi khi tạo ảnh"
+                );
+              } finally {
+                setIsGeneratingImage(false);
+                imagePromptRef.current = null;
+              }
+            }, 1000); // Đợi 1 giây sau khi nhận prompt cuối cùng
+          }
+        }
+      };
+
       const handleChunk = (chunk: string) => {
         setMessages((prev) => {
           const newMessages = [...prev];
@@ -108,10 +203,21 @@ export function useGeminiChat(chatId?: string) {
           );
 
           if (botMessageIndex !== -1) {
+            const newContent = newMessages[botMessageIndex].content + chunk;
             newMessages[botMessageIndex] = {
               ...newMessages[botMessageIndex],
-              content: newMessages[botMessageIndex].content + chunk,
+              content: newContent,
             };
+
+            // Đợi cho đến khi có cả tag đóng mới xử lý
+            if (
+              newContent.includes("[IMAGE_PROMPT]") &&
+              newContent.includes("[/IMAGE_PROMPT]")
+            ) {
+              // Đảm bảo gọi handleBotResponse bên ngoài setState
+              setTimeout(() => handleBotResponse(newContent, botMessageId), 0);
+            }
+
             accumulatedMessages = newMessages;
             saveChat(accumulatedMessages, currentChatId, "google");
           }
@@ -268,6 +374,15 @@ export function useGeminiChat(chatId?: string) {
       setAbortController(null);
     }
   };
+
+  // Cleanup khi unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     messages,

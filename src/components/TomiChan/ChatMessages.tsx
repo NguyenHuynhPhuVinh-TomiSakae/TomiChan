@@ -21,6 +21,7 @@ import { useMediaQuery } from "react-responsive";
 import Image from "next/image";
 import { useMessageActions } from "../../hooks/useMessageActions";
 import DeleteConfirmModal from "./DeleteConfirmModal";
+import { extractImagePrompt } from "../../lib/together";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -133,6 +134,52 @@ export default function ChatMessages({
     }
   }, [editingMessageId]);
 
+  const renderMessage = (message: Message) => {
+    // Kiểm tra xem có image prompt không
+    const imagePrompt = extractImagePrompt(message.content);
+
+    if (imagePrompt && message.sender === "bot") {
+      // Lọc bỏ image prompt khỏi nội dung hiển thị
+      const cleanContent = message.content.replace(
+        /\[IMAGE_PROMPT\].*?\[\/IMAGE_PROMPT\]/,
+        ""
+      );
+
+      return (
+        <div>
+          <div className="break-words">
+            <Markdown content={cleanContent} />
+          </div>
+          {message.images ? (
+            <div className="mt-4">
+              {message.images.map((image, index) => (
+                <div key={index} className="relative w-full max-w-[512px] mb-2">
+                  <Image
+                    src={image.data}
+                    alt="AI Generated Image"
+                    width={512}
+                    height={512}
+                    className="rounded-lg"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 w-full max-w-[512px] h-[512px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse flex items-center justify-center">
+              <span className="text-gray-500">Đang tạo ảnh...</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="break-words">
+        <Markdown content={message.content} />
+      </div>
+    );
+  };
+
   return (
     <div className="w-full relative">
       <div className="w-full space-y-12">
@@ -143,42 +190,44 @@ export default function ChatMessages({
               message.sender === "user" ? "items-end" : "items-start"
             }`}
           >
-            {message.images && message.images.length > 0 && (
-              <div
-                className={`w-full flex mx-4 sm:mx-8 ${
-                  message.sender === "user" ? "justify-end" : "justify-start"
-                } mb-2`}
-              >
+            {message.images &&
+              message.images.length > 0 &&
+              message.sender === "user" && (
                 <div
-                  className={`grid gap-y-1 sm:gap-1 w-fit border border-black dark:border-white rounded-lg overflow-hidden${
-                    message.images.length === 1
-                      ? "grid-cols-1"
-                      : message.images.length === 2
-                      ? "grid-cols-2"
-                      : message.images.length === 3
-                      ? "grid-cols-2 sm:grid-cols-3"
-                      : "grid-cols-2 sm:grid-cols-4"
-                  } justify-items-end`}
+                  className={`w-full flex mx-4 sm:mx-8 ${
+                    message.sender === "user" ? "justify-end" : "justify-start"
+                  } mb-2`}
                 >
-                  <div className="col-span-full font-medium text-sm py-1 px-2 bg-gray-100 dark:bg-gray-800 border-b border-black dark:border-white w-full">
-                    Hình ảnh
-                  </div>
-                  {message.images.map((image, index) => (
-                    <div
-                      key={index}
-                      className="relative w-[120px] h-[120px] sm:w-[100px] sm:h-[100px] justify-self-end m-1"
-                    >
-                      <Image
-                        src={image.data}
-                        alt={`Uploaded image ${index + 1}`}
-                        fill
-                        className="object-cover rounded-lg"
-                      />
+                  <div
+                    className={`grid gap-y-1 sm:gap-1 w-fit border border-black dark:border-white rounded-lg overflow-hidden${
+                      message.images.length === 1
+                        ? "grid-cols-1"
+                        : message.images.length === 2
+                        ? "grid-cols-2"
+                        : message.images.length === 3
+                        ? "grid-cols-2 sm:grid-cols-3"
+                        : "grid-cols-2 sm:grid-cols-4"
+                    } justify-items-end`}
+                  >
+                    <div className="col-span-full font-medium text-sm py-1 px-2 bg-gray-100 dark:bg-gray-800 border-b border-black dark:border-white w-full">
+                      Hình ảnh
                     </div>
-                  ))}
+                    {message.images.map((image, index) => (
+                      <div
+                        key={index}
+                        className="relative w-[120px] h-[120px] sm:w-[100px] sm:h-[100px] justify-self-end m-1"
+                      >
+                        <Image
+                          src={image.data}
+                          alt={`Uploaded image ${index + 1}`}
+                          fill
+                          className="object-cover rounded-lg"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             {message.files && message.files.length > 0 && (
               <div
                 className={`w-full flex mx-4 sm:mx-8 ${
@@ -361,11 +410,7 @@ export default function ChatMessages({
                   </div>
                 </div>
               ) : (
-                <div className="py-3 px-4">
-                  <div className="break-words">
-                    <Markdown content={message.content} />
-                  </div>
-                </div>
+                <div className="py-3 px-4">{renderMessage(message)}</div>
               )}
 
               {editingMessageId !== message.id && (

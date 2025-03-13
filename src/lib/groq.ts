@@ -1,5 +1,6 @@
 import { Groq } from "groq-sdk";
 import { getLocalStorage } from "../utils/localStorage";
+import { getApiKey } from "../utils/getApiKey";
 
 type Role = "user" | "assistant" | "system";
 
@@ -10,7 +11,7 @@ export const getGroqResponse = async (
   signal?: AbortSignal
 ) => {
   try {
-    const apiKey = getLocalStorage("groq_api_key");
+    const apiKey = await getApiKey("groq", "groq_api_key");
     if (!apiKey) {
       return "Vui lòng nhập API key Groq trong cài đặt.";
     }

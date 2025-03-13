@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { getLocalStorage } from "../utils/localStorage";
+import { getApiKey } from "../utils/getApiKey";
 
 export const getOpenRouterResponse = async (
   message: string,
@@ -8,7 +9,7 @@ export const getOpenRouterResponse = async (
   signal?: AbortSignal
 ) => {
   try {
-    const apiKey = getLocalStorage("openrouter_api_key");
+    const apiKey = await getApiKey("openrouter", "openrouter_api_key");
     if (!apiKey) {
       return "Vui lòng nhập API key OpenRouter trong cài đặt.";
     }

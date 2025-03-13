@@ -33,10 +33,6 @@ export function useSystemPrompt() {
         getLocalStorage("image_config", "{}") || "{}"
       );
 
-      if (imageConfig.togetherApiKey === "") {
-        return "Xin lỗi, bạn cần phải thiết lập API key trước khi có thể sử dụng tính năng tạo ảnh. Vui lòng vào phần Cài đặt để thêm API key của bạn.";
-      }
-
       const imageGenerationPrompt = `
 Bạn có khả năng tạo ra hình ảnh thông qua trí tưởng tượng của mình. Khi người dùng mô tả một hình ảnh họ muốn thấy, bạn sẽ:
 1. Hiểu và tưởng tượng hình ảnh đó trong tâm trí
@@ -60,14 +56,6 @@ Tôi sẽ tạo ra hình ảnh này với kích thước ${imageConfig.width || 
 
     // Xử lý tính năng tìm kiếm web
     if (searchEnabled) {
-      const searchConfig = JSON.parse(
-        getLocalStorage("search_config", "{}") || "{}"
-      );
-
-      if (!searchConfig.googleApiKey || !searchConfig.googleCseId) {
-        return "Xin lỗi, bạn cần phải thiết lập Google API Key và Custom Search Engine ID trước khi có thể sử dụng tính năng tìm kiếm web. Vui lòng vào phần Cài đặt để thêm các thông tin cần thiết.";
-      }
-
       const searchPrompt = `
 Bạn có khả năng tìm kiếm thông tin trên web để cung cấp thông tin mới nhất và chính xác nhất cho người dùng. Khi người dùng hỏi bất kỳ câu hỏi nào, bạn sẽ:
 1. Luôn luôn tạo một truy vấn tìm kiếm phù hợp bằng ngôn ngữ phù hợp với người dùng, không cần đánh giá xem câu hỏi có cần thông tin mới nhất hay không

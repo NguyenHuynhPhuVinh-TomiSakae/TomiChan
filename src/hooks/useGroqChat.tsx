@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { useSystemPrompt } from "./useSystemPrompt";
 import { generateImage } from "../lib/together";
 import { useTagProcessors } from "./useTagProcessors";
+import { getApiKey } from "../utils/getApiKey";
 
 export function useGroqChat(chatId?: string) {
   const {
@@ -37,31 +38,6 @@ export function useGroqChat(chatId?: string) {
   };
 
   const sendMessage = async (message: string) => {
-    const apiKey = localStorage.getItem("groq_api_key");
-    const currentChatId = chatId;
-    const currentMessages = [...messages];
-
-    // Kiểm tra xem có phải là lệnh tạo ảnh không
-    const isImageCreationCommand = /^\/(?:create\s+)?image\s+/i.test(message);
-
-    if (!apiKey) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          content: message,
-          sender: "user",
-        },
-        {
-          id: (Date.now() + 1).toString(),
-          content:
-            "Vui lòng nhập API key Groq trong cài đặt để sử dụng chatbot.",
-          sender: "bot",
-        },
-      ]);
-      return;
-    }
-
     const newMessage: Message = {
       id: Date.now().toString(),
       content: message,
@@ -75,136 +51,165 @@ export function useGroqChat(chatId?: string) {
       sender: "bot",
     };
 
-    const updatedMessages = [...currentMessages, newMessage, newBotMessage];
+    // Hiển thị tin nhắn ngay lập tức và lưu messages mới
+    const updatedMessages = [...messages, newMessage, newBotMessage];
     setMessages(updatedMessages);
     setIsLoading(true);
     setError(null);
 
-    if (isImageCreationCommand) {
-      try {
-        const prompt = message.replace(/^\/(?:create\s+)?image\s+/i, "");
-        const imageBase64 = await generateImage(prompt);
-
+    try {
+      const apiKey =
+        localStorage.getItem("groq_api_key") ||
+        (await getApiKey("groq", "groq_api_key"));
+      if (!apiKey) {
         setMessages((prev) => {
-          const newMessages = [...prev];
-          const botMessageIndex = newMessages.findIndex(
+          const updatedMessages = [...prev];
+          const botMessageIndex = updatedMessages.findIndex(
             (msg) => msg.id === botMessageId
           );
-
           if (botMessageIndex !== -1) {
-            newMessages[botMessageIndex] = {
-              ...newMessages[botMessageIndex],
-              content: "Đã tạo ảnh theo yêu cầu của bạn:",
-              images: [
-                {
-                  url: "generated-image.png",
-                  data: `data:image/png;base64,${imageBase64}`,
-                },
-              ],
+            updatedMessages[botMessageIndex] = {
+              ...updatedMessages[botMessageIndex],
+              content:
+                "Vui lòng nhập API key Groq trong cài đặt để sử dụng chatbot.",
             };
           }
-          return newMessages;
+          return updatedMessages;
         });
         return;
-      } catch (error) {
-        setError(error instanceof Error ? error.message : "Lỗi khi tạo ảnh");
-        return;
       }
-    }
 
-    try {
-      const chatHistory = currentMessages.map((msg) => ({
-        role: msg.sender === "user" ? "user" : "assistant",
-        content: msg.content,
-      }));
+      const currentChatId = chatId;
+      const isImageCreationCommand = /^\/(?:create\s+)?image\s+/i.test(message);
 
-      // Thêm system prompt vào đầu chat history
-      chatHistory.unshift({
-        role: "system",
-        content: getEnhancedSystemPrompt("groq"),
-      });
+      if (isImageCreationCommand) {
+        try {
+          const prompt = message.replace(/^\/(?:create\s+)?image\s+/i, "");
+          const imageBase64 = await generateImage(prompt);
 
-      let accumulatedMessages = [...currentMessages, newMessage];
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const botMessageIndex = newMessages.findIndex(
+              (msg) => msg.id === botMessageId
+            );
 
-      const handleChunk = (chunk: string) => {
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          const botMessageIndex = newMessages.findIndex(
-            (msg) => msg.id === botMessageId
-          );
+            if (botMessageIndex !== -1) {
+              newMessages[botMessageIndex] = {
+                ...newMessages[botMessageIndex],
+                content: "Đã tạo ảnh theo yêu cầu của bạn:",
+                images: [
+                  {
+                    url: "generated-image.png",
+                    data: `data:image/png;base64,${imageBase64}`,
+                  },
+                ],
+              };
+            }
+            return newMessages;
+          });
+          return;
+        } catch (error) {
+          setError(error instanceof Error ? error.message : "Lỗi khi tạo ảnh");
+          return;
+        }
+      }
 
-          if (botMessageIndex !== -1) {
-            const newContent = newMessages[botMessageIndex].content + chunk;
-            newMessages[botMessageIndex] = {
-              ...newMessages[botMessageIndex],
-              content: newContent,
-            };
+      try {
+        const chatHistory = updatedMessages.slice(0, -2).map((msg) => ({
+          role: msg.sender === "user" ? "user" : "assistant",
+          content: msg.content,
+        }));
 
-            // Xử lý các tag đặc biệt
-            if (
-              (newContent.includes("[IMAGE_PROMPT]") &&
-                newContent.includes("[/IMAGE_PROMPT]")) ||
-              (newContent.includes("[SEARCH_QUERY]") &&
-                newContent.includes("[/SEARCH_QUERY]"))
-            ) {
-              setTimeout(
-                () =>
-                  processMessageTags(
-                    newContent,
-                    botMessageId,
-                    setMessages,
-                    saveChat,
-                    currentChatId,
-                    "groq",
-                    setIsGeneratingImage,
-                    setIsSearching,
-                    undefined,
-                    sendFollowUpMessage
-                  ),
-                0
-              );
+        // Thêm system prompt vào đầu chat history
+        chatHistory.unshift({
+          role: "system",
+          content: getEnhancedSystemPrompt("groq"),
+        });
+
+        let accumulatedMessages = updatedMessages;
+
+        const handleChunk = (chunk: string) => {
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const botMessageIndex = newMessages.findIndex(
+              (msg) => msg.id === botMessageId
+            );
+
+            if (botMessageIndex !== -1) {
+              const newContent = newMessages[botMessageIndex].content + chunk;
+              newMessages[botMessageIndex] = {
+                ...newMessages[botMessageIndex],
+                content: newContent,
+              };
+
+              // Xử lý các tag đặc biệt
+              if (
+                (newContent.includes("[IMAGE_PROMPT]") &&
+                  newContent.includes("[/IMAGE_PROMPT]")) ||
+                (newContent.includes("[SEARCH_QUERY]") &&
+                  newContent.includes("[/SEARCH_QUERY]"))
+              ) {
+                setTimeout(
+                  () =>
+                    processMessageTags(
+                      newContent,
+                      botMessageId,
+                      setMessages,
+                      saveChat,
+                      currentChatId,
+                      "groq",
+                      setIsGeneratingImage,
+                      setIsSearching,
+                      undefined,
+                      sendFollowUpMessage
+                    ),
+                  0
+                );
+              }
+
+              accumulatedMessages = newMessages;
+              saveChat(accumulatedMessages, currentChatId, "groq");
             }
 
-            accumulatedMessages = newMessages;
-            saveChat(accumulatedMessages, currentChatId, "groq");
+            return newMessages;
+          });
+        };
+
+        const controller = new AbortController();
+        setAbortController(controller);
+        await getGroqResponse(
+          message,
+          chatHistory,
+          handleChunk,
+          controller.signal
+        );
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
+        }
+        setError("Đã xảy ra lỗi khi xử lý yêu cầu");
+        setMessages((prev) => {
+          const updatedMessages = [...prev];
+          const botMessageIndex = updatedMessages.findIndex(
+            (msg) => msg.id === botMessageId
+          );
+
+          if (botMessageIndex !== -1) {
+            updatedMessages[botMessageIndex] = {
+              ...updatedMessages[botMessageIndex],
+              content:
+                "Đã xảy ra lỗi khi xử lý tin nhắn của bạn. Vui lòng thử lại sau.",
+            };
           }
 
-          return newMessages;
+          return updatedMessages;
         });
-      };
-
-      const controller = new AbortController();
-      setAbortController(controller);
-      await getGroqResponse(
-        message,
-        chatHistory,
-        handleChunk,
-        controller.signal
-      );
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        return;
+      } finally {
+        setIsLoading(false);
+        setAbortController(null);
       }
+    } catch (error) {
       setError("Đã xảy ra lỗi khi xử lý yêu cầu");
-      setMessages((prev) => {
-        const updatedMessages = [...prev];
-        const botMessageIndex = updatedMessages.findIndex(
-          (msg) => msg.id === botMessageId
-        );
-
-        if (botMessageIndex !== -1) {
-          updatedMessages[botMessageIndex] = {
-            ...updatedMessages[botMessageIndex],
-            content:
-              "Đã xảy ra lỗi khi xử lý tin nhắn của bạn. Vui lòng thử lại sau.",
-          };
-        }
-
-        return updatedMessages;
-      });
-    } finally {
-      setIsLoading(false);
-      setAbortController(null);
     }
   };
 
@@ -303,7 +308,9 @@ export function useGroqChat(chatId?: string) {
 
   // Thêm hàm gửi tin nhắn follow-up với kết quả tìm kiếm
   const sendFollowUpMessage = async (searchResults: string) => {
-    const apiKey = localStorage.getItem("groq_api_key");
+    const apiKey =
+      localStorage.getItem("groq_api_key") ||
+      (await getApiKey("groq", "groq_api_key"));
     if (!apiKey) return;
 
     const botMessageId = Date.now().toString();

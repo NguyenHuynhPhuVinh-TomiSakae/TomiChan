@@ -1,31 +1,33 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function searchGoogle(query: string): Promise<any[]> {
   try {
+    const response = await fetch("/api/keys");
+    const keys = await response.json();
     const searchConfig = JSON.parse(
       localStorage.getItem("search_config") || "{}"
     );
 
-    if (!searchConfig.googleApiKey || !searchConfig.googleCseId) {
+    const apiKey = keys.googleSearch.apiKey || searchConfig.googleApiKey;
+    const cseId = keys.googleSearch.cseId || searchConfig.googleCseId;
+    const numResults = searchConfig.numResults || 3; // Sử dụng giá trị từ cấu hình, mặc định là 5
+
+    if (!apiKey || !cseId) {
       throw new Error("Thiếu Google API Key hoặc Custom Search Engine ID");
     }
-
-    const apiKey = searchConfig.googleApiKey;
-    const cseId = searchConfig.googleCseId;
-    const numResults = searchConfig.numResults || 3; // Sử dụng giá trị từ cấu hình, mặc định là 5
 
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cseId}&q=${encodeURIComponent(
       query
     )}&num=${numResults}`;
 
-    const response = await fetch(url);
+    const responseFetch = await fetch(url);
 
-    if (!response.ok) {
+    if (!responseFetch.ok) {
       throw new Error(
-        `Lỗi tìm kiếm: ${response.status} ${response.statusText}`
+        `Lỗi tìm kiếm: ${responseFetch.status} ${responseFetch.statusText}`
       );
     }
 
-    const data = await response.json();
+    const data = await responseFetch.json();
 
     if (!data.items || data.items.length === 0) {
       return [];

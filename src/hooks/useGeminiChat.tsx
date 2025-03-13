@@ -378,6 +378,7 @@ export function useGeminiChat(chatId?: string) {
       id: botMessageId,
       content: "",
       sender: "bot",
+      isFollowUpSearch: true,
     };
 
     setMessages((prev) => [...prev, newBotMessage]);
@@ -391,6 +392,26 @@ export function useGeminiChat(chatId?: string) {
       }));
 
       const systemPrompt = getEnhancedSystemPrompt("google");
+
+      // Sửa đổi hướng dẫn tìm kiếm sâu
+      const searchConfig = JSON.parse(
+        localStorage.getItem("search_config") || "{}"
+      );
+      const deepSearchInstruction = searchConfig.deepSearch
+        ? `Bạn chỉ được thực hiện ÍT NHẤT 3 lần tìm kiếm và TỐI ĐA 10 lần tìm kiếm để tránh quá tải. Với mỗi chủ đề hoặc khía cạnh quan trọng nhất của vấn đề, hãy sử dụng tag [SEARCH_QUERY]...[/SEARCH_QUERY] với từ khóa phù hợp.
+
+Quy trình tìm kiếm của bạn:
+1. Phân tích kết quả tìm kiếm hiện tại
+2. Xác định 1-2 khía cạnh quan trọng nhất cần tìm hiểu thêm
+3. Thực hiện tìm kiếm bổ sung (không quá 10 lần)
+4. Tổng hợp tất cả thông tin sau khi hoàn thành`
+        : "";
+
+      const enhancedSystemPrompt =
+        systemPrompt +
+        (deepSearchInstruction ? `\n\n${deepSearchInstruction}` : "");
+      const searchPrompt = searchResults + "\n\nPhân tích:";
+
       const controller = new AbortController();
       setAbortController(controller);
 
@@ -404,7 +425,7 @@ export function useGeminiChat(chatId?: string) {
 
           if (botMessageIndex !== -1) {
             const newContent = isFirstChunk
-              ? searchResults + "\n\nPhân tích:\n\n" + chunk
+              ? searchPrompt + "\n\n" + chunk
               : newMessages[botMessageIndex].content + chunk;
 
             newMessages[botMessageIndex] = {
@@ -448,11 +469,11 @@ export function useGeminiChat(chatId?: string) {
       };
 
       await getGeminiResponse(
-        searchResults,
+        searchPrompt,
         chatHistory,
         handleChunk,
         controller.signal,
-        systemPrompt
+        enhancedSystemPrompt // Sử dụng enhanced system prompt
       );
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {

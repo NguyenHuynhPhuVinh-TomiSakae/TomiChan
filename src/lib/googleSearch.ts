@@ -1,23 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export async function searchGoogle(query: string): Promise<any[]> {
+export async function searchGoogle(
+  query: string,
+  startIndex?: number
+): Promise<any[]> {
   try {
-    const response = await fetch("/api/keys");
-    const keys = await response.json();
+    // Đọc cấu hình local trước
     const searchConfig = JSON.parse(
       localStorage.getItem("search_config") || "{}"
     );
 
-    const apiKey = keys.googleSearch.apiKey || searchConfig.googleApiKey;
-    const cseId = keys.googleSearch.cseId || searchConfig.googleCseId;
+    // Sau đó mới gọi API để lấy keys
+    const response = await fetch("/api/keys");
+    const keys = await response.json();
+
+    // Ưu tiên sử dụng cấu hình local trước, nếu không có thì mới dùng từ API
+    const apiKey = searchConfig.googleApiKey || keys.googleSearch.apiKey;
+    const cseId = searchConfig.googleCseId || keys.googleSearch.cseId;
     const numResults = searchConfig.numResults || 3; // Sử dụng giá trị từ cấu hình, mặc định là 5
 
     if (!apiKey || !cseId) {
       throw new Error("Thiếu Google API Key hoặc Custom Search Engine ID");
     }
 
+    // Thêm tham số start nếu có startIndex
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cseId}&q=${encodeURIComponent(
       query
-    )}&num=${numResults}`;
+    )}&num=${numResults}${startIndex ? `&start=${startIndex}` : ""}`;
 
     const responseFetch = await fetch(url);
 

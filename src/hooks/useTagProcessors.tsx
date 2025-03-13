@@ -8,6 +8,7 @@ export function useTagProcessors() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const searchQueryRef = useRef<string | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchCountRef = useRef<number>(0);
 
   // Cleanup khi unmount
   useEffect(() => {
@@ -31,11 +32,11 @@ export function useTagProcessors() {
     setIsGeneratingImage?: React.Dispatch<React.SetStateAction<boolean>>,
     setIsSearching?: React.Dispatch<React.SetStateAction<boolean>>,
     messageIndex?: number,
-    sendFollowUpMessage?: (
-      searchResults: string,
-      messageId: string
-    ) => Promise<void>
+    sendFollowUpMessage?: (searchResults: string) => Promise<void>
   ) => {
+    // Reset search count khi bắt đầu xử lý tin nhắn mới
+    searchCountRef.current = 0;
+
     // Xử lý IMAGE_PROMPT
     if (
       content.includes("[IMAGE_PROMPT]") &&
@@ -121,8 +122,29 @@ export function useTagProcessors() {
       content.includes("[SEARCH_QUERY]") &&
       content.includes("[/SEARCH_QUERY]")
     ) {
+      // Kiểm tra số lần tìm kiếm
+      if (searchCountRef.current >= 10) {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const targetIndex = newMessages.findIndex(
+            (msg) => msg.id === messageId
+          );
+          if (targetIndex !== -1) {
+            newMessages[targetIndex] = {
+              ...newMessages[targetIndex],
+              content:
+                content +
+                "\n\n[ĐÃ ĐẠT GIỚI HẠN TÌM KIẾM] Vui lòng tổng hợp thông tin đã có.",
+            };
+          }
+          return newMessages;
+        });
+        return;
+      }
+
       const searchQuery = extractSearchQuery(content);
       if (searchQuery && searchQuery !== searchQueryRef.current) {
+        searchCountRef.current += 1; // Tăng biến đếm
         searchQueryRef.current = searchQuery;
         setIsSearching?.(true);
 
@@ -130,29 +152,29 @@ export function useTagProcessors() {
           clearTimeout(searchTimeoutRef.current);
         }
 
-        // Hiển thị trạng thái "đang tìm kiếm" trên UI
+        // Kiểm tra xem tin nhắn hiện tại có phải là follow-up search không
         setMessages((prev) => {
-          const newMessages = [...prev];
-          const targetIndex =
-            messageIndex !== undefined
-              ? messageIndex
-              : newMessages.findIndex((msg) => msg.id === messageId);
+          const currentMessage = prev.find((msg) => msg.id === messageId);
+          const isFollowUpSearch = currentMessage?.isFollowUpSearch;
 
-          if (targetIndex !== -1) {
-            newMessages[targetIndex] = {
-              ...newMessages[targetIndex],
-              content: "*Đang tìm kiếm...*",
-            };
-            saveChat(newMessages, chatId, model);
-          }
-          return newMessages;
+          const newMessages = isFollowUpSearch
+            ? prev // Giữ nguyên tin nhắn cũ nếu là follow-up search
+            : prev.filter((msg) => msg.id !== messageId); // Xóa tin nhắn hiện tại nếu là tìm kiếm thông thường
+
+          // Thêm trạng thái "đang tìm kiếm" vào cuối
+          const searchingMessage: Message = {
+            id: Date.now().toString(),
+            content: "*Đang tìm kiếm...*",
+            sender: "bot",
+          };
+
+          return [...newMessages, searchingMessage];
         });
 
         searchTimeoutRef.current = setTimeout(() => {
           searchGoogle(searchQuery)
             .then((searchResults) => {
-              // Định dạng kết quả tìm kiếm
-              let searchResultsForAI = `Kết quả tìm kiếm cho "${searchQuery}":\n\n`;
+              let searchResultsForAI = `Kết quả tìm kiếm cho "${searchQuery}" (Lần tìm kiếm thứ ${searchCountRef.current}/10):\n\n`;
 
               if (searchResults.length > 0) {
                 searchResults.forEach((result, index) => {
@@ -166,38 +188,42 @@ export function useTagProcessors() {
                 searchResultsForAI = "Không tìm thấy kết quả tìm kiếm phù hợp.";
               }
 
-              // Xóa tin nhắn tìm kiếm và gửi kết quả cho AI
+              // Xóa tin nhắn "đang tìm kiếm"
               setMessages((prev) => {
-                const newMessages = prev.filter((msg) => msg.id !== messageId);
-                return newMessages;
+                return prev.filter(
+                  (msg) => msg.content !== "*Đang tìm kiếm...*"
+                );
               });
+
+              // Thêm thông báo nếu đã đạt giới hạn
+              if (searchCountRef.current >= 10) {
+                searchResultsForAI +=
+                  "\n\n[SYSTEM] Đã đạt giới hạn 10 lần tìm kiếm. Hãy tổng hợp tất cả thông tin đã thu thập và đưa ra kết luận cuối cùng. Không thực hiện thêm tìm kiếm nào nữa.";
+              }
 
               // Gửi kết quả tìm kiếm cho AI để phân tích
               if (sendFollowUpMessage) {
-                sendFollowUpMessage(searchResultsForAI, messageId);
+                sendFollowUpMessage(searchResultsForAI);
               }
             })
             .catch((error) => {
               setMessages((prev) => {
-                const newMessages = [...prev];
-                const targetIndex =
-                  messageIndex !== undefined
-                    ? messageIndex
-                    : newMessages.findIndex((msg) => msg.id === messageId);
+                const errorMessage =
+                  error instanceof Error
+                    ? error.message
+                    : "Lỗi không xác định khi tìm kiếm";
 
-                if (targetIndex !== -1) {
-                  const errorMessage =
-                    error instanceof Error
-                      ? error.message
-                      : "Lỗi không xác định khi tìm kiếm";
-
-                  newMessages[targetIndex] = {
-                    ...newMessages[targetIndex],
+                const newMessages = prev.filter(
+                  (msg) => msg.content !== "*Đang tìm kiếm...*"
+                );
+                return [
+                  ...newMessages,
+                  {
+                    id: Date.now().toString(),
                     content: `*Lỗi tìm kiếm: ${errorMessage}*`,
-                  };
-                  saveChat(newMessages, chatId, model);
-                }
-                return newMessages;
+                    sender: "bot",
+                  },
+                ];
               });
             })
             .finally(() => {
@@ -208,6 +234,19 @@ export function useTagProcessors() {
       }
     }
   };
+
+  // Reset search count khi unmount
+  useEffect(() => {
+    return () => {
+      searchCountRef.current = 0;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return { processMessageTags };
 }

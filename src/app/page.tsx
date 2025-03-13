@@ -37,6 +37,9 @@ export default function Home() {
   };
 
   const handleNewChat = () => {
+    if (isLoading) {
+      stopGeneration();
+    }
     const newChatId = uuidv4();
     setCurrentChatId(newChatId);
     clearMessages();
@@ -46,6 +49,9 @@ export default function Home() {
   };
 
   const handleSelectChat = async (chatId: string) => {
+    if (isLoading) {
+      stopGeneration();
+    }
     const chat = await chatDB.getChat(chatId);
 
     if (chat && chat.provider && chat.provider !== selectedProvider) {
@@ -73,6 +79,9 @@ export default function Home() {
   };
 
   const handleProviderChange = (provider: string) => {
+    if (isLoading) {
+      stopGeneration();
+    }
     setSelectedProvider(provider);
     const newChatId = uuidv4();
     setCurrentChatId(newChatId);

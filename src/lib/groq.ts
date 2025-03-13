@@ -58,11 +58,37 @@ export const getGroqResponse = async (
     );
 
     let fullResponse = "";
+    let isInsideThink = false;
+
     for await (const chunk of chatCompletion) {
-      const chunkText = chunk.choices[0]?.delta?.content || "";
+      let chunkText = chunk.choices[0]?.delta?.content || "";
+
+      // Kiểm tra xem chunk có mở đầu thẻ think không
+      if (chunkText.includes("<think>")) {
+        isInsideThink = true;
+      }
+
+      // Nếu đang trong think, thay thế xuống dòng bằng khoảng trắng
+      if (isInsideThink) {
+        chunkText = chunkText.replace(/\n/g, " ");
+      }
+
+      // Kiểm tra xem chunk có đóng thẻ think không
+      if (chunkText.includes("</think>")) {
+        isInsideThink = false;
+        // Thêm 2 dòng trống sau </think>
+        chunkText = chunkText.replace("</think>", "</think>\n\n");
+      }
+
       fullResponse += chunkText;
       onChunk(chunkText);
     }
+
+    // Đảm bảo có đủ dòng trống sau </think> trong toàn bộ response
+    fullResponse = fullResponse.replace(
+      /<\/think>(?!\n\s*\n)/g,
+      "</think>\n\n"
+    );
 
     return fullResponse;
   } catch (error) {

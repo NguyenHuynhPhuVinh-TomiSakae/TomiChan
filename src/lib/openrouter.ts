@@ -63,7 +63,8 @@ export const getOpenRouterResponse = async (
 
     const decoder = new TextDecoder();
     let buffer = "";
-    let isReasoning = false;
+    let isInsideThink = false;
+    let fullResponse = "";
 
     try {
       while (true) {
@@ -89,19 +90,23 @@ export const getOpenRouterResponse = async (
               const reasoning = parsed.choices[0].delta.reasoning;
 
               if (reasoning) {
-                if (!isReasoning) {
-                  isReasoning = true;
+                if (!isInsideThink) {
+                  isInsideThink = true;
                   onChunk("<think>");
                 }
-                onChunk(reasoning);
+                const processedReasoning = reasoning.replace(/\n/g, " ");
+                onChunk(processedReasoning);
+                fullResponse += processedReasoning;
               }
 
               if (content) {
-                if (isReasoning) {
-                  isReasoning = false;
-                  onChunk("</think>\n");
+                if (isInsideThink) {
+                  isInsideThink = false;
+                  onChunk("</think>\n\n");
+                  fullResponse += "</think>\n\n";
                 }
                 onChunk(content);
+                fullResponse += content;
               }
             } catch (e) {
               console.error("Lỗi khi parse JSON chunk:", e);
@@ -109,11 +114,10 @@ export const getOpenRouterResponse = async (
           }
         }
       }
+      return fullResponse;
     } finally {
       reader.cancel();
     }
-
-    return "";
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw error;

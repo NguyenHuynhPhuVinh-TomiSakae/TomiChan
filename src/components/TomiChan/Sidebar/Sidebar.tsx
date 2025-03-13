@@ -187,8 +187,9 @@ export default function Sidebar({
                     width={32}
                     height={32}
                     priority
+                    className="hover:rotate-[20deg] transition-transform duration-300 cursor-pointer"
                   />
-                  <span className="bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-500 text-transparent bg-clip-text font-bold tracking-wide hover:scale-105 transition-transform duration-200">
+                  <span className="bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-500 text-transparent bg-clip-text font-bold tracking-wide hover:scale-105 transition-transform duration-200 cursor-pointer">
                     TomiChan
                   </span>
                 </motion.div>

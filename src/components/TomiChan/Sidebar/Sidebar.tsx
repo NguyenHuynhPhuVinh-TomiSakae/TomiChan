@@ -11,6 +11,7 @@ import { chatDB } from "../../../utils/db";
 import ChatHistoryList from "./ChatHistoryList";
 import { useMediaQuery } from "react-responsive";
 import { getLocalStorage, setLocalStorage } from "../../../utils/localStorage";
+import Image from "next/image";
 
 interface SidebarProps {
   onNewChat: () => void;
@@ -178,9 +179,18 @@ export default function Sidebar({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0, transition: { duration: 0 } }}
                   transition={{ delay: 0.3 }}
-                  className="font-semibold text-2xl truncate"
+                  className="font-semibold text-2xl truncate flex items-center gap-2"
                 >
-                  TomiChan
+                  <Image
+                    src="/tomichan-icon.png"
+                    alt="TomiChan"
+                    width={32}
+                    height={32}
+                    priority
+                  />
+                  <span className="bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-500 text-transparent bg-clip-text font-bold tracking-wide hover:scale-105 transition-transform duration-200">
+                    TomiChan
+                  </span>
                 </motion.div>
               )}
             </AnimatePresence>

@@ -52,6 +52,7 @@ export default function ChatInput({
     selectedImages,
     fileInputRef: imageInputRef,
     handleFileInputChange: handleImageInputChange,
+    handlePastedFiles: handlePastedImages,
     handleRemoveImage,
     handleClearAllImages,
   } = useImageUpload(onImagesUpload);
@@ -223,6 +224,40 @@ export default function ChatInput({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showPopup]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) {
+        return;
+      }
+
+      const imageItems = Array.from(items).filter((item) =>
+        item.type.startsWith("image/")
+      );
+
+      if (imageItems.length === 0) return;
+
+      e.preventDefault();
+
+      const files = imageItems
+        .map((item) => item.getAsFile())
+        .filter((file): file is File => file !== null);
+
+      if (files.length > 0) {
+        handlePastedImages(files);
+      }
+    };
+
+    textarea.addEventListener("paste", handlePaste);
+
+    return () => {
+      textarea.removeEventListener("paste", handlePaste);
+    };
+  }, [handlePastedImages]);
 
   return (
     <motion.form

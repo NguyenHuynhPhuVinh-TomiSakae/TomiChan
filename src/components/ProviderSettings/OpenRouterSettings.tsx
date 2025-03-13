@@ -64,7 +64,20 @@ export default function OpenRouterSettings({
       value: "google/gemini-2.0-flash-exp:free",
       label: "Gemini Flash 2.0 Experimental",
     },
+    {
+      value: "google/gemini-2.0-flash-thinking-exp-1219:free",
+      label: "Gemini 2.0 Flash Thinking Experimental",
+    },
+    { value: "google/gemini-exp-1206:free", label: "Gemini Experimental 1206" },
     { value: "google/gemma-2-9b-it:free", label: "Gemma 2 9B" },
+    {
+      value: "google/learnlm-1.5-pro-experimental:free",
+      label: "LearnLM 1.5 Pro Experimental",
+    },
+    {
+      value: "google/gemini-flash-1.5-8b-exp",
+      label: "Gemini Flash 1.5 8B Experimental",
+    },
   ];
 
   const groupDeepSeekOptions = [
@@ -72,6 +85,10 @@ export default function OpenRouterSettings({
     {
       value: "deepseek/deepseek-r1-distill-qwen-32b:free",
       label: "R1 Distill Qwen 32B",
+    },
+    {
+      value: "deepseek/deepseek-r1-distill-qwen-14b:free",
+      label: "R1 Distill Qwen 14B",
     },
     {
       value: "deepseek/deepseek-r1-distill-llama-70b:free",
@@ -84,8 +101,16 @@ export default function OpenRouterSettings({
   const groupQwenOptions = [
     { value: "qwen/qwq-32b:free", label: "QwQ 32B" },
     {
+      value: "qwen/qwq-32b-preview:free",
+      label: "QwQ 32B Preview",
+    },
+    {
       value: "qwen/qwen2.5-vl-72b-instruct:free",
       label: "Qwen2.5 VL 72B Instruct",
+    },
+    {
+      value: "qwen/qwen2.5-72b-instruct:free",
+      label: "Qwen2.5 72B Instruct",
     },
     {
       value: "qwen/qwen-2.5-coder-32b-instruct:free",
@@ -147,6 +172,10 @@ export default function OpenRouterSettings({
       label: "Dolphin3.0 R1 Mistral 24B",
     },
     {
+      value: "cognitivecomputations/dolphin3.0-mistral-24b:free",
+      label: "Dolphin3.0 Mistral 24B",
+    },
+    {
       value: "microsoft/phi-3-mini-128k-instruct:free",
       label: "Microsoft: Phi-3 Mini 128K Instruct",
     },
@@ -155,6 +184,21 @@ export default function OpenRouterSettings({
       label: "Microsoft: Phi-3 Medium 128K Instruct",
     },
     { value: "openchat/openchat-7b:free", label: "OpenChat 3.5 7B" },
+    { value: "rekaai/reka-flash-3:free", label: "Reka: Flash 3" },
+    {
+      value: "sophosympatheia/rogue-rose-103b-v0.2:free",
+      label: "Rogue Rose 103B v0.2",
+    },
+    {
+      value: "nvidia/llama-3.1-nemotron-70b-instruct:free",
+      label: "NVIDIA: Llama 3.1 Nemotron 70B Instruct",
+    },
+    { value: "undi95/toppy-m-7b:free", label: "Toppy M 7B" },
+    {
+      value: "huggingfaceh4/zephyr-7b-beta:free",
+      label: "Hugging Face: Zephyr 7B",
+    },
+    { value: "gryphe/mythomax-l2-13b:free", label: "MythoMax 13B" },
   ];
 
   // Khi mở modal, load lại dữ liệu và mở nhóm chứa model đã lưu

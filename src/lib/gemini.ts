@@ -8,7 +8,13 @@ import { getApiKey } from "../utils/getApiKey";
 
 export const getGeminiResponse = async (
   message: string,
-  history: { role: string; parts: { text: string }[] }[] = [],
+  history: {
+    role: string;
+    parts: (
+      | { text: string }
+      | { inlineData: { data: string; mimeType: string } }
+    )[];
+  }[] = [],
   onChunk: (chunk: string) => void,
   signal?: AbortSignal,
   systemPrompt?: string,

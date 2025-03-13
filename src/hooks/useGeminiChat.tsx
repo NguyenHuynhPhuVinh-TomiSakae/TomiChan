@@ -122,22 +122,65 @@ export function useGeminiChat(chatId?: string) {
       try {
         const chatHistory = updatedMessages.slice(0, -2).map((msg) => ({
           role: msg.sender === "user" ? "user" : "model",
-          parts: [{ text: msg.content }],
+          parts: [
+            { text: msg.content },
+            ...(msg.images?.map((img) => ({
+              inlineData: {
+                data: img.data.split(",")[1],
+                mimeType: img.data.match(/data:([^;]+);/)?.[1] || "image/jpeg",
+              },
+            })) || []),
+            ...(msg.files?.map((file) => ({
+              inlineData: {
+                data: file.data.split(",")[1],
+                mimeType: file.type,
+              },
+            })) || []),
+            ...(msg.videos?.map((video) => ({
+              inlineData: {
+                data: video.data.split(",")[1],
+                mimeType: video.data.match(/data:([^;]+);/)?.[1] || "video/mp4",
+              },
+            })) || []),
+            ...(msg.audios?.map((audio) => ({
+              inlineData: {
+                data: audio.data.split(",")[1],
+                mimeType: audio.data.match(/data:([^;]+);/)?.[1] || "audio/mp3",
+              },
+            })) || []),
+          ],
         }));
 
-        const systemPrompt = getEnhancedSystemPrompt("google");
-
-        if (
-          !imageData?.length &&
-          !fileData?.length &&
-          !videoData?.length &&
-          !audioData?.length
-        ) {
-          chatHistory.push({
-            role: "user",
-            parts: [{ text: message }],
-          });
-        }
+        chatHistory.push({
+          role: "user",
+          parts: [
+            { text: message },
+            ...(imageData?.map((img) => ({
+              inlineData: {
+                data: img.data.split(",")[1],
+                mimeType: img.data.match(/data:([^;]+);/)?.[1] || "image/jpeg",
+              },
+            })) || []),
+            ...(fileData?.map((file) => ({
+              inlineData: {
+                data: file.data.split(",")[1],
+                mimeType: file.type,
+              },
+            })) || []),
+            ...(videoData?.map((video) => ({
+              inlineData: {
+                data: video.data.split(",")[1],
+                mimeType: video.data.match(/data:([^;]+);/)?.[1] || "video/mp4",
+              },
+            })) || []),
+            ...(audioData?.map((audio) => ({
+              inlineData: {
+                data: audio.data.split(",")[1],
+                mimeType: audio.data.match(/data:([^;]+);/)?.[1] || "audio/mp3",
+              },
+            })) || []),
+          ],
+        });
 
         let accumulatedMessages = updatedMessages;
 
@@ -197,7 +240,7 @@ export function useGeminiChat(chatId?: string) {
           chatHistory,
           handleChunk,
           controller.signal,
-          systemPrompt,
+          getEnhancedSystemPrompt("google"),
           imageData,
           fileData,
           videoData,

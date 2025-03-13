@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { getLocalStorage } from "../utils/localStorage";
+import { getApiKey } from "../utils/getApiKey";
 
 export const getOpenRouterResponse = async (
   message: string,
@@ -8,7 +9,7 @@ export const getOpenRouterResponse = async (
   signal?: AbortSignal
 ) => {
   try {
-    const apiKey = getLocalStorage("openrouter_api_key");
+    const apiKey = await getApiKey("openrouter", "openrouter_api_key");
     if (!apiKey) {
       return "Vui lòng nhập API key OpenRouter trong cài đặt.";
     }
@@ -63,7 +64,8 @@ export const getOpenRouterResponse = async (
 
     const decoder = new TextDecoder();
     let buffer = "";
-    let isReasoning = false;
+    let isInsideThink = false;
+    let fullResponse = "";
 
     try {
       while (true) {
@@ -89,19 +91,23 @@ export const getOpenRouterResponse = async (
               const reasoning = parsed.choices[0].delta.reasoning;
 
               if (reasoning) {
-                if (!isReasoning) {
-                  isReasoning = true;
+                if (!isInsideThink) {
+                  isInsideThink = true;
                   onChunk("<think>");
                 }
-                onChunk(reasoning);
+                const processedReasoning = reasoning.replace(/\n/g, " ");
+                onChunk(processedReasoning);
+                fullResponse += processedReasoning;
               }
 
               if (content) {
-                if (isReasoning) {
-                  isReasoning = false;
-                  onChunk("</think>\n");
+                if (isInsideThink) {
+                  isInsideThink = false;
+                  onChunk("</think>\n\n");
+                  fullResponse += "</think>\n\n";
                 }
                 onChunk(content);
+                fullResponse += content;
               }
             } catch (e) {
               console.error("Lỗi khi parse JSON chunk:", e);
@@ -109,11 +115,10 @@ export const getOpenRouterResponse = async (
           }
         }
       }
+      return fullResponse;
     } finally {
       reader.cancel();
     }
-
-    return "";
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw error;

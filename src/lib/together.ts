@@ -1,5 +1,6 @@
 import Together from "together-ai";
 import { getLocalStorage } from "../utils/localStorage";
+import { getApiKey } from "../utils/getApiKey";
 
 export function getTogetherConfig() {
   const imageConfig = getLocalStorage("image_config", null);
@@ -21,13 +22,14 @@ export function extractImagePrompt(content: string) {
 
 export async function generateImage(prompt: string) {
   const config = getTogetherConfig();
+  const apiKey = await getApiKey("together", "together_api_key");
 
-  if (!config.togetherApiKey) {
+  if (!apiKey && !config.togetherApiKey) {
     throw new Error("Vui lòng cấu hình Together API Key trong phần cài đặt");
   }
 
   try {
-    const together = new Together({ apiKey: config.togetherApiKey });
+    const together = new Together({ apiKey: apiKey || config.togetherApiKey });
 
     const response = await together.images.create({
       model: "black-forest-labs/FLUX.1-schnell-Free",

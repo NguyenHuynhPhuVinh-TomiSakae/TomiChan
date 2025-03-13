@@ -19,6 +19,7 @@ export interface Message {
     url: string;
     data: string; // Base64 string của audio
   }[];
+  isFollowUpSearch?: boolean;
 }
 
 export interface ChatHistory {

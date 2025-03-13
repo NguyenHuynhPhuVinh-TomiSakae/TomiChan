@@ -4,6 +4,7 @@ import {
   HarmBlockThreshold,
 } from "@google/generative-ai";
 import { getLocalStorage } from "../utils/localStorage";
+import { getApiKey } from "../utils/getApiKey";
 
 export const getGeminiResponse = async (
   message: string,
@@ -17,7 +18,7 @@ export const getGeminiResponse = async (
   audios?: { url: string; data: string }[]
 ) => {
   try {
-    const apiKey = getLocalStorage("api_key");
+    const apiKey = await getApiKey("gemini", "api_key");
 
     if (!apiKey) {
       return "Vui lòng nhập API key trong cài đặt.";

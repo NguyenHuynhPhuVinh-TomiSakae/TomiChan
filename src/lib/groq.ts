@@ -1,5 +1,6 @@
 import { Groq } from "groq-sdk";
 import { getLocalStorage } from "../utils/localStorage";
+import { getApiKey } from "../utils/getApiKey";
 
 type Role = "user" | "assistant" | "system";
 
@@ -10,7 +11,7 @@ export const getGroqResponse = async (
   signal?: AbortSignal
 ) => {
   try {
-    const apiKey = getLocalStorage("groq_api_key");
+    const apiKey = await getApiKey("groq", "groq_api_key");
     if (!apiKey) {
       return "Vui lòng nhập API key Groq trong cài đặt.";
     }
@@ -58,11 +59,37 @@ export const getGroqResponse = async (
     );
 
     let fullResponse = "";
+    let isInsideThink = false;
+
     for await (const chunk of chatCompletion) {
-      const chunkText = chunk.choices[0]?.delta?.content || "";
+      let chunkText = chunk.choices[0]?.delta?.content || "";
+
+      // Kiểm tra xem chunk có mở đầu thẻ think không
+      if (chunkText.includes("<think>")) {
+        isInsideThink = true;
+      }
+
+      // Nếu đang trong think, thay thế xuống dòng bằng khoảng trắng
+      if (isInsideThink) {
+        chunkText = chunkText.replace(/\n/g, " ");
+      }
+
+      // Kiểm tra xem chunk có đóng thẻ think không
+      if (chunkText.includes("</think>")) {
+        isInsideThink = false;
+        // Thêm 2 dòng trống sau </think>
+        chunkText = chunkText.replace("</think>", "</think>\n\n");
+      }
+
       fullResponse += chunkText;
       onChunk(chunkText);
     }
+
+    // Đảm bảo có đủ dòng trống sau </think> trong toàn bộ response
+    fullResponse = fullResponse.replace(
+      /<\/think>(?!\n\s*\n)/g,
+      "</think>\n\n"
+    );
 
     return fullResponse;
   } catch (error) {

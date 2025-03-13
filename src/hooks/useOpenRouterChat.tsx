@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useChat } from "./useChat";
 import { getOpenRouterResponse } from "../lib/openrouter";
 import { Message } from "../types";
 import { useState, useRef, useEffect } from "react";
 import { useSystemPrompt } from "./useSystemPrompt";
-import { generateImage, extractImagePrompt } from "../lib/together";
+import { generateImage } from "../lib/together";
+import { useTagProcessors } from "./useTagProcessors";
 
 export function useOpenRouterChat(chatId?: string) {
   const {
@@ -21,7 +23,8 @@ export function useOpenRouterChat(chatId?: string) {
     useState<AbortController | null>(null);
   const { getEnhancedSystemPrompt } = useSystemPrompt();
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const imagePromptRef = useRef<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const { processMessageTags } = useTagProcessors();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const stopGeneration = () => {
@@ -121,89 +124,6 @@ export function useOpenRouterChat(chatId?: string) {
 
       let accumulatedMessages = [...currentMessages, newMessage];
 
-      const handleBotResponse = async (
-        content: string,
-        botMessageId: string
-      ) => {
-        const imagePrompt = extractImagePrompt(content);
-
-        if (imagePrompt && !isGeneratingImage) {
-          if (imagePrompt !== imagePromptRef.current) {
-            imagePromptRef.current = imagePrompt;
-
-            if (timeoutRef.current) {
-              clearTimeout(timeoutRef.current);
-            }
-
-            timeoutRef.current = setTimeout(async () => {
-              try {
-                setIsGeneratingImage(true);
-                console.log("Đang tạo ảnh với prompt:", imagePrompt);
-                const imageBase64 = await generateImage(imagePrompt);
-
-                setMessages((prev) => {
-                  const newMessages = [...prev];
-                  const botMessageIndex = newMessages.findIndex(
-                    (msg) => msg.id === botMessageId
-                  );
-
-                  if (botMessageIndex !== -1) {
-                    newMessages[botMessageIndex] = {
-                      ...newMessages[botMessageIndex],
-                      content: content,
-                      images: [
-                        {
-                          url: "generated-image.png",
-                          data: `data:image/png;base64,${imageBase64}`,
-                        },
-                      ],
-                    };
-                    saveChat(newMessages, chatId, "openrouter");
-                  }
-                  return newMessages;
-                });
-              } catch (error) {
-                console.error("Lỗi khi tạo ảnh:", error);
-
-                // Bỏ qua nếu là lỗi Too Many Requests
-                if (
-                  error instanceof Error &&
-                  (error.message.includes("429") ||
-                    error.message.includes("Too Many Requests"))
-                ) {
-                  return;
-                }
-
-                setMessages((prev) => {
-                  const newMessages = [...prev];
-                  const botMessageIndex = newMessages.findIndex(
-                    (msg) => msg.id === botMessageId
-                  );
-
-                  if (botMessageIndex !== -1) {
-                    const errorMessage =
-                      error instanceof Error
-                        ? error.message
-                        : "Lỗi không xác định khi tạo ảnh";
-
-                    newMessages[botMessageIndex] = {
-                      ...newMessages[botMessageIndex],
-                      content: content + `\n\n*Lỗi: ${errorMessage}*`,
-                      images: undefined, // Xóa placeholder
-                    };
-                    saveChat(newMessages, chatId, "openrouter");
-                  }
-                  return newMessages;
-                });
-              } finally {
-                setIsGeneratingImage(false);
-                imagePromptRef.current = null;
-              }
-            }, 1000);
-          }
-        }
-      };
-
       const handleChunk = (chunk: string) => {
         setMessages((prev) => {
           const newMessages = [...prev];
@@ -218,12 +138,29 @@ export function useOpenRouterChat(chatId?: string) {
               content: newContent,
             };
 
-            // Kiểm tra xem message đã hoàn thành chưa
+            // Xử lý các tag đặc biệt
             if (
-              newContent.includes("[IMAGE_PROMPT]") &&
-              newContent.includes("[/IMAGE_PROMPT]")
+              (newContent.includes("[IMAGE_PROMPT]") &&
+                newContent.includes("[/IMAGE_PROMPT]")) ||
+              (newContent.includes("[SEARCH_QUERY]") &&
+                newContent.includes("[/SEARCH_QUERY]"))
             ) {
-              setTimeout(() => handleBotResponse(newContent, botMessageId), 0);
+              setTimeout(
+                () =>
+                  processMessageTags(
+                    newContent,
+                    botMessageId,
+                    setMessages,
+                    saveChat,
+                    currentChatId,
+                    "openrouter",
+                    setIsGeneratingImage,
+                    setIsSearching,
+                    undefined,
+                    sendFollowUpMessage
+                  ),
+                0
+              );
             }
 
             accumulatedMessages = newMessages;
@@ -311,73 +248,25 @@ export function useOpenRouterChat(chatId?: string) {
             content: newContent,
           };
 
+          // Xử lý các tag đặc biệt
           if (
-            newContent.includes("[IMAGE_PROMPT]") &&
-            newContent.includes("[/IMAGE_PROMPT]")
+            (newContent.includes("[IMAGE_PROMPT]") &&
+              newContent.includes("[/IMAGE_PROMPT]")) ||
+            (newContent.includes("[SEARCH_QUERY]") &&
+              newContent.includes("[/SEARCH_QUERY]"))
           ) {
-            const imagePrompt = extractImagePrompt(newContent);
-            if (
-              imagePrompt &&
-              !isGeneratingImage &&
-              imagePrompt !== imagePromptRef.current
-            ) {
-              imagePromptRef.current = imagePrompt;
-              setIsGeneratingImage(true);
-
-              // Thêm timeout để tránh gọi API liên tục
-              if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-              }
-
-              timeoutRef.current = setTimeout(() => {
-                generateImage(imagePrompt)
-                  .then((imageBase64) => {
-                    setMessages((prev) => {
-                      const updatedMessages = [...prev];
-                      updatedMessages[messageIndex] = {
-                        ...updatedMessages[messageIndex],
-                        images: [
-                          {
-                            url: "generated-image.png",
-                            data: `data:image/png;base64,${imageBase64}`,
-                          },
-                        ],
-                      };
-                      saveChat(updatedMessages, chatId, "openrouter");
-                      return updatedMessages;
-                    });
-                  })
-                  .catch((error) => {
-                    // Bỏ qua nếu là lỗi Too Many Requests
-                    if (
-                      error instanceof Error &&
-                      (error.message.includes("429") ||
-                        error.message.includes("Too Many Requests"))
-                    ) {
-                      return;
-                    }
-
-                    setMessages((prev) => {
-                      const updatedMessages = [...prev];
-                      const errorMessage =
-                        error instanceof Error
-                          ? error.message
-                          : "Lỗi không xác định khi tạo ảnh";
-                      updatedMessages[messageIndex] = {
-                        ...updatedMessages[messageIndex],
-                        content: newContent + `\n\n*Lỗi: ${errorMessage}*`,
-                        images: undefined,
-                      };
-                      saveChat(updatedMessages, chatId, "openrouter");
-                      return updatedMessages;
-                    });
-                  })
-                  .finally(() => {
-                    setIsGeneratingImage(false);
-                    imagePromptRef.current = null;
-                  });
-              }, 1000);
-            }
+            processMessageTags(
+              newContent,
+              messageId,
+              setMessages,
+              saveChat,
+              chatId,
+              "openrouter",
+              setIsGeneratingImage,
+              setIsSearching,
+              messageIndex,
+              sendFollowUpMessage
+            );
           }
 
           saveChat(newMessages, chatId, "openrouter");
@@ -402,6 +291,123 @@ export function useOpenRouterChat(chatId?: string) {
           ...updatedMessages[messageIndex],
           content: "Đã xảy ra lỗi khi tạo lại phản hồi. Vui lòng thử lại sau.",
         };
+        return updatedMessages;
+      });
+    } finally {
+      setIsLoading(false);
+      setAbortController(null);
+    }
+  };
+
+  // Thêm hàm gửi tin nhắn follow-up với kết quả tìm kiếm
+  const sendFollowUpMessage = async (searchResults: string) => {
+    const apiKey = localStorage.getItem("openrouter_api_key");
+    if (!apiKey) return;
+
+    const botMessageId = Date.now().toString();
+    const newBotMessage: Message = {
+      id: botMessageId,
+      content: "",
+      sender: "bot",
+    };
+
+    setMessages((prev) => [...prev, newBotMessage]);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const chatHistory = messages.map((msg) => ({
+        role: msg.sender === "user" ? "user" : "assistant",
+        content: msg.content,
+      }));
+
+      // Thêm system prompt vào đầu chat history
+      chatHistory.unshift({
+        role: "system",
+        content: getEnhancedSystemPrompt("openrouter"),
+      });
+
+      // Thêm kết quả tìm kiếm như một tin nhắn từ người dùng
+      chatHistory.push({
+        role: "user",
+        content: searchResults,
+      });
+
+      const controller = new AbortController();
+      setAbortController(controller);
+
+      const handleChunk = (chunk: string) => {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const botMessageIndex = newMessages.findIndex(
+            (msg) => msg.id === botMessageId
+          );
+
+          if (botMessageIndex !== -1) {
+            const newContent = newMessages[botMessageIndex].content + chunk;
+            newMessages[botMessageIndex] = {
+              ...newMessages[botMessageIndex],
+              content: newContent,
+            };
+
+            // Xử lý các tag đặc biệt
+            if (
+              (newContent.includes("[IMAGE_PROMPT]") &&
+                newContent.includes("[/IMAGE_PROMPT]")) ||
+              (newContent.includes("[SEARCH_QUERY]") &&
+                newContent.includes("[/SEARCH_QUERY]"))
+            ) {
+              setTimeout(
+                () =>
+                  processMessageTags(
+                    newContent,
+                    botMessageId,
+                    setMessages,
+                    saveChat,
+                    chatId,
+                    "openrouter",
+                    setIsGeneratingImage,
+                    setIsSearching,
+                    undefined,
+                    sendFollowUpMessage
+                  ),
+                0
+              );
+            }
+
+            saveChat(newMessages, chatId, "openrouter");
+          }
+
+          return newMessages;
+        });
+      };
+
+      await getOpenRouterResponse(
+        searchResults,
+        chatHistory.slice(0, -1), // Bỏ tin nhắn cuối cùng vì đã thêm vào phần content
+        handleChunk,
+        controller.signal
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
+
+      const errorMessage = "Đã xảy ra lỗi khi xử lý kết quả tìm kiếm";
+      setError(errorMessage);
+      setMessages((prev) => {
+        const updatedMessages = [...prev];
+        const botMessageIndex = updatedMessages.findIndex(
+          (msg) => msg.id === botMessageId
+        );
+
+        if (botMessageIndex !== -1) {
+          updatedMessages[botMessageIndex] = {
+            ...updatedMessages[botMessageIndex],
+            content: errorMessage,
+          };
+        }
+
         return updatedMessages;
       });
     } finally {

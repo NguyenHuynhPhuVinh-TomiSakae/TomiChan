@@ -17,7 +17,7 @@ import {
 } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { useThemeContext } from "../providers/ThemeProvider";
 import { ThinkBlock } from "./ThinkBlock";
-import { IconCopy, IconCheck } from "@tabler/icons-react";
+import { IconCopy, IconCheck, IconPlayerPlay } from "@tabler/icons-react";
 
 interface MarkdownProps {
   content: string;
@@ -100,6 +100,14 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
         setTimeout(() => setCopied(false), 2000);
       };
 
+      const handleRunCode = () => {
+        const newWindow = window.open("", "_blank");
+        if (newWindow) {
+          newWindow.document.write(codeContent);
+          newWindow.document.close();
+        }
+      };
+
       if (!inline && match) {
         const language = match[1];
 
@@ -133,11 +141,30 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
                 {codeContent.replace(/\n$/, "")}
               </SyntaxHighlighter>
             </div>
-            {/* Footer: Nút sao chép */}
+            {/* Footer: Nút sao chép và chạy code */}
             <div
-              className="flex justify-end items-center px-4 py-2 border-t"
+              className="flex justify-end items-center gap-2 px-4 py-2 border-t"
               style={{ background: isDarkMode ? "#282c34" : "#f8f9fa" }}
             >
+              {language.toLowerCase() === "html" && (
+                <button
+                  onClick={handleRunCode}
+                  className={`p-2 rounded-md transition-colors cursor-pointer ${
+                    isDarkMode
+                      ? "bg-gray-700 hover:bg-gray-600"
+                      : "bg-gray-200 hover:bg-gray-300"
+                  }`}
+                  aria-label="Run code"
+                >
+                  <div className="flex items-center">
+                    <IconPlayerPlay
+                      size={18}
+                      className={isDarkMode ? "text-gray-300" : "text-gray-700"}
+                    />
+                    <span className="ml-1 text-sm">Chạy</span>
+                  </div>
+                </button>
+              )}
               <button
                 onClick={handleCopy}
                 className={`p-2 rounded-md transition-colors cursor-pointer ${

@@ -329,15 +329,10 @@ export function useGroqChat(chatId?: string) {
         content: getEnhancedSystemPrompt("groq"),
       });
 
-      // Thêm kết quả tìm kiếm như một tin nhắn từ người dùng
-      chatHistory.push({
-        role: "user",
-        content: searchResults,
-      });
-
       const controller = new AbortController();
       setAbortController(controller);
 
+      let isFirstChunk = true;
       const handleChunk = (chunk: string) => {
         setMessages((prev) => {
           const newMessages = [...prev];
@@ -346,7 +341,10 @@ export function useGroqChat(chatId?: string) {
           );
 
           if (botMessageIndex !== -1) {
-            const newContent = newMessages[botMessageIndex].content + chunk;
+            const newContent = isFirstChunk
+              ? searchResults + "\n\nPhân tích:\n\n" + chunk
+              : newMessages[botMessageIndex].content + chunk;
+
             newMessages[botMessageIndex] = {
               ...newMessages[botMessageIndex],
               content: newContent,
@@ -377,16 +375,19 @@ export function useGroqChat(chatId?: string) {
               );
             }
 
+            if (isFirstChunk) {
+              isFirstChunk = false;
+            }
+
             saveChat(newMessages, chatId, "groq");
           }
-
           return newMessages;
         });
       };
 
       await getGroqResponse(
         searchResults,
-        chatHistory.slice(0, -1), // Bỏ tin nhắn cuối cùng vì đã thêm vào phần content
+        chatHistory,
         handleChunk,
         controller.signal
       );

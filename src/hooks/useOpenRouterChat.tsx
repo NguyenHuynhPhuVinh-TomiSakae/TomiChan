@@ -327,15 +327,10 @@ export function useOpenRouterChat(chatId?: string) {
         content: getEnhancedSystemPrompt("openrouter"),
       });
 
-      // Thêm kết quả tìm kiếm như một tin nhắn từ người dùng
-      chatHistory.push({
-        role: "user",
-        content: searchResults,
-      });
-
       const controller = new AbortController();
       setAbortController(controller);
 
+      let isFirstChunk = true;
       const handleChunk = (chunk: string) => {
         setMessages((prev) => {
           const newMessages = [...prev];
@@ -344,7 +339,10 @@ export function useOpenRouterChat(chatId?: string) {
           );
 
           if (botMessageIndex !== -1) {
-            const newContent = newMessages[botMessageIndex].content + chunk;
+            const newContent = isFirstChunk
+              ? searchResults + "\n\nPhân tích:\n\n" + chunk
+              : newMessages[botMessageIndex].content + chunk;
+
             newMessages[botMessageIndex] = {
               ...newMessages[botMessageIndex],
               content: newContent,
@@ -375,16 +373,19 @@ export function useOpenRouterChat(chatId?: string) {
               );
             }
 
+            if (isFirstChunk) {
+              isFirstChunk = false;
+            }
+
             saveChat(newMessages, chatId, "openrouter");
           }
-
           return newMessages;
         });
       };
 
       await getOpenRouterResponse(
         searchResults,
-        chatHistory.slice(0, -1), // Bỏ tin nhắn cuối cùng vì đã thêm vào phần content
+        chatHistory,
         handleChunk,
         controller.signal
       );

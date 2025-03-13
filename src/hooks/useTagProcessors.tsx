@@ -130,7 +130,7 @@ export function useTagProcessors() {
           clearTimeout(searchTimeoutRef.current);
         }
 
-        // Hiển thị trạng thái "đang tìm kiếm" trên UI và ẩn thẻ SEARCH_QUERY
+        // Hiển thị trạng thái "đang tìm kiếm" trên UI
         setMessages((prev) => {
           const newMessages = [...prev];
           const targetIndex =
@@ -139,14 +139,9 @@ export function useTagProcessors() {
               : newMessages.findIndex((msg) => msg.id === messageId);
 
           if (targetIndex !== -1) {
-            const updatedContent = content.replace(
-              /\[SEARCH_QUERY\].*?\[\/SEARCH_QUERY\]/,
-              `*Đang tìm kiếm...*`
-            );
-
             newMessages[targetIndex] = {
               ...newMessages[targetIndex],
-              content: updatedContent,
+              content: "*Đang tìm kiếm...*",
             };
             saveChat(newMessages, chatId, model);
           }
@@ -157,59 +152,30 @@ export function useTagProcessors() {
           searchGoogle(searchQuery)
             .then((searchResults) => {
               // Định dạng kết quả tìm kiếm
-              let searchResultsText = "";
-              let searchResultsForAI = "";
+              let searchResultsForAI = `Kết quả tìm kiếm cho "${searchQuery}":\n\n`;
 
               if (searchResults.length > 0) {
-                searchResultsText = "**Kết quả tìm kiếm:**\n\n";
-                searchResultsForAI = `Dựa trên kết quả tìm kiếm cho "${searchQuery}":\n\n`;
-
                 searchResults.forEach((result, index) => {
-                  searchResultsText += `${index + 1}. **${result.title}**\n${
-                    result.snippet
-                  }\nNguồn: ${result.displayLink}\n\n`;
-
                   searchResultsForAI += `${index + 1}. Tiêu đề: ${
                     result.title
                   }\nTrích đoạn: ${result.snippet}\nNguồn: ${
                     result.displayLink
                   }\n\n`;
                 });
-
-                searchResultsForAI +=
-                  "Vui lòng phân tích thông tin trên và trả lời câu hỏi của tôi một cách đầy đủ.";
               } else {
-                searchResultsText = "*Không tìm thấy kết quả phù hợp.*\n\n";
-                searchResultsForAI =
-                  "Không tìm thấy kết quả tìm kiếm phù hợp cho truy vấn này.";
+                searchResultsForAI = "Không tìm thấy kết quả tìm kiếm phù hợp.";
               }
 
+              // Xóa tin nhắn tìm kiếm và gửi kết quả cho AI
               setMessages((prev) => {
-                const newMessages = [...prev];
-                const targetIndex =
-                  messageIndex !== undefined
-                    ? messageIndex
-                    : newMessages.findIndex((msg) => msg.id === messageId);
-
-                if (targetIndex !== -1) {
-                  const updatedContent = content.replace(
-                    /\[SEARCH_QUERY\].*?\[\/SEARCH_QUERY\](\n\n\*Đang tìm kiếm\.\.\.\*\n\n)?/,
-                    searchResultsText
-                  );
-
-                  newMessages[targetIndex] = {
-                    ...newMessages[targetIndex],
-                    content: updatedContent,
-                  };
-                  saveChat(newMessages, chatId, model);
-
-                  // Gửi kết quả tìm kiếm cho AI để phản hồi
-                  if (sendFollowUpMessage) {
-                    sendFollowUpMessage(searchResultsForAI, messageId);
-                  }
-                }
+                const newMessages = prev.filter((msg) => msg.id !== messageId);
                 return newMessages;
               });
+
+              // Gửi kết quả tìm kiếm cho AI để phân tích
+              if (sendFollowUpMessage) {
+                sendFollowUpMessage(searchResultsForAI, messageId);
+              }
             })
             .catch((error) => {
               setMessages((prev) => {
@@ -225,14 +191,9 @@ export function useTagProcessors() {
                       ? error.message
                       : "Lỗi không xác định khi tìm kiếm";
 
-                  const updatedContent = content.replace(
-                    /\[SEARCH_QUERY\].*?\[\/SEARCH_QUERY\](\n\n\*Đang tìm kiếm\.\.\.\*\n\n)?/,
-                    `*Lỗi tìm kiếm: ${errorMessage}*\n\n`
-                  );
-
                   newMessages[targetIndex] = {
                     ...newMessages[targetIndex],
-                    content: updatedContent,
+                    content: `*Lỗi tìm kiếm: ${errorMessage}*`,
                   };
                   saveChat(newMessages, chatId, model);
                 }

@@ -27,11 +27,13 @@ interface SettingsModalProps {
     googleApiKey?: string;
     googleCseId?: string;
     numResults?: number;
+    deepSearch?: boolean;
   };
   onSearchConfigChange: (config: {
     googleApiKey?: string;
     googleCseId?: string;
     numResults?: number;
+    deepSearch?: boolean;
   }) => void;
 }
 
@@ -350,19 +352,56 @@ export default function SettingsModal({
                       type="range"
                       min="1"
                       max="10"
-                      value={searchConfig.numResults || 5}
+                      value={searchConfig.numResults || 3}
                       onChange={(e) =>
                         onSearchConfigChange({
                           ...searchConfig,
                           numResults: parseInt(e.target.value),
                         })
                       }
-                      className="w-full cursor-pointer"
+                      className={`w-full cursor-pointer ${
+                        searchConfig.deepSearch
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+                      disabled={searchConfig.deepSearch}
                     />
                     <p className="mt-1 text-xs text-gray-500">
                       Số lượng kết quả tìm kiếm nhiều hơn sẽ cung cấp thông tin
-                      chi tiết hơn nhưng có thể tốn nhiều token hơn.
+                      chi tiết hơn.
                     </p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm">Tìm kiếm sâu</span>
+                      <p className="text-xs text-gray-500">
+                        Phân tích sâu với nhiều kết quả tìm kiếm.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newDeepSearch = !searchConfig.deepSearch;
+                        onSearchConfigChange({
+                          ...searchConfig,
+                          deepSearch: newDeepSearch,
+                          numResults: newDeepSearch ? 10 : 3,
+                        });
+                      }}
+                      className={`w-12 h-6 rounded-full transition-colors cursor-pointer ${
+                        searchConfig.deepSearch
+                          ? "bg-black dark:bg-white"
+                          : "bg-gray-200 dark:bg-gray-700"
+                      } relative`}
+                    >
+                      <span
+                        className={`block w-4 h-4 rounded-full bg-white dark:bg-black transition-transform transform ${
+                          searchConfig.deepSearch
+                            ? "translate-x-7"
+                            : "translate-x-1"
+                        }`}
+                      />
+                    </button>
                   </div>
 
                   <div className="flex justify-end">

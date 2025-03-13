@@ -68,6 +68,7 @@ export default function Sidebar({
           googleApiKey: "",
           googleCseId: "",
           numResults: 3,
+          deepSearch: false,
         };
   });
 

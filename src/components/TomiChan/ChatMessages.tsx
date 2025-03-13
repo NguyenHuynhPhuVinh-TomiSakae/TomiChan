@@ -407,7 +407,9 @@ export default function ChatMessages({
                   <textarea
                     value={editContent}
                     onChange={handleTextareaChange}
-                    className="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white resize-none overflow-hidden shadow-lg"
+                    className={`w-full p-4 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white resize-none overflow-hidden shadow-lg ${
+                      message.sender === "user" ? "mx-4 sm:mx-0" : ""
+                    }`}
                     autoFocus
                     style={{ height: "auto" }}
                   />

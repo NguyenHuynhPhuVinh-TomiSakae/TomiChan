@@ -184,8 +184,8 @@ export default function Sidebar({
                   <Image
                     src="/tomichan-icon.png"
                     alt="TomiChan"
-                    width={32}
-                    height={32}
+                    width={36}
+                    height={36}
                     priority
                     className="hover:rotate-[20deg] transition-transform duration-300 cursor-pointer"
                   />

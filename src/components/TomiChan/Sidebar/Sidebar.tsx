@@ -56,6 +56,20 @@ export default function Sidebar({
         };
   });
 
+  // Thêm state cho tìm kiếm web
+  const [searchEnabled, setSearchEnabled] = React.useState(() => {
+    return getLocalStorage("search_enabled", false) === "true";
+  });
+  const [searchConfig, setSearchConfig] = React.useState(() => {
+    const savedConfig = getLocalStorage("search_config", null);
+    return savedConfig
+      ? JSON.parse(savedConfig)
+      : {
+          googleApiKey: "",
+          googleCseId: "",
+        };
+  });
+
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
   React.useEffect(() => {
@@ -116,6 +130,20 @@ export default function Sidebar({
   }) => {
     setImageConfig(config);
     setLocalStorage("image_config", JSON.stringify(config));
+  };
+
+  // Thêm handlers để cập nhật localStorage khi thay đổi cài đặt tìm kiếm
+  const handleSearchEnabledChange = (enabled: boolean) => {
+    setSearchEnabled(enabled);
+    setLocalStorage("search_enabled", enabled.toString());
+  };
+
+  const handleSearchConfigChange = (config: {
+    googleApiKey?: string;
+    googleCseId?: string;
+  }) => {
+    setSearchConfig(config);
+    setLocalStorage("search_config", JSON.stringify(config));
   };
 
   return (
@@ -247,6 +275,10 @@ export default function Sidebar({
           onImageGenerationChange={handleImageGenerationChange}
           imageConfig={imageConfig}
           onImageConfigChange={handleImageConfigChange}
+          searchEnabled={searchEnabled}
+          onSearchEnabledChange={handleSearchEnabledChange}
+          searchConfig={searchConfig}
+          onSearchConfigChange={handleSearchConfigChange}
         />
       </div>
     </>

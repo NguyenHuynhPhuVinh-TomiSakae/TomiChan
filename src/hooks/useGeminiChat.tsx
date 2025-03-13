@@ -5,6 +5,8 @@ import { Message } from "../types";
 import { useState, useRef, useEffect } from "react";
 import { useSystemPrompt } from "./useSystemPrompt";
 import { generateImage, extractImagePrompt } from "../lib/together";
+import { searchGoogle, extractSearchQuery } from "../lib/googleSearch";
+import { useTagProcessors } from "./useTagProcessors";
 
 export function useGeminiChat(chatId?: string) {
   const {
@@ -19,12 +21,16 @@ export function useGeminiChat(chatId?: string) {
   } = useChat(chatId);
 
   const { getEnhancedSystemPrompt } = useSystemPrompt();
+  const { processMessageTags } = useTagProcessors();
 
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const imagePromptRef = useRef<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchQueryRef = useRef<string | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const sendMessage = async (
     message: string,
@@ -137,89 +143,6 @@ export function useGeminiChat(chatId?: string) {
 
       let accumulatedMessages = [...currentMessages, newMessage];
 
-      const handleBotResponse = async (
-        content: string,
-        botMessageId: string
-      ) => {
-        const imagePrompt = extractImagePrompt(content);
-
-        if (imagePrompt && !isGeneratingImage) {
-          if (imagePrompt !== imagePromptRef.current) {
-            imagePromptRef.current = imagePrompt;
-
-            if (timeoutRef.current) {
-              clearTimeout(timeoutRef.current);
-            }
-
-            timeoutRef.current = setTimeout(async () => {
-              try {
-                setIsGeneratingImage(true);
-                console.log("Đang tạo ảnh với prompt:", imagePrompt);
-                const imageBase64 = await generateImage(imagePrompt);
-
-                setMessages((prev) => {
-                  const newMessages = [...prev];
-                  const botMessageIndex = newMessages.findIndex(
-                    (msg) => msg.id === botMessageId
-                  );
-
-                  if (botMessageIndex !== -1) {
-                    newMessages[botMessageIndex] = {
-                      ...newMessages[botMessageIndex],
-                      content: content,
-                      images: [
-                        {
-                          url: "generated-image.png",
-                          data: `data:image/png;base64,${imageBase64}`,
-                        },
-                      ],
-                    };
-                    saveChat(newMessages, chatId, "google");
-                  }
-                  return newMessages;
-                });
-              } catch (error) {
-                console.error("Lỗi khi tạo ảnh:", error);
-
-                // Bỏ qua nếu là lỗi Too Many Requests
-                if (
-                  error instanceof Error &&
-                  (error.message.includes("429") ||
-                    error.message.includes("Too Many Requests"))
-                ) {
-                  return;
-                }
-
-                setMessages((prev) => {
-                  const newMessages = [...prev];
-                  const botMessageIndex = newMessages.findIndex(
-                    (msg) => msg.id === botMessageId
-                  );
-
-                  if (botMessageIndex !== -1) {
-                    const errorMessage =
-                      error instanceof Error
-                        ? error.message
-                        : "Lỗi không xác định khi tạo ảnh";
-
-                    newMessages[botMessageIndex] = {
-                      ...newMessages[botMessageIndex],
-                      content: content + `\n\n*Lỗi: ${errorMessage}*`,
-                      images: undefined, // Xóa placeholder
-                    };
-                    saveChat(newMessages, chatId, "google");
-                  }
-                  return newMessages;
-                });
-              } finally {
-                setIsGeneratingImage(false);
-                imagePromptRef.current = null;
-              }
-            }, 1000);
-          }
-        }
-      };
-
       const handleChunk = (chunk: string) => {
         setMessages((prev) => {
           const newMessages = [...prev];
@@ -234,13 +157,28 @@ export function useGeminiChat(chatId?: string) {
               content: newContent,
             };
 
-            // Đợi cho đến khi có cả tag đóng mới xử lý
+            // Xử lý các tag đặc biệt
             if (
-              newContent.includes("[IMAGE_PROMPT]") &&
-              newContent.includes("[/IMAGE_PROMPT]")
+              (newContent.includes("[IMAGE_PROMPT]") &&
+                newContent.includes("[/IMAGE_PROMPT]")) ||
+              (newContent.includes("[SEARCH_QUERY]") &&
+                newContent.includes("[/SEARCH_QUERY]"))
             ) {
-              // Đảm bảo gọi handleBotResponse bên ngoài setState
-              setTimeout(() => handleBotResponse(newContent, botMessageId), 0);
+              // Sử dụng hook mới để xử lý các tag
+              setTimeout(
+                () =>
+                  processMessageTags(
+                    newContent,
+                    botMessageId,
+                    setMessages,
+                    saveChat,
+                    currentChatId,
+                    "google",
+                    setIsGeneratingImage,
+                    setIsSearching
+                  ),
+                0
+              );
             }
 
             accumulatedMessages = newMessages;
@@ -368,73 +306,25 @@ export function useGeminiChat(chatId?: string) {
             content: newContent,
           };
 
+          // Xử lý các tag đặc biệt
           if (
-            newContent.includes("[IMAGE_PROMPT]") &&
-            newContent.includes("[/IMAGE_PROMPT]")
+            (newContent.includes("[IMAGE_PROMPT]") &&
+              newContent.includes("[/IMAGE_PROMPT]")) ||
+            (newContent.includes("[SEARCH_QUERY]") &&
+              newContent.includes("[/SEARCH_QUERY]"))
           ) {
-            const imagePrompt = extractImagePrompt(newContent);
-            if (
-              imagePrompt &&
-              !isGeneratingImage &&
-              imagePrompt !== imagePromptRef.current
-            ) {
-              imagePromptRef.current = imagePrompt;
-              setIsGeneratingImage(true);
-
-              // Thêm timeout để tránh gọi API liên tục
-              if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-              }
-
-              timeoutRef.current = setTimeout(() => {
-                generateImage(imagePrompt)
-                  .then((imageBase64) => {
-                    setMessages((prev) => {
-                      const updatedMessages = [...prev];
-                      updatedMessages[messageIndex] = {
-                        ...updatedMessages[messageIndex],
-                        images: [
-                          {
-                            url: "generated-image.png",
-                            data: `data:image/png;base64,${imageBase64}`,
-                          },
-                        ],
-                      };
-                      saveChat(updatedMessages, chatId, "google");
-                      return updatedMessages;
-                    });
-                  })
-                  .catch((error) => {
-                    // Bỏ qua nếu là lỗi Too Many Requests
-                    if (
-                      error instanceof Error &&
-                      (error.message.includes("429") ||
-                        error.message.includes("Too Many Requests"))
-                    ) {
-                      return;
-                    }
-
-                    setMessages((prev) => {
-                      const updatedMessages = [...prev];
-                      const errorMessage =
-                        error instanceof Error
-                          ? error.message
-                          : "Lỗi không xác định khi tạo ảnh";
-                      updatedMessages[messageIndex] = {
-                        ...updatedMessages[messageIndex],
-                        content: newContent + `\n\n*Lỗi: ${errorMessage}*`,
-                        images: undefined,
-                      };
-                      saveChat(updatedMessages, chatId, "google");
-                      return updatedMessages;
-                    });
-                  })
-                  .finally(() => {
-                    setIsGeneratingImage(false);
-                    imagePromptRef.current = null;
-                  });
-              }, 1000);
-            }
+            // Sử dụng hook mới để xử lý các tag
+            processMessageTags(
+              newContent,
+              messageId,
+              setMessages,
+              saveChat,
+              chatId,
+              "google",
+              setIsGeneratingImage,
+              setIsSearching,
+              messageIndex
+            );
           }
 
           saveChat(newMessages, chatId, "google");
@@ -477,6 +367,9 @@ export function useGeminiChat(chatId?: string) {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+      }
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
     };
   }, []);

@@ -26,10 +26,12 @@ interface SettingsModalProps {
   searchConfig: {
     googleApiKey?: string;
     googleCseId?: string;
+    numResults?: number;
   };
   onSearchConfigChange: (config: {
     googleApiKey?: string;
     googleCseId?: string;
+    numResults?: number;
   }) => void;
 }
 
@@ -71,6 +73,7 @@ export default function SettingsModal({
     onSearchConfigChange({
       googleApiKey: currentApiKey,
       googleCseId: currentCseId,
+      numResults: 3, // Giá trị mặc định
     });
   };
 
@@ -336,6 +339,29 @@ export default function SettingsModal({
                       >
                         Programmable Search Engine
                       </a>
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm mb-1 block">
+                      Số lượng kết quả tìm kiếm ({searchConfig.numResults || 3})
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={searchConfig.numResults || 5}
+                      onChange={(e) =>
+                        onSearchConfigChange({
+                          ...searchConfig,
+                          numResults: parseInt(e.target.value),
+                        })
+                      }
+                      className="w-full cursor-pointer"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Số lượng kết quả tìm kiếm nhiều hơn sẽ cung cấp thông tin
+                      chi tiết hơn nhưng có thể tốn nhiều token hơn.
                     </p>
                   </div>
 

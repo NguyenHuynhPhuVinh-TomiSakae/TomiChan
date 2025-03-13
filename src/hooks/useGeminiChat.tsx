@@ -175,7 +175,9 @@ export function useGeminiChat(chatId?: string) {
                     currentChatId,
                     "google",
                     setIsGeneratingImage,
-                    setIsSearching
+                    setIsSearching,
+                    undefined,
+                    sendFollowUpMessage
                   ),
                 0
               );
@@ -323,7 +325,8 @@ export function useGeminiChat(chatId?: string) {
               "google",
               setIsGeneratingImage,
               setIsSearching,
-              messageIndex
+              messageIndex,
+              sendFollowUpMessage
             );
           }
 
@@ -354,6 +357,129 @@ export function useGeminiChat(chatId?: string) {
           ...updatedMessages[messageIndex],
           content: "Đã xảy ra lỗi khi tạo lại phản hồi. Vui lòng thử lại sau.",
         };
+        return updatedMessages;
+      });
+    } finally {
+      setIsLoading(false);
+      setAbortController(null);
+    }
+  };
+
+  // Thêm hàm gửi tin nhắn follow-up với kết quả tìm kiếm
+  const sendFollowUpMessage = async (searchResults: string) => {
+    const apiKey = localStorage.getItem("api_key");
+    if (!apiKey) return;
+
+    const botMessageId = Date.now().toString();
+    const newBotMessage: Message = {
+      id: botMessageId,
+      content: "",
+      sender: "bot",
+    };
+
+    setMessages((prev) => [...prev, newBotMessage]);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const chatHistory = messages.map((msg) => ({
+        role: msg.sender === "user" ? "user" : "model",
+        parts: [{ text: msg.content }],
+      }));
+
+      // Thêm kết quả tìm kiếm như một tin nhắn từ người dùng
+      chatHistory.push({
+        role: "user",
+        parts: [{ text: searchResults }],
+      });
+
+      const systemPrompt = getEnhancedSystemPrompt("google");
+      const controller = new AbortController();
+      setAbortController(controller);
+
+      const handleChunk = (chunk: string) => {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const botMessageIndex = newMessages.findIndex(
+            (msg) => msg.id === botMessageId
+          );
+
+          if (botMessageIndex !== -1) {
+            const newContent = newMessages[botMessageIndex].content + chunk;
+            newMessages[botMessageIndex] = {
+              ...newMessages[botMessageIndex],
+              content: newContent,
+            };
+
+            // Xử lý các tag đặc biệt
+            if (
+              (newContent.includes("[IMAGE_PROMPT]") &&
+                newContent.includes("[/IMAGE_PROMPT]")) ||
+              (newContent.includes("[SEARCH_QUERY]") &&
+                newContent.includes("[/SEARCH_QUERY]"))
+            ) {
+              setTimeout(
+                () =>
+                  processMessageTags(
+                    newContent,
+                    botMessageId,
+                    setMessages,
+                    saveChat,
+                    chatId,
+                    "google",
+                    setIsGeneratingImage,
+                    setIsSearching,
+                    undefined,
+                    sendFollowUpMessage
+                  ),
+                0
+              );
+            }
+
+            saveChat(newMessages, chatId, "google");
+          }
+
+          return newMessages;
+        });
+      };
+
+      await getGeminiResponse(
+        searchResults,
+        chatHistory.slice(0, -1), // Bỏ tin nhắn cuối cùng vì đã thêm vào phần parts
+        handleChunk,
+        controller.signal,
+        systemPrompt
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
+
+      let errorMessage = "Đã xảy ra lỗi khi xử lý kết quả tìm kiếm";
+      if (error instanceof Error) {
+        console.error("Gemini API error:", error.message);
+        if (
+          error.message.includes("400") ||
+          error.message.includes("Bad Request")
+        ) {
+          errorMessage = "Lỗi xử lý kết quả tìm kiếm. Vui lòng thử lại sau.";
+        }
+      }
+
+      setError(errorMessage);
+      setMessages((prev) => {
+        const updatedMessages = [...prev];
+        const botMessageIndex = updatedMessages.findIndex(
+          (msg) => msg.id === botMessageId
+        );
+
+        if (botMessageIndex !== -1) {
+          updatedMessages[botMessageIndex] = {
+            ...updatedMessages[botMessageIndex],
+            content: errorMessage,
+          };
+        }
+
         return updatedMessages;
       });
     } finally {

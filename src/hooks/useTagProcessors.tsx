@@ -30,7 +30,11 @@ export function useTagProcessors() {
     model?: string,
     setIsGeneratingImage?: React.Dispatch<React.SetStateAction<boolean>>,
     setIsSearching?: React.Dispatch<React.SetStateAction<boolean>>,
-    messageIndex?: number
+    messageIndex?: number,
+    sendFollowUpMessage?: (
+      searchResults: string,
+      messageId: string
+    ) => Promise<void>
   ) => {
     // Xử lý IMAGE_PROMPT
     if (
@@ -126,21 +130,58 @@ export function useTagProcessors() {
           clearTimeout(searchTimeoutRef.current);
         }
 
+        // Hiển thị trạng thái "đang tìm kiếm" trên UI và ẩn thẻ SEARCH_QUERY
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const targetIndex =
+            messageIndex !== undefined
+              ? messageIndex
+              : newMessages.findIndex((msg) => msg.id === messageId);
+
+          if (targetIndex !== -1) {
+            const updatedContent = content.replace(
+              /\[SEARCH_QUERY\].*?\[\/SEARCH_QUERY\]/,
+              `*Đang tìm kiếm...*`
+            );
+
+            newMessages[targetIndex] = {
+              ...newMessages[targetIndex],
+              content: updatedContent,
+            };
+            saveChat(newMessages, chatId, model);
+          }
+          return newMessages;
+        });
+
         searchTimeoutRef.current = setTimeout(() => {
           searchGoogle(searchQuery)
             .then((searchResults) => {
               // Định dạng kết quả tìm kiếm
               let searchResultsText = "";
+              let searchResultsForAI = "";
 
               if (searchResults.length > 0) {
-                searchResultsText = "\n\n**Kết quả tìm kiếm:**\n\n";
-                searchResults.slice(0, 3).forEach((result, index) => {
+                searchResultsText = "**Kết quả tìm kiếm:**\n\n";
+                searchResultsForAI = `Dựa trên kết quả tìm kiếm cho "${searchQuery}":\n\n`;
+
+                searchResults.forEach((result, index) => {
                   searchResultsText += `${index + 1}. **${result.title}**\n${
                     result.snippet
                   }\nNguồn: ${result.displayLink}\n\n`;
+
+                  searchResultsForAI += `${index + 1}. Tiêu đề: ${
+                    result.title
+                  }\nTrích đoạn: ${result.snippet}\nNguồn: ${
+                    result.displayLink
+                  }\n\n`;
                 });
+
+                searchResultsForAI +=
+                  "Vui lòng phân tích thông tin trên và trả lời câu hỏi của tôi một cách đầy đủ.";
               } else {
-                searchResultsText = "\n\n*Không tìm thấy kết quả phù hợp.*\n\n";
+                searchResultsText = "*Không tìm thấy kết quả phù hợp.*\n\n";
+                searchResultsForAI =
+                  "Không tìm thấy kết quả tìm kiếm phù hợp cho truy vấn này.";
               }
 
               setMessages((prev) => {
@@ -152,8 +193,8 @@ export function useTagProcessors() {
 
                 if (targetIndex !== -1) {
                   const updatedContent = content.replace(
-                    /\[SEARCH_QUERY\].*?\[\/SEARCH_QUERY\]/,
-                    `[SEARCH_QUERY]${searchQuery}[/SEARCH_QUERY]${searchResultsText}`
+                    /\[SEARCH_QUERY\].*?\[\/SEARCH_QUERY\](\n\n\*Đang tìm kiếm\.\.\.\*\n\n)?/,
+                    searchResultsText
                   );
 
                   newMessages[targetIndex] = {
@@ -161,6 +202,11 @@ export function useTagProcessors() {
                     content: updatedContent,
                   };
                   saveChat(newMessages, chatId, model);
+
+                  // Gửi kết quả tìm kiếm cho AI để phản hồi
+                  if (sendFollowUpMessage) {
+                    sendFollowUpMessage(searchResultsForAI, messageId);
+                  }
                 }
                 return newMessages;
               });
@@ -180,8 +226,8 @@ export function useTagProcessors() {
                       : "Lỗi không xác định khi tìm kiếm";
 
                   const updatedContent = content.replace(
-                    /\[SEARCH_QUERY\].*?\[\/SEARCH_QUERY\]/,
-                    `[SEARCH_QUERY]${searchQuery}[/SEARCH_QUERY]\n\n*Lỗi tìm kiếm: ${errorMessage}*\n\n`
+                    /\[SEARCH_QUERY\].*?\[\/SEARCH_QUERY\](\n\n\*Đang tìm kiếm\.\.\.\*\n\n)?/,
+                    `*Lỗi tìm kiếm: ${errorMessage}*\n\n`
                   );
 
                   newMessages[targetIndex] = {

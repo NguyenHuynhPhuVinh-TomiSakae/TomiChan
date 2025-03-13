@@ -11,10 +11,11 @@ export async function searchGoogle(query: string): Promise<any[]> {
 
     const apiKey = searchConfig.googleApiKey;
     const cseId = searchConfig.googleCseId;
+    const numResults = searchConfig.numResults || 3; // Sử dụng giá trị từ cấu hình, mặc định là 5
 
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cseId}&q=${encodeURIComponent(
       query
-    )}`;
+    )}&num=${numResults}`;
 
     const response = await fetch(url);
 

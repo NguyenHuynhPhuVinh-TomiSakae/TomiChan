@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useGeminiChat } from "./useGeminiChat";
 import { useGroqChat } from "./useGroqChat";
-import { getLocalStorage } from "../utils/localStorage";
-import { Message } from "../types";
+import { getLocalStorage } from "../../utils/localStorage";
+import { Message } from "../../types";
 import { useOpenRouterChat } from "./useOpenRouterChat";
 
 interface ChatProviderReturn {

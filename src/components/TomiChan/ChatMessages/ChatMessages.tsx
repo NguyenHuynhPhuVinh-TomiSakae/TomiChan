@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Message } from "../../types";
+import { Message } from "../../../types";
 import {
   IconArrowDown,
   IconFile,
@@ -17,12 +17,12 @@ import {
   IconDownload,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
-import Markdown from "../Markdown";
+import Markdown from "../../Markdown";
 import { useMediaQuery } from "react-responsive";
 import Image from "next/image";
-import { useMessageActions } from "../../hooks/useMessageActions";
+import { useMessageActions } from "../../../hooks/useMessageActions";
 import DeleteConfirmModal from "./DeleteConfirmModal";
-import { extractImagePrompt } from "../../lib/together";
+import { extractImagePrompt } from "../../../lib/together";
 
 interface ChatMessagesProps {
   messages: Message[];

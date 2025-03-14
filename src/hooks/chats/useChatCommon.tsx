@@ -1,15 +1,39 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useChat } from "./useChat";
-import { getGeminiResponse } from "../lib/gemini";
-import { Message } from "../types";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Message } from "../../types";
 import { useState, useRef, useEffect } from "react";
-import { useSystemPrompt } from "./useSystemPrompt";
-import { generateImage } from "../lib/together";
-import { useTagProcessors } from "./tags/useTagProcessors";
-import { getApiKey } from "../utils/getApiKey";
-import { useSearchProcessor } from "./tags/useSearchProcessor";
+import { generateImage } from "../../lib/together";
+import { useTagProcessors } from "../tags/useTagProcessors";
+import { useSearchProcessor } from "../tags/useSearchProcessor";
+import { useSystemPrompt } from "../useSystemPrompt";
+import { useChat } from "./useChat";
+import { getApiKey } from "../../utils/getApiKey";
 
-export function useGeminiChat(chatId?: string) {
+export interface ChatCommonProps<T = any> {
+  chatId?: string;
+  provider: "gemini" | "openrouter" | "groq";
+  getResponse: (
+    message: string,
+    history: T,
+    onChunk: (chunk: string) => void,
+    signal?: AbortSignal,
+    systemPrompt?: string,
+    images?: { url: string; data: string }[],
+    files?: { name: string; type: string; data: string }[],
+    videos?: { url: string; data: string }[],
+    audios?: { url: string; data: string }[]
+  ) => Promise<string>;
+}
+
+type Part =
+  | { text: string }
+  | { inlineData: { data: string; mimeType: string } };
+
+export function useChatCommon<T>({
+  chatId,
+  provider,
+  getResponse,
+}: ChatCommonProps<T>) {
   const {
     messages,
     setMessages,
@@ -21,15 +45,118 @@ export function useGeminiChat(chatId?: string) {
     clearMessages,
   } = useChat(chatId);
 
+  const [abortController, setAbortController] =
+    useState<AbortController | null>(null);
   const { getEnhancedSystemPrompt } = useSystemPrompt();
   const { processMessageTags } = useTagProcessors();
   const { resetSearchCount } = useSearchProcessor();
-
-  const [abortController, setAbortController] =
-    useState<AbortController | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const stopGeneration = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+  };
+
+  const pushSystemPrompt = (history: any[], systemPrompt?: string) => {
+    if ((provider === "groq" || provider === "openrouter") && systemPrompt) {
+      history.unshift({
+        role: "system",
+        content: systemPrompt,
+      });
+    }
+    return history as T;
+  };
+
+  const processMediaParts = (message: Message): Part[] => {
+    const parts: Part[] = [{ text: message.content }];
+    if (message.sender === "user") {
+      const mediaTypes = [
+        { data: message.images, mimeType: "image/jpeg" },
+        { data: message.files, useCustomType: true },
+        { data: message.videos, mimeType: "video/mp4" },
+        { data: message.audios, mimeType: "audio/mp3" },
+      ];
+
+      mediaTypes.forEach(({ data, mimeType, useCustomType }) => {
+        if (data?.length) {
+          parts.push(
+            ...data.map((item: any) => ({
+              inlineData: {
+                data: item.data.split(",")[1],
+                mimeType: useCustomType
+                  ? item.type
+                  : item.data.match(/data:([^;]+);/)?.[1] || mimeType,
+              },
+            }))
+          );
+        }
+      });
+    }
+    return parts;
+  };
+
+  const formatMessageForProvider = (msg: Message) => {
+    if (provider === "groq") {
+      return {
+        role: msg.sender === "user" ? "user" : "assistant",
+        content: msg.content,
+      };
+    }
+    return {
+      role: msg.sender === "user" ? "user" : "model",
+      parts: processMediaParts(msg),
+    };
+  };
+
+  const handleApiError = (error: unknown, messageId: string) => {
+    if (error instanceof Error && error.name === "AbortError") {
+      return;
+    }
+
+    let errorMessage = "Đã xảy ra lỗi khi xử lý yêu cầu";
+
+    if (error instanceof Error) {
+      console.error(`${provider} API error:`, error.message);
+
+      if (
+        error.message.includes("400") ||
+        error.message.includes("Bad Request")
+      ) {
+        if (error.message.includes("SAFETY")) {
+          errorMessage = `Nội dung bị chặn bởi bộ lọc an toàn của ${provider}.`;
+        } else if (error.message.includes("BLOCKED_REASON")) {
+          errorMessage = `Nội dung bị từ chối do vi phạm chính sách của ${provider}.`;
+        } else if (error.message.includes("API key")) {
+          errorMessage =
+            "API key không hợp lệ. Vui lòng kiểm tra lại trong phần cài đặt.";
+        } else {
+          errorMessage =
+            "Lỗi yêu cầu không hợp lệ (400). Vui lòng thử cách diễn đạt khác.";
+        }
+      }
+    }
+
+    setError(errorMessage);
+    setMessages((prev) => {
+      const updatedMessages = [...prev];
+      const botMessageIndex = updatedMessages.findIndex(
+        (msg) => msg.id === messageId
+      );
+
+      if (botMessageIndex !== -1) {
+        updatedMessages[botMessageIndex] = {
+          ...updatedMessages[botMessageIndex],
+          content: errorMessage,
+        };
+      }
+
+      return updatedMessages;
+    });
+  };
 
   const sendMessage = async (
     message: string,
@@ -59,7 +186,6 @@ export function useGeminiChat(chatId?: string) {
       sender: "bot",
     };
 
-    // Hiển thị tin nhắn ngay lập tức và lưu messages mới
     const updatedMessages = [...messages, newMessage, newBotMessage];
     setMessages(updatedMessages);
     setIsLoading(true);
@@ -67,8 +193,8 @@ export function useGeminiChat(chatId?: string) {
 
     try {
       const apiKey =
-        localStorage.getItem("api_key") ||
-        (await getApiKey("gemini", "api_key"));
+        localStorage.getItem(`${provider}_api_key`) ||
+        (await getApiKey(provider, `${provider}_api_key`));
       if (!apiKey) {
         setMessages((prev) => {
           const updatedMessages = [...prev];
@@ -78,8 +204,7 @@ export function useGeminiChat(chatId?: string) {
           if (botMessageIndex !== -1) {
             updatedMessages[botMessageIndex] = {
               ...updatedMessages[botMessageIndex],
-              content:
-                "Vui lòng nhập API key Gemini trong cài đặt để sử dụng chatbot.",
+              content: `Vui lòng nhập API key ${provider} trong cài đặt để sử dụng chatbot.`,
             };
           }
           return updatedMessages;
@@ -122,67 +247,12 @@ export function useGeminiChat(chatId?: string) {
       }
 
       try {
-        const chatHistory = updatedMessages.slice(0, -2).map((msg) => ({
-          role: msg.sender === "user" ? "user" : "model",
-          parts: [
-            { text: msg.content },
-            ...(msg.images?.map((img) => ({
-              inlineData: {
-                data: img.data.split(",")[1],
-                mimeType: img.data.match(/data:([^;]+);/)?.[1] || "image/jpeg",
-              },
-            })) || []),
-            ...(msg.files?.map((file) => ({
-              inlineData: {
-                data: file.data.split(",")[1],
-                mimeType: file.type,
-              },
-            })) || []),
-            ...(msg.videos?.map((video) => ({
-              inlineData: {
-                data: video.data.split(",")[1],
-                mimeType: video.data.match(/data:([^;]+);/)?.[1] || "video/mp4",
-              },
-            })) || []),
-            ...(msg.audios?.map((audio) => ({
-              inlineData: {
-                data: audio.data.split(",")[1],
-                mimeType: audio.data.match(/data:([^;]+);/)?.[1] || "audio/mp3",
-              },
-            })) || []),
-          ],
-        }));
-
-        chatHistory.push({
-          role: "user",
-          parts: [
-            { text: message },
-            ...(imageData?.map((img) => ({
-              inlineData: {
-                data: img.data.split(",")[1],
-                mimeType: img.data.match(/data:([^;]+);/)?.[1] || "image/jpeg",
-              },
-            })) || []),
-            ...(fileData?.map((file) => ({
-              inlineData: {
-                data: file.data.split(",")[1],
-                mimeType: file.type,
-              },
-            })) || []),
-            ...(videoData?.map((video) => ({
-              inlineData: {
-                data: video.data.split(",")[1],
-                mimeType: video.data.match(/data:([^;]+);/)?.[1] || "video/mp4",
-              },
-            })) || []),
-            ...(audioData?.map((audio) => ({
-              inlineData: {
-                data: audio.data.split(",")[1],
-                mimeType: audio.data.match(/data:([^;]+);/)?.[1] || "audio/mp3",
-              },
-            })) || []),
-          ],
-        });
+        const chatHistory = pushSystemPrompt(
+          updatedMessages
+            .slice(0, -2)
+            .map((msg) => formatMessageForProvider(msg)),
+          getEnhancedSystemPrompt(provider)
+        );
 
         let accumulatedMessages = updatedMessages;
 
@@ -200,14 +270,12 @@ export function useGeminiChat(chatId?: string) {
                 content: newContent,
               };
 
-              // Xử lý các tag đặc biệt
               if (
                 (newContent.includes("[IMAGE_PROMPT]") &&
                   newContent.includes("[/IMAGE_PROMPT]")) ||
                 (newContent.includes("[SEARCH_QUERY]") &&
                   newContent.includes("[/SEARCH_QUERY]"))
               ) {
-                // Sử dụng hook mới để xử lý các tag
                 setTimeout(
                   () =>
                     processMessageTags(
@@ -216,7 +284,7 @@ export function useGeminiChat(chatId?: string) {
                       setMessages,
                       saveChat,
                       currentChatId,
-                      "google",
+                      provider,
                       setIsGeneratingImage,
                       setIsSearching,
                       undefined,
@@ -227,7 +295,7 @@ export function useGeminiChat(chatId?: string) {
               }
 
               accumulatedMessages = newMessages;
-              saveChat(accumulatedMessages, currentChatId, "google");
+              saveChat(accumulatedMessages, currentChatId, provider);
             }
 
             return newMessages;
@@ -237,76 +305,25 @@ export function useGeminiChat(chatId?: string) {
         const controller = new AbortController();
         setAbortController(controller);
 
-        await getGeminiResponse(
+        await getResponse(
           message,
           chatHistory,
           handleChunk,
           controller.signal,
-          getEnhancedSystemPrompt("google"),
+          getEnhancedSystemPrompt(provider),
           imageData,
           fileData,
           videoData,
           audioData
         );
       } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          return;
-        }
-
-        let errorMessage = "Đã xảy ra lỗi khi xử lý yêu cầu";
-
-        // Kiểm tra và hiển thị lỗi cụ thể hơn từ API
-        if (error instanceof Error) {
-          console.error("Gemini API error:", error.message);
-
-          if (
-            error.message.includes("400") ||
-            error.message.includes("Bad Request")
-          ) {
-            if (error.message.includes("SAFETY")) {
-              errorMessage = "Nội dung bị chặn bởi bộ lọc an toàn của Gemini.";
-            } else if (error.message.includes("BLOCKED_REASON")) {
-              errorMessage =
-                "Nội dung bị từ chối do vi phạm chính sách của Gemini.";
-            } else if (error.message.includes("API key")) {
-              errorMessage =
-                "API key không hợp lệ. Vui lòng kiểm tra lại trong phần cài đặt.";
-            } else {
-              errorMessage =
-                "Lỗi yêu cầu không hợp lệ (400). Vui lòng thử cách diễn đạt khác.";
-            }
-          }
-        }
-
-        setError(errorMessage);
-        setMessages((prev) => {
-          const updatedMessages = [...prev];
-          const botMessageIndex = updatedMessages.findIndex(
-            (msg) => msg.id === botMessageId
-          );
-
-          if (botMessageIndex !== -1) {
-            updatedMessages[botMessageIndex] = {
-              ...updatedMessages[botMessageIndex],
-              content: errorMessage,
-            };
-          }
-
-          return updatedMessages;
-        });
-      } finally {
-        setIsLoading(false);
-        setAbortController(null);
+        handleApiError(error, botMessageId);
       }
     } catch (error) {
       console.error("Error in sendMessage:", error);
       setError("Đã xảy ra lỗi khi gửi tin nhắn");
-    }
-  };
-
-  const stopGeneration = () => {
-    if (abortController) {
-      abortController.abort();
+    } finally {
+      setIsLoading(false);
       setAbortController(null);
     }
   };
@@ -326,12 +343,12 @@ export function useGeminiChat(chatId?: string) {
     setError(null);
 
     try {
-      const chatHistory = messages.slice(0, messageIndex).map((msg) => ({
-        role: msg.sender === "user" ? "user" : "model",
-        parts: [{ text: msg.content }],
-      }));
-
-      const systemPrompt = getEnhancedSystemPrompt("google");
+      const chatHistory = pushSystemPrompt(
+        messages
+          .slice(0, messageIndex)
+          .map((msg) => formatMessageForProvider(msg)),
+        getEnhancedSystemPrompt(provider)
+      );
 
       const controller = new AbortController();
       setAbortController(controller);
@@ -344,7 +361,7 @@ export function useGeminiChat(chatId?: string) {
         images: undefined,
       };
       setMessages(updatedMessages);
-      saveChat(updatedMessages, chatId, "google");
+      saveChat(updatedMessages, chatId, provider);
 
       const handleChunk = (chunk: string) => {
         setMessages((prev) => {
@@ -369,7 +386,7 @@ export function useGeminiChat(chatId?: string) {
               setMessages,
               saveChat,
               chatId,
-              "google",
+              provider,
               setIsGeneratingImage,
               setIsSearching,
               messageIndex,
@@ -377,27 +394,23 @@ export function useGeminiChat(chatId?: string) {
             );
           }
 
-          saveChat(newMessages, chatId, "google");
+          saveChat(newMessages, chatId, provider);
           return newMessages;
         });
       };
 
-      await getGeminiResponse(
+      await getResponse(
         previousUserMessage.content,
         chatHistory,
         handleChunk,
         controller.signal,
-        systemPrompt,
-        previousUserMessage.images,
-        previousUserMessage.files,
-        previousUserMessage.videos,
-        previousUserMessage.audios
+        getEnhancedSystemPrompt(provider)
       );
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         return;
       }
-      setError("Đã xảy ra lỗi khi tạo lại phản hồi");
+      handleApiError(error, messageId);
       setMessages((prev) => {
         const updatedMessages = [...prev];
         updatedMessages[messageIndex] = {
@@ -415,7 +428,8 @@ export function useGeminiChat(chatId?: string) {
   // Thêm hàm gửi tin nhắn follow-up với kết quả tìm kiếm
   const sendFollowUpMessage = async (searchResults: string) => {
     const apiKey =
-      localStorage.getItem("api_key") || (await getApiKey("gemini", "api_key"));
+      localStorage.getItem(`${provider}_api_key`) ||
+      (await getApiKey(provider, `${provider}_api_key`));
     if (!apiKey) return;
 
     const botMessageId = Date.now().toString();
@@ -430,31 +444,32 @@ export function useGeminiChat(chatId?: string) {
     setIsLoading(true);
     setError(null);
 
-    try {
-      const chatHistory = messages.map((msg) => ({
-        role: msg.sender === "user" ? "user" : "model",
-        parts: [{ text: msg.content }],
-      }));
+    const systemPrompt = getEnhancedSystemPrompt(provider);
 
-      const systemPrompt = getEnhancedSystemPrompt("google");
-
-      // Sửa đổi hướng dẫn tìm kiếm sâu
-      const searchConfig = JSON.parse(
-        localStorage.getItem("search_config") || "{}"
-      );
-      const deepSearchInstruction = searchConfig.deepSearch
-        ? `Bạn chỉ được thực hiện ÍT NHẤT 3 lần tìm kiếm và TỐI ĐA 10 lần tìm kiếm để tránh quá tải. Với mỗi chủ đề hoặc khía cạnh quan trọng nhất của vấn đề, hãy sử dụng tag [SEARCH_QUERY]...[/SEARCH_QUERY] với từ khóa phù hợp.
+    // Sửa đổi hướng dẫn tìm kiếm sâu
+    const searchConfig = JSON.parse(
+      localStorage.getItem("search_config") || "{}"
+    );
+    const deepSearchInstruction = searchConfig.deepSearch
+      ? `Bạn chỉ được thực hiện ÍT NHẤT 3 lần tìm kiếm và TỐI ĐA 10 lần tìm kiếm để tránh quá tải. Với mỗi chủ đề hoặc khía cạnh quan trọng nhất của vấn đề, hãy sử dụng tag [SEARCH_QUERY]...[/SEARCH_QUERY] với từ khóa phù hợp.
 
 Quy trình tìm kiếm của bạn:
 1. Phân tích kết quả tìm kiếm hiện tại
 2. Xác định 1-2 khía cạnh quan trọng nhất cần tìm hiểu thêm
 3. Thực hiện tìm kiếm bổ sung (không quá 10 lần)
 4. Tổng hợp tất cả thông tin sau khi hoàn thành`
-        : "";
+      : "";
 
-      const enhancedSystemPrompt =
-        systemPrompt +
-        (deepSearchInstruction ? `\n\n${deepSearchInstruction}` : "");
+    const enhancedSystemPrompt =
+      systemPrompt +
+      (deepSearchInstruction ? `\n\n${deepSearchInstruction}` : "");
+
+    try {
+      const chatHistory = pushSystemPrompt(
+        messages.map((msg) => formatMessageForProvider(msg)),
+        enhancedSystemPrompt
+      );
+
       const searchPrompt = searchResults + "\n\nPhân tích:";
 
       const controller = new AbortController();
@@ -493,7 +508,7 @@ Quy trình tìm kiếm của bạn:
                     setMessages,
                     saveChat,
                     chatId,
-                    "google",
+                    provider,
                     setIsGeneratingImage,
                     setIsSearching,
                     undefined,
@@ -507,13 +522,13 @@ Quy trình tìm kiếm của bạn:
               isFirstChunk = false;
             }
 
-            saveChat(newMessages, chatId, "google");
+            saveChat(newMessages, chatId, provider);
           }
           return newMessages;
         });
       };
 
-      await getGeminiResponse(
+      await getResponse(
         searchPrompt,
         chatHistory,
         handleChunk,
@@ -536,29 +551,13 @@ Quy trình tìm kiếm của bạn:
         }
       }
 
-      setError(errorMessage);
-      setMessages((prev) => {
-        const updatedMessages = [...prev];
-        const botMessageIndex = updatedMessages.findIndex(
-          (msg) => msg.id === botMessageId
-        );
-
-        if (botMessageIndex !== -1) {
-          updatedMessages[botMessageIndex] = {
-            ...updatedMessages[botMessageIndex],
-            content: errorMessage,
-          };
-        }
-
-        return updatedMessages;
-      });
+      handleApiError(error, botMessageId);
     } finally {
       setIsLoading(false);
       setAbortController(null);
     }
   };
 
-  // Cleanup khi unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {

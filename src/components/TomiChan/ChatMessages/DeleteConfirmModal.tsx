@@ -1,6 +1,6 @@
 import React from "react";
 import { IconX } from "@tabler/icons-react";
-import Portal from "../Portal";
+import Portal from "../../Portal";
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;

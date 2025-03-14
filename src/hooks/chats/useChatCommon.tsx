@@ -457,7 +457,7 @@ Quy trình tìm kiếm của bạn:
 1. Phân tích kết quả tìm kiếm hiện tại
 2. Xác định 1-2 khía cạnh quan trọng nhất cần tìm hiểu thêm
 3. Thực hiện tìm kiếm bổ sung (không quá 10 lần)
-4. Tổng hợp tất cả thông tin sau khi hoàn thành`
+4. Tổng hợp tất cả thông tin sau khi hoàn thành và giải thích chi tiết cặn kẽ kết hợp với toàn bộ nội dung trước đó một cách sâu sắc và ấn tượng!`
       : "";
 
     const enhancedSystemPrompt =

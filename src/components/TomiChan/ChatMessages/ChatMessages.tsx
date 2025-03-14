@@ -58,6 +58,7 @@ export default function ChatMessages({
     src: string;
     title?: string;
   } | null>(null);
+  const prevChatIdRef = useRef(chatId);
 
   const {
     copiedMessageId,
@@ -83,15 +84,29 @@ export default function ChatMessages({
 
   useEffect(() => {
     const handleScroll = () => {
+      // Chỉ kiểm tra và cập nhật khi có tin nhắn
+      if (messages.length === 0) {
+        setShowScrollButton(false);
+        onScrollButtonStateChange?.(false);
+        return;
+      }
+
       const isNearBottom = checkIfAtBottom();
       setShowScrollButton(!isNearBottom);
       onScrollButtonStateChange?.(!isNearBottom);
     };
 
     window.addEventListener("scroll", handleScroll);
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [onScrollButtonStateChange]);
+    handleScroll(); // Gọi ngay khi mount
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      // Reset state khi unmount
+      setShowScrollButton(false);
+      onScrollButtonStateChange?.(false);
+    };
+  }, [messages.length, onScrollButtonStateChange]);
 
   useEffect(() => {
     // So sánh số lượng tin nhắn để biết có tin nhắn mới không
@@ -113,6 +128,29 @@ export default function ChatMessages({
     // Cập nhật số lượng tin nhắn hiện tại
     prevMessagesLengthRef.current = messages.length;
   }, [messages]);
+
+  // Thêm useEffect mới để xử lý khi chuyển chat
+  useEffect(() => {
+    if (prevChatIdRef.current !== chatId) {
+      // Reset scroll về đầu trang
+      window.scrollTo(0, 0);
+
+      // Sau đó đợi messages load xong và cuộn xuống cuối
+      setTimeout(() => {
+        if (messages.length > 0) {
+          scrollToBottom();
+        }
+      }, 100);
+
+      prevChatIdRef.current = chatId;
+    }
+  }, [chatId, messages]);
+
+  // Reset scroll button state khi chatId thay đổi
+  useEffect(() => {
+    setShowScrollButton(false);
+    onScrollButtonStateChange?.(false);
+  }, [chatId, onScrollButtonStateChange]);
 
   // Hàm để xác định biểu tượng theo loại file
   const getFileIcon = (type: string) => {

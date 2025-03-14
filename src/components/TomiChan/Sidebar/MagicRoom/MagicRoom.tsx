@@ -33,17 +33,17 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         {/* Hero Section */}
-        <div className="p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-800">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-2xl mx-auto text-center"
+            className="text-center"
           >
-            <IconWand className="w-16 h-16 mx-auto text-purple-500 mb-4" />
-            <h1 className="text-3xl font-bold mb-4">
+            <IconWand className="w-12 h-12 mx-auto text-purple-500 mb-3" />
+            <h1 className="text-2xl font-semibold mb-2">
               Công Cụ Ma Thuật Hỗ Trợ AI
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-gray-600 dark:text-gray-400">
               Tối ưu hóa quy trình làm việc của bạn với sự hỗ trợ của trí tuệ
               nhân tạo
             </p>

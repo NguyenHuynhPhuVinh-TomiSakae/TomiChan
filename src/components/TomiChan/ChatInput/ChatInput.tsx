@@ -282,6 +282,12 @@ export default function ChatInput({
     };
   }, [isMobile]);
 
+  useEffect(() => {
+    // Reset trạng thái khi provider thay đổi (tạo chat mới)
+    setShowPopup(false);
+    setIsTouching(false);
+  }, [selectedProvider]);
+
   return (
     <motion.form
       onSubmit={handleSubmit}

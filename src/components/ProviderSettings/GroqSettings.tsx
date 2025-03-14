@@ -175,7 +175,7 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
                       <button
                         type="button"
                         onClick={() => setIsGroupAOpen(!isGroupAOpen)}
-                        className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none"
+                        className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
                       >
                         <span>Nhóm AI phân tích tốt</span>
                         {isGroupAOpen ? (
@@ -210,7 +210,7 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
                       <button
                         type="button"
                         onClick={() => setIsGroupBOpen(!isGroupBOpen)}
-                        className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none"
+                        className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
                       >
                         <span>Nhóm AI phản hồi nhanh</span>
                         {isGroupBOpen ? (

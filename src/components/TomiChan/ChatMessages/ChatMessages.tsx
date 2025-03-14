@@ -584,11 +584,45 @@ export default function ChatMessages({
               ) : null}
 
               {isLoading && message === messages[messages.length - 1] && (
-                <motion.div
-                  className="w-4 h-4 border-2 border-black dark:border-white mt-2 mb-6 mx-2"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                />
+                <div className="flex items-center gap-2 mt-2 mb-6 mx-2">
+                  <Image
+                    src="/tomichan-icon.png"
+                    alt="TomiChan thinking"
+                    width={24}
+                    height={24}
+                    className="animate-bounce"
+                  />
+                  <motion.div
+                    className="flex gap-1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <motion.div
+                      className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-300"
+                      animate={{ y: [0, -6, 0] }}
+                      transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}
+                    />
+                    <motion.div
+                      className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-300"
+                      animate={{ y: [0, -6, 0] }}
+                      transition={{
+                        duration: 0.8,
+                        repeat: Infinity,
+                        delay: 0.2,
+                      }}
+                    />
+                    <motion.div
+                      className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-300"
+                      animate={{ y: [0, -6, 0] }}
+                      transition={{
+                        duration: 0.8,
+                        repeat: Infinity,
+                        delay: 0.4,
+                      }}
+                    />
+                  </motion.div>
+                </div>
               )}
             </div>
           </div>

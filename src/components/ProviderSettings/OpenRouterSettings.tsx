@@ -284,8 +284,8 @@ export default function OpenRouterSettings({
     setTopK(40);
     setApiKey(currentApiKey);
     // Mở nhóm mặc định của Google
-    setIsGoogleOpen(true);
-    setIsDeepSeekOpen(false);
+    setIsGoogleOpen(false);
+    setIsDeepSeekOpen(true);
     setIsQwenOpen(false);
     setIsMetaOpen(false);
     setIsMistralOpen(false);
@@ -355,7 +355,7 @@ export default function OpenRouterSettings({
                     <button
                       type="button"
                       onClick={() => setIsGoogleOpen(!isGoogleOpen)}
-                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none"
+                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
                     >
                       <span>Google</span>
                       {isGoogleOpen ? (
@@ -390,7 +390,7 @@ export default function OpenRouterSettings({
                     <button
                       type="button"
                       onClick={() => setIsDeepSeekOpen(!isDeepSeekOpen)}
-                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none"
+                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
                     >
                       <span>DeepSeek</span>
                       {isDeepSeekOpen ? (
@@ -425,7 +425,7 @@ export default function OpenRouterSettings({
                     <button
                       type="button"
                       onClick={() => setIsQwenOpen(!isQwenOpen)}
-                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none"
+                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
                     >
                       <span>Qwen</span>
                       {isQwenOpen ? (
@@ -460,7 +460,7 @@ export default function OpenRouterSettings({
                     <button
                       type="button"
                       onClick={() => setIsMetaOpen(!isMetaOpen)}
-                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none"
+                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
                     >
                       <span>Meta</span>
                       {isMetaOpen ? (
@@ -495,7 +495,7 @@ export default function OpenRouterSettings({
                     <button
                       type="button"
                       onClick={() => setIsMistralOpen(!isMistralOpen)}
-                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none"
+                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
                     >
                       <span>Mistral</span>
                       {isMistralOpen ? (
@@ -530,7 +530,7 @@ export default function OpenRouterSettings({
                     <button
                       type="button"
                       onClick={() => setIsOthersOpen(!isOthersOpen)}
-                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none"
+                      className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
                     >
                       <span>Others</span>
                       {isOthersOpen ? (

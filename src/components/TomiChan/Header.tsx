@@ -156,7 +156,7 @@ export default function Header({
             onClick={() => setIsModalOpen(true)}
           >
             <IconAdjustmentsHorizontal size={20} />
-            Cài đặt AI
+            {isMagicMode ? "" : "Cài đặt AI"}
           </button>
         </div>
       </div>

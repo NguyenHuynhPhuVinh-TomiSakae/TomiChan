@@ -38,6 +38,7 @@ interface ChatInputProps {
   onAudiosUpload?: (files: File[]) => void;
   selectedProvider?: string;
   showScrollButton?: boolean;
+  isMagicMode?: boolean;
 }
 
 export default function ChatInput({
@@ -50,6 +51,7 @@ export default function ChatInput({
   onAudiosUpload,
   selectedProvider = "google",
   showScrollButton = false,
+  isMagicMode = false,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [textareaHeight, setTextareaHeight] = useState(56);
@@ -63,6 +65,7 @@ export default function ChatInput({
   } = useImageUpload(onImagesUpload);
 
   const isMobile = useMediaQuery({ maxWidth: 768 });
+  const isTablet = useMediaQuery({ maxWidth: 1024 });
 
   const {
     selectedFiles,
@@ -364,7 +367,11 @@ export default function ChatInput({
               value={message}
               onChange={handleTextareaChange}
               placeholder="Nhập câu hỏi của bạn..."
-              className="w-full pt-3 pb-3 sm:pt-4 sm:pb-4 px-4 sm:px-6 focus:outline-none resize-none overflow-y min-h-[50px] sm:min-h-[56px] max-h-[160px] sm:max-h-[200px] bg-transparent flex-grow placeholder:text-gray-500 dark:placeholder:text-gray-400"
+              className={`w-full pt-3 pb-3 px-4 focus:outline-none resize-none overflow-y min-h-[50px] max-h-[160px] bg-transparent flex-grow placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                isMagicMode
+                  ? ""
+                  : "sm:min-h-[56px] sm:max-h-[200px] sm:pt-4 sm:pb-4 sm:px-6"
+              }`}
               style={{ height: `${textareaHeight}px` }}
               rows={1}
               disabled={isGenerating}
@@ -376,13 +383,15 @@ export default function ChatInput({
               }}
             />
 
-            <div className="h-10 sm:h-14">
+            <div className={`h-10 ${isMagicMode ? "" : "sm:h-14"}`}>
               <AnimatePresence>
                 {selectedProvider === "google" && (
                   <motion.button
                     data-plus-button
                     type="button"
-                    className="absolute left-2 sm:left-3 bottom-8 sm:bottom-10 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 sm:p-2 transition-all duration-200 border border-black dark:border-white"
+                    className={`absolute left-2 bottom-8 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 transition-all duration-200 border border-black dark:border-white ${
+                      isMagicMode ? "" : "sm:left-3 sm:bottom-10 sm:p-2"
+                    }`}
                     onClick={(e) => {
                       e.preventDefault();
                       if (isGenerating) return;
@@ -402,7 +411,9 @@ export default function ChatInput({
                   >
                     <IconPlus
                       size={18}
-                      className="text-black dark:text-white sm:w-[22px] sm:h-[22px]"
+                      className={`text-black dark:text-white ${
+                        isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
+                      }`}
                       stroke={1.5}
                     />
                   </motion.button>
@@ -413,7 +424,9 @@ export default function ChatInput({
                 {(message.trim() || isGenerating) && (
                   <motion.button
                     type="button"
-                    className="absolute right-2 sm:right-3 bottom-8 sm:bottom-10 cursor-pointer rounded-full p-2 bg-black dark:bg-white"
+                    className={`absolute right-2 bottom-8 cursor-pointer rounded-full p-2 bg-black dark:bg-white ${
+                      isMagicMode ? "" : "sm:right-3 sm:bottom-10"
+                    }`}
                     onClick={(e) => {
                       e.preventDefault();
                       if (isGenerating && onStopGeneration) {
@@ -455,14 +468,18 @@ export default function ChatInput({
                       >
                         <IconSquare
                           size={18}
-                          className="text-white dark:text-black sm:w-[22px] sm:h-[22px]"
+                          className={`text-white dark:text-black ${
+                            isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
+                          }`}
                           stroke={1.5}
                         />
                       </motion.div>
                     ) : (
                       <IconSend2
                         size={18}
-                        className="text-white dark:text-black sm:w-[22px] sm:h-[22px]"
+                        className={`text-white dark:text-black ${
+                          isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
+                        }`}
                         stroke={1.5}
                       />
                     )}
@@ -508,8 +525,16 @@ export default function ChatInput({
             />
           </div>
         </div>
-        <div className="text-center mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-          Đây là dự án mã nguồn mở của TomiSakae! -{" "}
+        <div
+          className={`text-center mt-2 text-xs ${
+            isMagicMode ? "" : "sm:text-sm"
+          } text-gray-500 dark:text-gray-400`}
+        >
+          {isMagicMode && isTablet
+            ? "Dự án của TomiSakae! - "
+            : isMagicMode
+            ? "Dự án mã nguồn mở của TomiSakae! - "
+            : "Đây là dự án mã nguồn mở của TomiSakae! - "}
           <a
             href="https://github.com/NguyenHuynhPhuVinh-TomiSakae/TomiChan"
             className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors"

@@ -32,6 +32,7 @@ export default function Home() {
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showLoading, setShowLoading] = React.useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isMagicMode, setIsMagicMode] = useState(false);
 
   const handleToggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -89,24 +90,15 @@ export default function Home() {
     clearMessages();
   };
 
-  const handleImagesUpload = (files: File[]) => {
-    console.log("Uploaded images:", files);
-  };
-
-  const handleFilesUpload = (files: File[]) => {
-    console.log("Uploaded files:", files);
-  };
-
-  const handleVideosUpload = (files: File[]) => {
-    console.log("Uploaded videos:", files);
-  };
-
-  const handleAudiosUpload = (files: File[]) => {
-    console.log("Uploaded audios:", files);
-  };
-
   const handleRegenerate = async (messageId: string) => {
     await regenerateMessage(messageId);
+  };
+
+  const handleToggleMagicMode = () => {
+    setIsMagicMode(!isMagicMode);
+    if (isCollapsed) {
+      handleToggleCollapse();
+    }
   };
 
   if (showLoading) {
@@ -126,6 +118,8 @@ export default function Home() {
         onSelectChat={handleSelectChat}
         onDeleteChat={handleDeleteChat}
         onEditChatTitle={handleEditChatTitle}
+        isMagicMode={isMagicMode}
+        onToggleMagicMode={handleToggleMagicMode}
       />
       <main
         className={`flex-1 transition-all duration-300 text-black dark:text-white
@@ -134,6 +128,8 @@ export default function Home() {
               ? !isMobile
                 ? isCollapsed
                   ? "sm:ml-16"
+                  : isMagicMode
+                  ? "sm:ml-[70vw]"
                   : "sm:ml-64"
                 : "ml-0"
               : ""
@@ -147,16 +143,17 @@ export default function Home() {
               onToggleCollapse={handleToggleCollapse}
               onProviderChange={handleProviderChange}
               selectedProvider={selectedProvider}
+              isMagicMode={isMagicMode}
             />
             <div className="h-screen flex flex-col justify-center items-center">
               <TomiChat />
               <div className="w-full max-w-4xl mx-auto p-4">
                 <ChatInput
                   onSendMessage={sendMessage}
-                  onImagesUpload={handleImagesUpload}
-                  onFilesUpload={handleFilesUpload}
-                  onVideosUpload={handleVideosUpload}
-                  onAudiosUpload={handleAudiosUpload}
+                  onImagesUpload={() => {}}
+                  onFilesUpload={() => {}}
+                  onVideosUpload={() => {}}
+                  onAudiosUpload={() => {}}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}
@@ -173,6 +170,7 @@ export default function Home() {
               onToggleCollapse={handleToggleCollapse}
               onProviderChange={handleProviderChange}
               selectedProvider={selectedProvider}
+              isMagicMode={isMagicMode}
             />
             {messages.length > 0 ? (
               <div className="w-full max-w-4xl mx-auto flex-1 pb-42 sm:pb-126 pt-20">
@@ -193,16 +191,22 @@ export default function Home() {
             <div
               className="fixed bottom-0 right-0 bg-white dark:bg-black transition-all duration-300 w-full sm:w-auto"
               style={{
-                left: isMobile ? 0 : isCollapsed ? "64px" : "256px",
+                left: isMobile
+                  ? 0
+                  : isCollapsed
+                  ? "64px"
+                  : isMagicMode
+                  ? "70vw"
+                  : "256px",
               }}
             >
               <div className="w-full max-w-4xl mx-auto p-2 sm:p-4">
                 <ChatInput
                   onSendMessage={sendMessage}
-                  onImagesUpload={handleImagesUpload}
-                  onFilesUpload={handleFilesUpload}
-                  onVideosUpload={handleVideosUpload}
-                  onAudiosUpload={handleAudiosUpload}
+                  onImagesUpload={() => {}}
+                  onFilesUpload={() => {}}
+                  onVideosUpload={() => {}}
+                  onAudiosUpload={() => {}}
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}

@@ -15,12 +15,14 @@ export default function Header({
   onToggleCollapse,
   onProviderChange,
   selectedProvider: propSelectedProvider,
+  isMagicMode,
 }: {
   isCollapsed: boolean;
   isMobile: boolean;
   onToggleCollapse: () => void;
   onProviderChange?: (provider: string) => void;
   selectedProvider?: string;
+  isMagicMode: boolean;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(() => {
@@ -76,7 +78,13 @@ export default function Header({
       <div
         className="fixed top-0 right-0 z-10 bg-white dark:bg-black text-black dark:text-white transition-all duration-300"
         style={{
-          left: isMobile ? 0 : isCollapsed ? "64px" : "256px",
+          left: isMobile
+            ? 0
+            : isCollapsed
+            ? "64px"
+            : isMagicMode
+            ? "70vw" // Điều chỉnh left margin khi ở chế độ magic
+            : "256px",
         }}
       >
         <div className="w-full p-2 sm:p-4 flex items-center justify-between">

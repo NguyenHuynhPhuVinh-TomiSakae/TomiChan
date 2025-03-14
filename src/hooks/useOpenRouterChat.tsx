@@ -5,8 +5,9 @@ import { Message } from "../types";
 import { useState, useRef, useEffect } from "react";
 import { useSystemPrompt } from "./useSystemPrompt";
 import { generateImage } from "../lib/together";
-import { useTagProcessors } from "./useTagProcessors";
+import { useTagProcessors } from "./tags/useTagProcessors";
 import { getApiKey } from "../utils/getApiKey";
+import { useSearchProcessor } from "./tags/useSearchProcessor";
 
 export function useOpenRouterChat(chatId?: string) {
   const {
@@ -26,6 +27,7 @@ export function useOpenRouterChat(chatId?: string) {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const { processMessageTags } = useTagProcessors();
+  const { resetSearchCount } = useSearchProcessor();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const stopGeneration = () => {
@@ -48,6 +50,9 @@ export function useOpenRouterChat(chatId?: string) {
       content: "",
       sender: "bot",
     };
+
+    // Reset search count khi có tin nhắn mới từ user
+    resetSearchCount();
 
     // Hiển thị tin nhắn ngay lập tức và lưu messages mới
     const updatedMessages = [...messages, newMessage, newBotMessage];

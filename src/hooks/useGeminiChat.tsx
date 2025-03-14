@@ -5,8 +5,9 @@ import { Message } from "../types";
 import { useState, useRef, useEffect } from "react";
 import { useSystemPrompt } from "./useSystemPrompt";
 import { generateImage } from "../lib/together";
-import { useTagProcessors } from "./useTagProcessors";
+import { useTagProcessors } from "./tags/useTagProcessors";
 import { getApiKey } from "../utils/getApiKey";
+import { useSearchProcessor } from "./tags/useSearchProcessor";
 
 export function useGeminiChat(chatId?: string) {
   const {
@@ -22,15 +23,13 @@ export function useGeminiChat(chatId?: string) {
 
   const { getEnhancedSystemPrompt } = useSystemPrompt();
   const { processMessageTags } = useTagProcessors();
+  const { resetSearchCount } = useSearchProcessor();
 
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const imagePromptRef = useRef<string | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const searchQueryRef = useRef<string | null>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const sendMessage = async (
     message: string,
@@ -39,6 +38,9 @@ export function useGeminiChat(chatId?: string) {
     videoData?: { url: string; data: string }[],
     audioData?: { url: string; data: string }[]
   ) => {
+    // Reset search count khi có tin nhắn mới từ user
+    resetSearchCount();
+
     const currentChatId = chatId;
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -235,7 +237,7 @@ export function useGeminiChat(chatId?: string) {
         const controller = new AbortController();
         setAbortController(controller);
 
-        const botResponse = await getGeminiResponse(
+        await getGeminiResponse(
           message,
           chatHistory,
           handleChunk,
@@ -561,9 +563,6 @@ Quy trình tìm kiếm của bạn:
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
-      }
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
       }
     };
   }, []);

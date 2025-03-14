@@ -3,6 +3,7 @@ import {
   IconMessage,
   IconSettings,
   IconLayoutSidebarLeftCollapse,
+  IconSparkles,
 } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Message, ChatHistory } from "../../../types";
@@ -12,6 +13,7 @@ import ChatHistoryList from "./ChatHistoryList";
 import { useMediaQuery } from "react-responsive";
 import { getLocalStorage, setLocalStorage } from "../../../utils/localStorage";
 import Image from "next/image";
+import MagicRoom from "./MagicRoom/MagicRoom";
 
 interface SidebarProps {
   onNewChat: () => void;
@@ -24,6 +26,8 @@ interface SidebarProps {
   onSelectChat: (chatId: string) => void;
   onDeleteChat?: (chatId: string) => void;
   onEditChatTitle?: (chatId: string, newTitle: string) => void;
+  isMagicMode?: boolean;
+  onToggleMagicMode?: () => void;
 }
 
 export default function Sidebar({
@@ -37,6 +41,8 @@ export default function Sidebar({
   onSelectChat,
   onDeleteChat,
   onEditChatTitle,
+  isMagicMode = false,
+  onToggleMagicMode,
 }: SidebarProps) {
   const [isFirstRender, setIsFirstRender] = React.useState(true);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
@@ -75,6 +81,9 @@ export default function Sidebar({
 
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
+  // Thêm state để quản lý việc hiển thị header của sidebar
+  const [isSidebarHeaderVisible, setIsSidebarHeaderVisible] = useState(true);
+
   React.useEffect(() => {
     setIsFirstRender(false);
     loadChatHistory();
@@ -87,6 +96,15 @@ export default function Sidebar({
     loadChatHistory();
   }, [messages, updateTrigger]);
 
+  // Cập nhật effect để ẩn header khi bật magic mode
+  React.useEffect(() => {
+    if (isMagicMode) {
+      setIsSidebarHeaderVisible(false);
+    } else {
+      setIsSidebarHeaderVisible(true);
+    }
+  }, [isMagicMode]);
+
   const loadChatHistory = async () => {
     const history = await chatDB.getAllChats();
     setChatHistory(
@@ -98,7 +116,7 @@ export default function Sidebar({
     setIsSettingsModalOpen(true);
   };
 
-  // Thay đổi sidebarStyle
+  // Cập nhật sidebarStyle để mở rộng 70% màn hình khi ở chế độ magic
   const sidebarStyle: React.CSSProperties = {
     position: isMobile ? "fixed" : messages.length > 0 ? "fixed" : "relative",
     width: isCollapsed
@@ -106,7 +124,11 @@ export default function Sidebar({
         ? "100%"
         : "4rem"
       : isMobile
-      ? "80%" // Thay đổi từ 100% thành 80%
+      ? isMagicMode
+        ? "100%" // Chiếm toàn màn hình khi ở chế độ magic trên mobile
+        : "80%"
+      : isMagicMode
+      ? "70vw"
       : "16rem",
     zIndex: isMobile ? 50 : 10,
     left: isMobile && isCollapsed ? "-100%" : 0,
@@ -169,114 +191,211 @@ export default function Sidebar({
         }`}
         style={sidebarStyle}
       >
-        {/* Header with Title and Collapse button */}
-        <div className="p-4 flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <AnimatePresence mode="wait">
-              {!isCollapsed && (
-                <motion.div
-                  initial={isFirstRender ? { opacity: 1 } : { opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0, transition: { duration: 0 } }}
-                  transition={{ delay: 0.3 }}
-                  className="font-semibold text-2xl truncate flex items-center gap-2"
-                >
-                  <Image
-                    src="/tomichan-icon.png"
-                    alt="TomiChan"
-                    width={36}
-                    height={36}
-                    priority
-                    className="hover:rotate-[20deg] transition-transform duration-300 cursor-pointer"
-                  />
-                  <span className="bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-500 text-transparent bg-clip-text font-bold tracking-wide hover:scale-105 transition-transform duration-200 cursor-pointer">
-                    TomiChan
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
+        {/* Header with Title and Collapse button - Thêm điều kiện hiển thị */}
+        {isSidebarHeaderVisible && (
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <AnimatePresence mode="wait">
+                {!isCollapsed && (
+                  <motion.div
+                    initial={isFirstRender ? { opacity: 1 } : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, transition: { duration: 0 } }}
+                    transition={{ delay: 0.3 }}
+                    className="font-semibold text-2xl truncate flex items-center gap-2"
+                  >
+                    <Image
+                      src="/tomichan-icon.png"
+                      alt="TomiChan"
+                      width={36}
+                      height={36}
+                      priority
+                      className="hover:rotate-[20deg] transition-transform duration-300 cursor-pointer"
+                    />
+                    <span className="bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-500 text-transparent bg-clip-text font-bold tracking-wide hover:scale-105 transition-transform duration-200 cursor-pointer">
+                      TomiChan
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <button
+              onClick={onToggleCollapse}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full cursor-pointer flex-shrink-0"
+            >
+              <IconLayoutSidebarLeftCollapse
+                size={24}
+                className={isCollapsed ? "rotate-180" : ""}
+              />
+            </button>
           </div>
-          <button
-            onClick={onToggleCollapse}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full cursor-pointer flex-shrink-0"
-          >
-            <IconLayoutSidebarLeftCollapse
-              size={24}
-              className={isCollapsed ? "rotate-180" : ""}
-            />
-          </button>
-        </div>
+        )}
 
-        {/* New Chat Button */}
+        {/* Nội dung chính - Hiển thị MagicRoom hoặc Sidebar thông thường */}
+        {isMagicMode && !isCollapsed ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 overflow-hidden"
+          >
+            <MagicRoom onToggleMagicMode={onToggleMagicMode} />
+          </motion.div>
+        ) : (
+          <>
+            {/* New Chat Button */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+              <button
+                onClick={onNewChat}
+                className={`w-full py-2 text-black bg-white dark:bg-black hover:bg-gray-100 dark:hover:bg-gray-900 dark:text-white cursor-pointer rounded-lg flex items-center justify-center transition-colors border border-black dark:border-white ${
+                  isCollapsed ? "px-2" : "px-4"
+                }`}
+              >
+                <IconMessage size={20} className="flex-shrink-0" />
+                <AnimatePresence mode="wait">
+                  {!isCollapsed && (
+                    <motion.span
+                      initial={
+                        isFirstRender
+                          ? { opacity: 1, x: 0 }
+                          : { opacity: 0, x: -10 }
+                      }
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10, transition: { duration: 0 } }}
+                      transition={{ delay: 0.3 }}
+                      className="ml-2 truncate"
+                    >
+                      Cuộc trò chuyện mới
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+            </div>
+
+            {/* Chat History */}
+            <div className="flex-grow overflow-hidden p-4">
+              <ChatHistoryList
+                isCollapsed={isCollapsed}
+                isFirstRender={isFirstRender}
+                chatHistory={chatHistory}
+                currentChatId={currentChatId}
+                onSelectChat={handleSelectChat}
+                onDeleteChat={onDeleteChat}
+                onEditChatTitle={onEditChatTitle}
+                onUpdateTrigger={() => setUpdateTrigger((prev) => prev + 1)}
+              />
+            </div>
+
+            {/* Magic Mode Button */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+              <button
+                onClick={onToggleMagicMode}
+                className={`w-full py-2 cursor-pointer rounded-lg flex items-center bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/30 transition-all ${
+                  isCollapsed ? "px-2 justify-center" : "px-4"
+                }`}
+              >
+                <motion.div
+                  animate={{
+                    rotate: [0, 360],
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                >
+                  <IconSparkles
+                    size={20}
+                    className="flex-shrink-0 text-purple-500"
+                  />
+                </motion.div>
+                <AnimatePresence mode="wait">
+                  {!isCollapsed && (
+                    <motion.span
+                      initial={
+                        isFirstRender
+                          ? { opacity: 1, x: 0 }
+                          : { opacity: 0, x: -10 }
+                      }
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10, transition: { duration: 0 } }}
+                      transition={{ delay: 0.3 }}
+                      className="ml-2 truncate bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-transparent bg-clip-text font-medium"
+                    >
+                      Phòng ma thuật
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Settings and Header Toggle Buttons */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-          <button
-            onClick={onNewChat}
-            className={`w-full py-2 text-black bg-white dark:bg-black hover:bg-gray-100 dark:hover:bg-gray-900 dark:text-white cursor-pointer rounded-lg flex items-center justify-center transition-colors border border-black dark:border-white ${
-              isCollapsed ? "px-2" : "px-4"
+          <div
+            className={`w-full flex gap-2 ${
+              isCollapsed ? "justify-center" : "px-4"
             }`}
           >
-            <IconMessage size={20} className="flex-shrink-0" />
-            <AnimatePresence mode="wait">
-              {!isCollapsed && (
-                <motion.span
-                  initial={
-                    isFirstRender
-                      ? { opacity: 1, x: 0 }
-                      : { opacity: 0, x: -10 }
-                  }
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10, transition: { duration: 0 } }}
-                  transition={{ delay: 0.3 }}
-                  className="ml-2 truncate"
-                >
-                  Cuộc trò chuyện mới
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </button>
-        </div>
+            <button
+              onClick={handleOpenSettings}
+              className={`flex items-center cursor-pointer ${
+                isMagicMode && !isCollapsed
+                  ? "hover:bg-gray-200 dark:hover:bg-gray-800 px-2 py-1 rounded transition-colors"
+                  : "w-full py-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg px-2"
+              }`}
+            >
+              <IconSettings size={20} className="flex-shrink-0" />
+              <AnimatePresence mode="wait">
+                {!isCollapsed && (
+                  <motion.span
+                    initial={
+                      isFirstRender
+                        ? { opacity: 1, x: 0 }
+                        : { opacity: 0, x: -10 }
+                    }
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10, transition: { duration: 0 } }}
+                    transition={{ delay: 0.3 }}
+                    className="ml-2 truncate"
+                  >
+                    Cài đặt
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
 
-        {/* Chat History */}
-        <div className="flex-grow overflow-hidden p-4">
-          <ChatHistoryList
-            isCollapsed={isCollapsed}
-            isFirstRender={isFirstRender}
-            chatHistory={chatHistory}
-            currentChatId={currentChatId}
-            onSelectChat={handleSelectChat}
-            onDeleteChat={onDeleteChat}
-            onEditChatTitle={onEditChatTitle}
-            onUpdateTrigger={() => setUpdateTrigger((prev) => prev + 1)}
-          />
-        </div>
-
-        {/* Settings Button */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-          <button
-            onClick={handleOpenSettings}
-            className={`w-full py-2 cursor-pointer text-gray-700 dark:text-gray-300 rounded-lg flex items-center hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors ${
-              isCollapsed ? "px-2 justify-center" : "px-4"
-            }`}
-          >
-            <IconSettings size={20} className="flex-shrink-0" />
-            <AnimatePresence mode="wait">
-              {!isCollapsed && (
-                <motion.span
-                  initial={
-                    isFirstRender
-                      ? { opacity: 1, x: 0 }
-                      : { opacity: 0, x: -10 }
-                  }
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10, transition: { duration: 0 } }}
-                  transition={{ delay: 0.3 }}
-                  className="ml-2 truncate"
-                >
-                  Cài đặt
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </button>
+            {/* Header Toggle Button - Only show in magic mode */}
+            {isMagicMode && !isCollapsed && (
+              <button
+                onClick={() =>
+                  setIsSidebarHeaderVisible(!isSidebarHeaderVisible)
+                }
+                className="flex items-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 px-2 py-1 rounded transition-colors"
+              >
+                <IconLayoutSidebarLeftCollapse
+                  size={20}
+                  className={`flex-shrink-0 ${
+                    isSidebarHeaderVisible ? "" : "rotate-180"
+                  }`}
+                />
+                <AnimatePresence mode="wait">
+                  {!isCollapsed && (
+                    <motion.span
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      className="ml-2 truncate"
+                    >
+                      {isSidebarHeaderVisible ? "Ẩn tiêu đề" : "Hiện tiêu đề"}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+            )}
+          </div>
         </div>
 
         <SettingsModal

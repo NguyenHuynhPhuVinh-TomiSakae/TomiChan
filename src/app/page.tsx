@@ -2,7 +2,7 @@
 import TomiChat from "../components/TomiChan/TomiChat";
 import ChatInput from "../components/TomiChan/ChatInput/ChatInput";
 import Sidebar from "../components/TomiChan/Sidebar/Sidebar";
-import React from "react";
+import React, { useState } from "react";
 import ChatMessages from "../components/TomiChan/ChatMessages/ChatMessages";
 import Header from "../components/TomiChan/Header";
 import { useThemeContext } from "../providers/ThemeProvider";
@@ -31,6 +31,7 @@ export default function Home() {
   } = useChatProvider(currentChatId, selectedProvider);
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showLoading, setShowLoading] = React.useState(true);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   const handleToggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -159,6 +160,7 @@ export default function Home() {
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}
+                  showScrollButton={showScrollButton}
                 />
               </div>
             </div>
@@ -180,6 +182,7 @@ export default function Home() {
                   chatId={currentChatId}
                   setMessages={setMessages}
                   onRegenerate={handleRegenerate}
+                  onScrollButtonStateChange={setShowScrollButton}
                 />
               </div>
             ) : (
@@ -203,6 +206,7 @@ export default function Home() {
                   onStopGeneration={stopGeneration}
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}
+                  showScrollButton={showScrollButton}
                 />
               </div>
             </div>

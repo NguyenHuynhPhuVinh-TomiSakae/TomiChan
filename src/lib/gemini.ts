@@ -24,7 +24,7 @@ export const getGeminiResponse = async (
   audios?: { url: string; data: string }[]
 ) => {
   try {
-    const apiKey = await getApiKey("gemini", "api_key");
+    const apiKey = await getApiKey("google", "google_api_key");
 
     if (!apiKey) {
       return "Vui lòng nhập API key trong cài đặt.";

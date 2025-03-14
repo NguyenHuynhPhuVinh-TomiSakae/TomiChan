@@ -12,7 +12,7 @@ type GeminiHistory = {
 export function useGeminiChat(chatId?: string) {
   return useChatCommon<GeminiHistory>({
     chatId,
-    provider: "gemini",
+    provider: "google",
     getResponse: getGeminiResponse,
   });
 }

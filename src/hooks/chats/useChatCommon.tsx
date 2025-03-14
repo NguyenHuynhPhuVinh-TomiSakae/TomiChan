@@ -11,7 +11,7 @@ import { getApiKey } from "../../utils/getApiKey";
 
 export interface ChatCommonProps<T = any> {
   chatId?: string;
-  provider: "gemini" | "openrouter" | "groq";
+  provider: "google" | "openrouter" | "groq";
   getResponse: (
     message: string,
     history: T,

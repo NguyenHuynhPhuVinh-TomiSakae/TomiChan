@@ -8,6 +8,7 @@ import {
   IconFile,
   IconVideo,
   IconMusicUp,
+  IconArrowDown,
 } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UploadFiles from "./UploadFiles";
@@ -17,6 +18,8 @@ import {
   useVideoUpload,
   useAudioUpload,
 } from "@/hooks/useUploadFiles";
+import { scrollToBottom } from "../ChatMessages/ChatMessages";
+import { useMediaQuery } from "react-responsive";
 
 interface ChatInputProps {
   onSendMessage: (
@@ -34,6 +37,7 @@ interface ChatInputProps {
   onVideosUpload?: (files: File[]) => void;
   onAudiosUpload?: (files: File[]) => void;
   selectedProvider?: string;
+  showScrollButton?: boolean;
 }
 
 export default function ChatInput({
@@ -45,6 +49,7 @@ export default function ChatInput({
   onVideosUpload,
   onAudiosUpload,
   selectedProvider = "google",
+  showScrollButton = false,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [textareaHeight, setTextareaHeight] = useState(56);
@@ -52,9 +57,12 @@ export default function ChatInput({
     selectedImages,
     fileInputRef: imageInputRef,
     handleFileInputChange: handleImageInputChange,
+    handlePastedFiles: handlePastedImages,
     handleRemoveImage,
     handleClearAllImages,
   } = useImageUpload(onImagesUpload);
+
+  const isMobile = useMediaQuery({ maxWidth: 768 });
 
   const {
     selectedFiles,
@@ -83,6 +91,7 @@ export default function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const [isTouching, setIsTouching] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,6 +233,55 @@ export default function ChatInput({
     };
   }, [showPopup]);
 
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) {
+        return;
+      }
+
+      const imageItems = Array.from(items).filter((item) =>
+        item.type.startsWith("image/")
+      );
+
+      if (imageItems.length === 0) return;
+
+      e.preventDefault();
+
+      const files = imageItems
+        .map((item) => item.getAsFile())
+        .filter((file): file is File => file !== null);
+
+      if (files.length > 0) {
+        handlePastedImages(files);
+      }
+    };
+
+    textarea.addEventListener("paste", handlePaste);
+
+    return () => {
+      textarea.removeEventListener("paste", handlePaste);
+    };
+  }, [handlePastedImages]);
+
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleTouchStart = () => setIsTouching(true);
+    const handleTouchEnd = () => setIsTouching(false);
+
+    document.addEventListener("touchstart", handleTouchStart);
+    document.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [isMobile]);
+
   return (
     <motion.form
       onSubmit={handleSubmit}
@@ -232,6 +290,27 @@ export default function ChatInput({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
     >
+      <AnimatePresence>
+        {showScrollButton && !isTouching && (
+          <motion.button
+            onClick={scrollToBottom}
+            className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-white dark:bg-black p-2 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-900 border border-black dark:border-white transition-all z-[9999] cursor-pointer"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            whileHover={{ scale: 0.9 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div
+              animate={{ y: [0, 3, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+              <IconArrowDown size={16} stroke={1.5} />
+            </motion.div>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-col w-full">
         <div className="w-full overflow-hidden bg-white dark:bg-black rounded-2xl border border-black dark:border-white">
           <div className="w-full h-full flex flex-col">

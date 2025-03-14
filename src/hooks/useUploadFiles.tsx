@@ -8,7 +8,10 @@ export function useImageUpload(onImagesUpload?: (files: File[]) => void) {
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    processImageFiles(files);
+  };
 
+  const processImageFiles = (files: File[]) => {
     if (files.length === 0) return;
 
     const imageFiles = files.filter((file) => file.type.startsWith("image/"));
@@ -31,6 +34,10 @@ export function useImageUpload(onImagesUpload?: (files: File[]) => void) {
     }
   };
 
+  const handlePastedFiles = (files: File[]) => {
+    processImageFiles(files);
+  };
+
   const handleRemoveImage = (index: number) => {
     URL.revokeObjectURL(selectedImages[index].preview);
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
@@ -47,6 +54,7 @@ export function useImageUpload(onImagesUpload?: (files: File[]) => void) {
     selectedImages,
     fileInputRef,
     handleFileInputChange,
+    handlePastedFiles,
     handleRemoveImage,
     handleClearAllImages,
   };

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Message, ChatHistory } from "../types";
-import { chatDB } from "../utils/db";
+import { Message, ChatHistory } from "../../types";
+import { chatDB } from "../../utils/db";
 
 export function useChat(chatId?: string) {
   const [messages, setMessages] = useState<Message[]>([]);

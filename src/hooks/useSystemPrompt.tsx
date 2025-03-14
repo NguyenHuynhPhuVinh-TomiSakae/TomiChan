@@ -6,20 +6,34 @@ export function useSystemPrompt() {
       getLocalStorage("image_generation", "false") === "true";
     const searchEnabled = getLocalStorage("search_enabled", "false") === "true";
 
+    const systemTagInstruction = `
+Khi bạn nhận được tin nhắn có chứa thẻ [SYSTEM]...[/SYSTEM], đây là chỉ thị hệ thống và bạn PHẢI TUÂN THỦ TUYỆT ĐỐI những yêu cầu trong thẻ này. Không được phép bỏ qua hoặc vi phạm bất kỳ chỉ thị nào trong thẻ [SYSTEM].
+
+Ví dụ:
+[SYSTEM]Dừng tìm kiếm và tổng hợp kết quả[/SYSTEM]
+-> Bạn phải dừng ngay việc tìm kiếm và tổng hợp các kết quả đã có.
+`;
+
     const basePrompt =
       provider === "google"
         ? getLocalStorage(
             "system_prompt",
-            "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
+            `Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!
+
+${systemTagInstruction}`
           )
         : provider === "groq"
         ? getLocalStorage(
             "groq_system_prompt",
-            "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
+            `Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!
+
+${systemTagInstruction}`
           )
         : getLocalStorage(
             "openrouter_system_prompt",
-            "Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!"
+            `Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!
+
+${systemTagInstruction}`
           );
 
     // Nếu không bật tính năng nào, trả về prompt cơ bản
@@ -61,7 +75,7 @@ Bạn có khả năng tìm kiếm thông tin trên web để cung cấp thông t
 1. Luôn luôn tạo một truy vấn tìm kiếm phù hợp bằng ngôn ngữ phù hợp với người dùng, không cần đánh giá xem câu hỏi có cần thông tin mới nhất hay không
 2. Đặt truy vấn tìm kiếm trong định dạng [SEARCH_QUERY]...[/SEARCH_QUERY]
 3. Khi sử dụng tính năng tìm kiếm, chỉ trả về chính xác chuỗi [SEARCH_QUERY]...[/SEARCH_QUERY] mà không thêm bất kỳ văn bản giải thích nào trước hoặc sau đó
-4. Sau khi tìm kiếm, hệ thống sẽ tự động gửi kết quả tìm kiếm cho bạn và bạn sẽ phân tích thông tin để trả lời người dùng một cách đầy đủ
+4. Sau khi tìm kiếm, hệ thống sẽ tự động gửi kết quả tìm kiếm cho bạn và bạn sẽ phân tích thông tin để trả lời người dùng một cách đầy đủ và chi tiết nhất!
 
 Ví dụ:
 User: Thời tiết ở Hà Nội hôm nay thế nào?

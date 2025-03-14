@@ -13,7 +13,9 @@ export default function GoogleSettings({
   onClose,
 }: GoogleSettingsProps) {
   // Khởi tạo state từ localStorage
-  const [apiKey, setApiKey] = useState(() => getLocalStorage("api_key", ""));
+  const [apiKey, setApiKey] = useState(() =>
+    getLocalStorage("google_api_key", "")
+  );
   const [model, setModel] = useState(() =>
     getLocalStorage("selected_model", "gemini-2.0-flash")
   );
@@ -46,7 +48,7 @@ export default function GoogleSettings({
   // Khi mở modal, reset các giá trị hiển thị từ localStorage
   useEffect(() => {
     if (isOpen) {
-      setApiKey(getLocalStorage("api_key", ""));
+      setApiKey(getLocalStorage("google_api_key", ""));
       setModel(getLocalStorage("selected_model", "gemini-2.0-flash"));
       setSystemPrompt(
         getLocalStorage(
@@ -105,7 +107,7 @@ export default function GoogleSettings({
 
   // Hàm lưu cài đặt và đóng modal
   const handleClose = () => {
-    setLocalStorage("api_key", apiKey);
+    setLocalStorage("google_api_key", apiKey);
     setLocalStorage("selected_model", model);
     setLocalStorage("system_prompt", systemPrompt);
     setLocalStorage("temperature", temperature.toString());

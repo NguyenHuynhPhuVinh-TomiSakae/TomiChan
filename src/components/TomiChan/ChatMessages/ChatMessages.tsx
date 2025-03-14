@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useState, useRef } from "react";
-import { Message } from "../../types";
+import { Message } from "../../../types";
 import {
-  IconArrowDown,
   IconFile,
   IconPdf,
   IconCode,
@@ -17,12 +17,13 @@ import {
   IconDownload,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
-import Markdown from "../Markdown";
+import Markdown from "../../Markdown";
 import { useMediaQuery } from "react-responsive";
 import Image from "next/image";
-import { useMessageActions } from "../../hooks/useMessageActions";
+import { useMessageActions } from "../../../hooks/useMessageActions";
 import DeleteConfirmModal from "./DeleteConfirmModal";
-import { extractImagePrompt } from "../../lib/together";
+import { extractImagePrompt } from "../../../lib/together";
+import MediaViewer from "./MediaViewer";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -30,6 +31,7 @@ interface ChatMessagesProps {
   chatId?: string;
   setMessages: (messages: Message[]) => void;
   onRegenerate?: (messageId: string) => void;
+  onScrollButtonStateChange?: (show: boolean) => void;
 }
 
 export default function ChatMessages({
@@ -38,6 +40,7 @@ export default function ChatMessages({
   chatId,
   setMessages,
   onRegenerate,
+  onScrollButtonStateChange,
 }: ChatMessagesProps) {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const prevMessagesLengthRef = useRef(0);
@@ -50,6 +53,11 @@ export default function ChatMessages({
   const [editContent, setEditContent] = useState("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{
+    type: "image" | "video" | "audio" | "file";
+    src: string;
+    title?: string;
+  } | null>(null);
 
   const {
     copiedMessageId,
@@ -77,12 +85,13 @@ export default function ChatMessages({
     const handleScroll = () => {
       const isNearBottom = checkIfAtBottom();
       setShowScrollButton(!isNearBottom);
+      onScrollButtonStateChange?.(!isNearBottom);
     };
 
     window.addEventListener("scroll", handleScroll);
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [onScrollButtonStateChange]);
 
   useEffect(() => {
     // So sánh số lượng tin nhắn để biết có tin nhắn mới không
@@ -159,7 +168,14 @@ export default function ChatMessages({
               {message.images.map((image, index) => (
                 <div
                   key={index}
-                  className="relative w-full max-w-[512px] mb-2 group"
+                  className="relative w-full max-w-[512px] mb-2 group cursor-pointer"
+                  onClick={() =>
+                    setSelectedMedia({
+                      type: "image",
+                      src: image.data,
+                      title: `AI Generated Image ${index + 1}`,
+                    })
+                  }
                 >
                   <Image
                     src={image.data}
@@ -169,7 +185,8 @@ export default function ChatMessages({
                     className="rounded-lg"
                   />
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       const link = document.createElement("a");
                       link.href = image.data;
                       link.download = `ai-image-${Date.now()}.png`;
@@ -235,7 +252,14 @@ export default function ChatMessages({
                     {message.images.map((image, index) => (
                       <div
                         key={index}
-                        className="relative w-[120px] h-[120px] sm:w-[100px] sm:h-[100px] justify-self-end m-1"
+                        className="relative w-[120px] h-[120px] sm:w-[100px] sm:h-[100px] justify-self-end m-1 cursor-pointer"
+                        onClick={() =>
+                          setSelectedMedia({
+                            type: "image",
+                            src: image.data,
+                            title: `Uploaded image ${index + 1}`,
+                          })
+                        }
                       >
                         <Image
                           src={image.data}
@@ -298,7 +322,17 @@ export default function ChatMessages({
                     {message.videos.map((video, index) => (
                       <div
                         key={index}
-                        className="relative w-[200px] flex flex-col"
+                        className="relative w-[200px] flex flex-col cursor-pointer"
+                        onClick={() =>
+                          setSelectedMedia({
+                            type: "video",
+                            src: video.data,
+                            title: video.url
+                              ? video.url.split("/").pop() ||
+                                `Video ${index + 1}`
+                              : `Video ${index + 1}`,
+                          })
+                        }
                       >
                         <div className="h-[150px] rounded overflow-hidden relative">
                           {playingVideo?.messageId === message.id &&
@@ -368,7 +402,17 @@ export default function ChatMessages({
                     {message.audios.map((audio, index) => (
                       <div
                         key={index}
-                        className="flex flex-col gap-1 bg-gray-100 dark:bg-gray-900 rounded p-2 max-w-[350px]"
+                        className="flex flex-col gap-1 bg-gray-100 dark:bg-gray-900 rounded p-2 max-w-[350px] cursor-pointer"
+                        onClick={() =>
+                          setSelectedMedia({
+                            type: "audio",
+                            src: audio.data,
+                            title: audio.url
+                              ? audio.url.split("/").pop() ||
+                                `Audio ${index + 1}`
+                              : `Audio ${index + 1}`,
+                          })
+                        }
                       >
                         <div className="flex items-center gap-2">
                           <IconMusic
@@ -396,7 +440,7 @@ export default function ChatMessages({
             <div
               className={`relative group ${
                 message.sender === "user"
-                  ? "self-end bg-gray-100 dark:bg-gray-900 text-black dark:text-white mx-4 sm:mx-8 rounded-tl-2xl rounded-bl-2xl rounded-br-2xl sm:rounded-tl-3xl sm:rounded-bl-3xl sm:rounded-br-3xl"
+                  ? "self-end bg-gray-100 dark:bg-gray-900 text-black dark:text-white mx-4 sm:mx-8 rounded-tl-2xl rounded-bl-2xl rounded-br-2xl sm:rounded-tl-3xl sm:rounded-bl-3xl sm:rounded-br-3xl max-w-[85%]"
                   : "self-start text-black dark:text-white w-full"
               } ${
                 editingMessageId === message.id ? "!bg-transparent w-full" : ""
@@ -513,25 +557,6 @@ export default function ChatMessages({
         ))}
       </div>
 
-      {showScrollButton && !isMobile && (
-        <motion.button
-          onClick={scrollToBottom}
-          className="fixed bottom-16 sm:bottom-24 right-4 sm:right-24 bg-white dark:bg-black p-2 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-900 border border-black dark:border-white transition-all z-[9999] cursor-pointer"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0, opacity: 0 }}
-          whileHover={{ scale: 0.9 }}
-          transition={{ duration: 0.2 }}
-        >
-          <motion.div
-            animate={{ y: [0, 3, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-          >
-            <IconArrowDown size={16} stroke={1.5} />
-          </motion.div>
-        </motion.button>
-      )}
-
       <DeleteConfirmModal
         isOpen={deleteModalOpen}
         onClose={() => {
@@ -544,6 +569,21 @@ export default function ChatMessages({
           }
         }}
       />
+
+      <MediaViewer
+        isOpen={selectedMedia !== null}
+        onClose={() => setSelectedMedia(null)}
+        type={selectedMedia?.type || "image"}
+        src={selectedMedia?.src || ""}
+        title={selectedMedia?.title}
+      />
     </div>
   );
 }
+
+export const scrollToBottom = () => {
+  window.scrollTo({
+    top: document.documentElement.scrollHeight,
+    behavior: "smooth",
+  });
+};

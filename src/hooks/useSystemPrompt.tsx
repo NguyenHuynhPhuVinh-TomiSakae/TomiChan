@@ -12,36 +12,30 @@ Khi bạn nhận được tin nhắn có chứa thẻ [SYSTEM]...[/SYSTEM], đâ
 Ví dụ:
 [SYSTEM]Dừng tìm kiếm và tổng hợp kết quả[/SYSTEM]
 -> Bạn phải dừng ngay việc tìm kiếm và tổng hợp các kết quả đã có.
+
+LUÔN LUÔN SỬ DỤNG ĐỊNH DẠNG ĐẸP VỚI LaTeX CHO CÁC CÔNG THỨC TOÁN HỌC!
 `;
 
     const basePrompt =
       provider === "google"
         ? getLocalStorage(
             "system_prompt",
-            `Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!
-
-${systemTagInstruction}`
+            `Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!`
           )
         : provider === "groq"
         ? getLocalStorage(
             "groq_system_prompt",
-            `Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!
-
-${systemTagInstruction}`
+            `Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!`
           )
         : getLocalStorage(
             "openrouter_system_prompt",
-            `Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!
-
-${systemTagInstruction}`
+            `Bạn là 1 Chat Bot AI tên là TomiChan được phát triển bởi TomiSakae!`
           );
 
-    // Nếu không bật tính năng nào, trả về prompt cơ bản
-    if (!imageGeneration && !searchEnabled) return basePrompt;
-
-    // Xử lý tính năng tạo ảnh
+    // Bắt đầu với basePrompt
     let enhancedPrompt = basePrompt;
 
+    // Thêm các tính năng tùy chọn nếu được bật
     if (imageGeneration) {
       const imageConfig = JSON.parse(
         getLocalStorage("image_config", "{}") || "{}"
@@ -68,24 +62,24 @@ Tôi sẽ tạo ra hình ảnh này với kích thước ${imageConfig.width || 
       enhancedPrompt = imageGenerationPrompt + enhancedPrompt;
     }
 
-    // Xử lý tính năng tìm kiếm web
     if (searchEnabled) {
       const searchPrompt = `
 Bạn có khả năng tìm kiếm thông tin trên web để cung cấp thông tin mới nhất và chính xác nhất cho người dùng. Khi người dùng hỏi bất kỳ câu hỏi nào, bạn sẽ:
-1. Luôn luôn tạo một truy vấn tìm kiếm phù hợp bằng ngôn ngữ phù hợp với người dùng, không cần đánh giá xem câu hỏi có cần thông tin mới nhất hay không
+1. Luôn luôn tạo một truy vấn tìm kiếm phù hợp bằng tiếng anh, không cần đánh giá xem câu hỏi có cần thông tin mới nhất hay không
 2. Đặt truy vấn tìm kiếm trong định dạng [SEARCH_QUERY]...[/SEARCH_QUERY]
 3. Khi sử dụng tính năng tìm kiếm, chỉ trả về chính xác chuỗi [SEARCH_QUERY]...[/SEARCH_QUERY] mà không thêm bất kỳ văn bản giải thích nào trước hoặc sau đó
 4. Sau khi tìm kiếm, hệ thống sẽ tự động gửi kết quả tìm kiếm cho bạn và bạn sẽ phân tích thông tin để trả lời người dùng một cách đầy đủ và chi tiết nhất!
 
 Ví dụ:
 User: Thời tiết ở Hà Nội hôm nay thế nào?
-Assistant: [SEARCH_QUERY]thời tiết hôm nay ở Hà Nội[/SEARCH_QUERY]
+Assistant: [SEARCH_QUERY]weather in Hanoi today[/SEARCH_QUERY]
 
 `;
       enhancedPrompt = searchPrompt + enhancedPrompt;
     }
 
-    return enhancedPrompt;
+    // Luôn luôn thêm systemTagInstruction vào cuối
+    return enhancedPrompt + "\n\n" + systemTagInstruction;
   };
 
   return { getEnhancedSystemPrompt };

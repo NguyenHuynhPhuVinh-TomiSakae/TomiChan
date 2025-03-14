@@ -288,7 +288,8 @@ export function useChatCommon<T>({
                       setIsGeneratingImage,
                       setIsSearching,
                       undefined,
-                      sendFollowUpMessage
+                      (searchResults) =>
+                        sendFollowUpMessage(searchResults, message)
                     ),
                   0
                 );
@@ -390,7 +391,8 @@ export function useChatCommon<T>({
               setIsGeneratingImage,
               setIsSearching,
               messageIndex,
-              sendFollowUpMessage
+              (searchResults) =>
+                sendFollowUpMessage(searchResults, previousUserMessage.content)
             );
           }
 
@@ -426,7 +428,10 @@ export function useChatCommon<T>({
   };
 
   // Thêm hàm gửi tin nhắn follow-up với kết quả tìm kiếm
-  const sendFollowUpMessage = async (searchResults: string) => {
+  const sendFollowUpMessage = async (
+    searchResults: string,
+    originalUserMessage?: string
+  ) => {
     const apiKey =
       localStorage.getItem(`${provider}_api_key`) ||
       (await getApiKey(provider, `${provider}_api_key`));
@@ -446,20 +451,34 @@ export function useChatCommon<T>({
 
     const systemPrompt = getEnhancedSystemPrompt(provider);
 
+    // Sử dụng originalUserMessage được truyền vào, hoặc tìm trong messages nếu không có
+    const userQuery =
+      originalUserMessage ||
+      (() => {
+        const userMessages = messages.filter(
+          (msg) => msg.sender === "user" && !msg.isFollowUpSearch
+        );
+        return userMessages.length > 0
+          ? userMessages[userMessages.length - 1].content
+          : "";
+      })();
+
     // Sửa đổi hướng dẫn tìm kiếm sâu
     const searchConfig = JSON.parse(
       localStorage.getItem("search_config") || "{}"
     );
     const deepSearchInstruction = searchConfig.deepSearch
-      ? `Bạn chỉ được thực hiện ÍT NHẤT 3 lần tìm kiếm và TỐI ĐA 10 lần tìm kiếm để tránh quá tải. Với mỗi chủ đề hoặc khía cạnh quan trọng nhất của vấn đề, hãy sử dụng tag [SEARCH_QUERY]...[/SEARCH_QUERY] với từ khóa phù hợp.
+      ? `Bạn chỉ được thực hiện TỐI ĐA 10 lần tìm kiếm để tránh quá tải. Với mỗi chủ đề hoặc khía cạnh quan trọng nhất của vấn đề, hãy sử dụng tag [SEARCH_QUERY]...[/SEARCH_QUERY] với từ khóa phù hợp. Nếu cần tìm nhiều thông tin, hãy thực hiện tìm kiếm từng cái một, và chỉ tìm kiếm tiếp nếu thông tin hiện tại là chưa đủ.
+
+Câu hỏi ban đầu của người dùng là: "${userQuery}"
 
 Quy trình tìm kiếm của bạn:
-1. Phân tích kết quả tìm kiếm hiện tại
-2. Xác định 1-2 khía cạnh quan trọng nhất cần tìm hiểu thêm
-3. Thực hiện tìm kiếm bổ sung (không quá 10 lần)
-4. Tổng hợp tất cả thông tin sau khi hoàn thành và giải thích chi tiết cặn kẽ kết hợp với toàn bộ nội dung trước đó một cách sâu sắc và ấn tượng!`
+1. Phân tích kết quả tìm kiếm hiện tại.
+2. Xác định (các) khía cạnh quan trọng nhất cần tìm hiểu thêm.
+3. Nếu cần tìm nhiều thông tin, hãy tìm kiếm TỪNG CÁI MỘT bằng cách sử dụng tag [SEARCH_QUERY]...[/SEARCH_QUERY] cho mỗi truy vấn. Chỉ tìm kiếm tiếp nếu thông tin hiện tại vẫn chưa đủ để trả lời câu hỏi một cách đầy đủ.
+4. Nếu người dùng không yêu cầu cụ thể, KHÔNG TÌM KIẾM QUÁ CHI TIẾT VÀO MỘT VẤN ĐỀ CỤ THỂ. Thay vào đó, hãy tìm kiếm tổng quát và đánh giá kết quả một cách tổng quan.
+5. Tổng hợp tất cả thông tin sau khi hoàn thành và giải thích chi tiết cặn kẽ kết hợp với toàn bộ nội dung trước đó một cách sâu sắc và ấn tượng!`
       : "";
-
     const enhancedSystemPrompt =
       systemPrompt +
       (deepSearchInstruction ? `\n\n${deepSearchInstruction}` : "");
@@ -512,7 +531,8 @@ Quy trình tìm kiếm của bạn:
                     setIsGeneratingImage,
                     setIsSearching,
                     undefined,
-                    sendFollowUpMessage
+                    (searchResults) =>
+                      sendFollowUpMessage(searchResults, originalUserMessage)
                   ),
                 0
               );

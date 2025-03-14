@@ -146,7 +146,7 @@ export default function Home() {
               isMagicMode={isMagicMode}
             />
             <div className="h-screen flex flex-col justify-center items-center">
-              <TomiChat />
+              <TomiChat isMagicMode={isMagicMode} />
               <div className="w-full max-w-4xl mx-auto p-4">
                 <ChatInput
                   onSendMessage={sendMessage}
@@ -158,6 +158,7 @@ export default function Home() {
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}
                   showScrollButton={showScrollButton}
+                  isMagicMode={isMagicMode}
                 />
               </div>
             </div>
@@ -211,6 +212,7 @@ export default function Home() {
                   isGenerating={isLoading}
                   selectedProvider={selectedProvider}
                   showScrollButton={showScrollButton}
+                  isMagicMode={isMagicMode}
                 />
               </div>
             </div>

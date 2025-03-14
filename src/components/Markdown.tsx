@@ -18,6 +18,8 @@ import {
 import { useThemeContext } from "../providers/ThemeProvider";
 import { ThinkBlock } from "./ThinkBlock";
 import { IconCopy, IconCheck, IconPlayerPlay } from "@tabler/icons-react";
+import "katex/dist/katex.min.css";
+import { MathJaxContext, MathJax } from "better-react-mathjax";
 
 interface MarkdownProps {
   content: string;
@@ -40,6 +42,8 @@ interface CustomComponents extends Components {
     node: any;
     children: React.ReactNode;
   }) => JSX.Element;
+  math: ({ value }: { value: string }) => JSX.Element;
+  inlineMath: ({ value }: { value: string }) => JSX.Element;
 }
 
 export default function Markdown({ content, className = "" }: MarkdownProps) {
@@ -49,9 +53,6 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     theme === "dark" ||
     (theme === "system" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
-
-  // Không thực hiện thay thế <think>...</think> nữa, truyền content trực tiếp.
-  // VN: Nội dung bao gồm thẻ <think>... sẽ được xử lý bởi rehypeRaw ở bước sau
 
   const components: CustomComponents = {
     // Mapping tag "think" thành component ThinkBlock
@@ -327,27 +328,50 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
 
       return <p className="my-2">{content}</p>;
     },
+
+    math: ({ value }) => (
+      <MathJax>
+        <div className="flex justify-center my-4">
+          <div
+            className={`${
+              isDarkMode ? "text-gray-100" : "text-gray-900"
+            } text-lg`}
+          >
+            {"\\[" + value + "\\]"}
+          </div>
+        </div>
+      </MathJax>
+    ),
+
+    inlineMath: ({ value }) => (
+      <MathJax>
+        <span className={`${isDarkMode ? "text-gray-100" : "text-gray-900"}`}>
+          {"\\(" + value + "\\)"}
+        </span>
+      </MathJax>
+    ),
   };
 
   return (
-    <div
-      className={`prose ${
-        isDarkMode ? "prose-invert" : ""
-      } max-w-none ${className}`}
-    >
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
-        // Cho phép raw HTML (rehypeRaw) và sử dụng customSchema chứa tag think
-        rehypePlugins={[
-          rehypeRaw,
-          [rehypeSanitize, customSchema],
-          rehypeHighlight,
-          rehypeKatex,
-        ]}
-        components={components}
+    <MathJaxContext>
+      <div
+        className={`prose ${
+          isDarkMode ? "prose-invert" : ""
+        } max-w-none ${className}`}
       >
-        {content}
-      </ReactMarkdown>
-    </div>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[
+            rehypeRaw,
+            [rehypeSanitize, customSchema],
+            rehypeHighlight,
+            [rehypeKatex, { output: "html" }],
+          ]}
+          components={components}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+    </MathJaxContext>
   );
 }

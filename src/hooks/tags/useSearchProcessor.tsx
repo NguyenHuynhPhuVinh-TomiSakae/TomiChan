@@ -28,7 +28,14 @@ export function useSearchProcessor() {
     setIsSearching?: React.Dispatch<React.SetStateAction<boolean>>,
     sendFollowUpMessage?: (searchResults: string) => Promise<void>
   ) => {
-    // Reset search count khi bắt đầu xử lý tin nhắn mới
+    // Kiểm tra xem có phải là follow-up search không
+    const isFollowUpSearch = content.includes("Kết quả tìm kiếm cho");
+
+    // Reset search count nếu KHÔNG phải là follow-up search
+    if (!isFollowUpSearch) {
+      resetSearchCount();
+    }
+
     if (
       content.includes("[SEARCH_QUERY]") &&
       content.includes("[/SEARCH_QUERY]")
@@ -51,7 +58,7 @@ export function useSearchProcessor() {
                 ...newMessages[targetIndex],
                 content:
                   content +
-                  "\n\n[ĐÃ ĐẠT GIỚI HẠN TÌM KIẾM] Vui lòng tổng hợp thông tin đã có.",
+                  "\n\n[SYSTEM]Đã đạt giới hạn tìm kiếm. Vui lòng tổng hợp thông tin đã có.[/SYSTEM]",
               };
             }
             return newMessages;
@@ -66,29 +73,31 @@ export function useSearchProcessor() {
           clearTimeout(searchTimeoutRef.current);
         }
 
-        // Kiểm tra xem tin nhắn hiện tại có phải là follow-up search không
+        // Sửa phần này để tránh duplicate messages
         setMessages((prev) => {
-          const currentMessage = prev.find((msg) => msg.id === messageId);
-          const isFollowUpSearch = currentMessage?.isFollowUpSearch;
+          // Lọc bỏ tin nhắn "đang tìm kiếm" cũ nếu có
+          const filteredMessages = prev.filter(
+            (msg) => msg.content !== "*Đang tìm kiếm...*"
+          );
 
-          const newMessages = isFollowUpSearch
-            ? prev // Giữ nguyên tin nhắn cũ nếu là follow-up search
-            : prev.filter((msg) => msg.id !== messageId); // Xóa tin nhắn hiện tại nếu là tìm kiếm thông thường
+          const baseMessages = isFollowUpSearch
+            ? filteredMessages
+            : filteredMessages.filter((msg) => msg.id !== messageId);
 
-          // Thêm trạng thái "đang tìm kiếm" vào cuối
+          // Thêm trạng thái "đang tìm kiếm" với ID duy nhất
           const searchingMessage: Message = {
-            id: Date.now().toString(),
+            id: `searching-${Date.now()}`,
             content: "*Đang tìm kiếm...*",
             sender: "bot",
           };
 
-          return [...newMessages, searchingMessage];
+          return [...baseMessages, searchingMessage];
         });
 
         searchTimeoutRef.current = setTimeout(() => {
           searchGoogle(searchQuery)
             .then((searchResults) => {
-              let searchResultsForAI = `Kết quả tìm kiếm cho "${searchQuery}" (Lần tìm kiếm thứ ${searchCountRef.current}/10):\n\n`;
+              let searchResultsForAI = `Kết quả tìm kiếm cho "${searchQuery}" [SYSTEM]Lần tìm kiếm thứ ${searchCountRef.current}/10[/SYSTEM]:\n\n`;
 
               if (searchResults.length > 0) {
                 searchResults.forEach((result, index) => {
@@ -112,7 +121,7 @@ export function useSearchProcessor() {
               // Thêm thông báo nếu đã đạt giới hạn
               if (searchCountRef.current >= 10) {
                 searchResultsForAI +=
-                  "\n\n[SYSTEM] Đã đạt giới hạn 10 lần tìm kiếm. Hãy tổng hợp tất cả thông tin đã thu thập và đưa ra kết luận cuối cùng. Không thực hiện thêm tìm kiếm nào nữa.";
+                  "\n\n[SYSTEM]Đã đạt giới hạn 10 lần tìm kiếm. Hãy tổng hợp tất cả thông tin đã thu thập và đưa ra kết luận cuối cùng. Không thực hiện thêm tìm kiếm nào nữa.[/SYSTEM]";
               }
 
               // Gửi kết quả tìm kiếm cho AI để phân tích
@@ -134,7 +143,7 @@ export function useSearchProcessor() {
                   ...newMessages,
                   {
                     id: Date.now().toString(),
-                    content: `*Lỗi tìm kiếm: ${errorMessage}*`,
+                    content: `[SYSTEM]Lỗi tìm kiếm: ${errorMessage}[/SYSTEM]`,
                     sender: "bot",
                   },
                 ];

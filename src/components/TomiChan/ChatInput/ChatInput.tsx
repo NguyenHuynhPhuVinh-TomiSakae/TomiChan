@@ -95,6 +95,7 @@ export default function ChatInput({
   const [showPopup, setShowPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
   const [isTouching, setIsTouching] = useState(false);
+  const touchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,8 +274,20 @@ export default function ChatInput({
   useEffect(() => {
     if (!isMobile) return;
 
-    const handleTouchStart = () => setIsTouching(true);
-    const handleTouchEnd = () => setIsTouching(false);
+    const handleTouchStart = () => {
+      // Xóa timeout cũ nếu có
+      if (touchTimeoutRef.current) {
+        clearTimeout(touchTimeoutRef.current);
+      }
+      setIsTouching(true);
+    };
+
+    const handleTouchEnd = () => {
+      // Thêm timeout 2s trước khi set isTouching = false
+      touchTimeoutRef.current = setTimeout(() => {
+        setIsTouching(false);
+      }, 2000);
+    };
 
     document.addEventListener("touchstart", handleTouchStart);
     document.addEventListener("touchend", handleTouchEnd);
@@ -282,6 +295,10 @@ export default function ChatInput({
     return () => {
       document.removeEventListener("touchstart", handleTouchStart);
       document.removeEventListener("touchend", handleTouchEnd);
+      // Cleanup timeout khi unmount
+      if (touchTimeoutRef.current) {
+        clearTimeout(touchTimeoutRef.current);
+      }
     };
   }, [isMobile]);
 

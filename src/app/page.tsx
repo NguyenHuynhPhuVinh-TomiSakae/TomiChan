@@ -106,7 +106,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-black">
+    <div className="flex min-h-screen bg-white dark:bg-black overflow-x-hidden">
       <Sidebar
         onNewChat={handleNewChat}
         isCollapsed={isCollapsed}
@@ -122,20 +122,18 @@ export default function Home() {
         onToggleMagicMode={handleToggleMagicMode}
       />
       <main
-        className={`flex-1 transition-all duration-300 text-black dark:text-white
+        className={`relative transition-all duration-300 text-black dark:text-white min-h-screen overflow-x-hidden
           ${
-            messages.length > 0
-              ? !isMobile
-                ? isCollapsed
-                  ? "sm:ml-16"
-                  : isMagicMode
-                  ? "sm:ml-[70vw]"
-                  : "sm:ml-64"
-                : "ml-0"
-              : ""
-          } ${isMobile ? "w-full" : ""}`}
+            !isMobile
+              ? isCollapsed
+                ? "ml-16 w-[calc(100%-4rem)]"
+                : isMagicMode
+                ? "ml-[70vw] w-[30vw]"
+                : "ml-64 w-[calc(100%-16rem)]"
+              : "w-full"
+          }`}
       >
-        {messages.length === 0 && !isMobile ? (
+        {messages.length === 0 ? (
           <>
             <Header
               isCollapsed={isCollapsed}
@@ -145,7 +143,7 @@ export default function Home() {
               selectedProvider={selectedProvider}
               isMagicMode={isMagicMode}
             />
-            <div className="h-screen flex flex-col justify-center items-center">
+            <div className="min-h-screen flex flex-col justify-center items-center">
               <TomiChat isMagicMode={isMagicMode} />
               <div className="w-full max-w-4xl mx-auto p-4">
                 <ChatInput
@@ -173,33 +171,31 @@ export default function Home() {
               selectedProvider={selectedProvider}
               isMagicMode={isMagicMode}
             />
-            {messages.length > 0 ? (
-              <div className="w-full max-w-4xl mx-auto flex-1 pb-[22vh] sm:pb-[70vh] pt-20">
-                <ChatMessages
-                  messages={messages}
-                  isLoading={isLoading}
-                  chatId={currentChatId}
-                  setMessages={setMessages}
-                  onRegenerate={handleRegenerate}
-                  onScrollButtonStateChange={setShowScrollButton}
-                />
-              </div>
-            ) : (
-              <div className="h-screen flex flex-col justify-center items-center">
-                <TomiChat />
-              </div>
-            )}
             <div
-              className="fixed bottom-0 right-0 bg-white dark:bg-black transition-all duration-300 w-full sm:w-auto"
-              style={{
-                left: isMobile
-                  ? 0
-                  : isCollapsed
-                  ? "64px"
-                  : isMagicMode
-                  ? "70vw"
-                  : "256px",
-              }}
+              className={`w-full max-w-4xl mx-auto flex-1 pb-[22vh] pt-20
+              ${isMagicMode ? "sm:pb-[30vh]" : "sm:pb-[70vh]"}
+              `}
+            >
+              <ChatMessages
+                messages={messages}
+                isLoading={isLoading}
+                chatId={currentChatId}
+                setMessages={setMessages}
+                onRegenerate={handleRegenerate}
+                onScrollButtonStateChange={setShowScrollButton}
+              />
+            </div>
+            <div
+              className={`fixed bottom-0 bg-white dark:bg-black transition-all duration-300
+                ${
+                  !isMobile
+                    ? isCollapsed
+                      ? "left-16 w-[calc(100%-4rem)]"
+                      : isMagicMode
+                      ? "left-[70vw] w-[30vw]"
+                      : "left-64 w-[calc(100%-16rem)]"
+                    : "left-0 w-full"
+                }`}
             >
               <div className="w-full max-w-4xl mx-auto p-2 sm:p-4">
                 <ChatInput

@@ -118,20 +118,21 @@ export default function Sidebar({
 
   // Cập nhật sidebarStyle để mở rộng 70% màn hình khi ở chế độ magic
   const sidebarStyle: React.CSSProperties = {
-    position: isMobile ? "fixed" : messages.length > 0 ? "fixed" : "relative",
+    position: isMobile ? "fixed" : "fixed",
     width: isCollapsed
       ? isMobile
         ? "100%"
         : "4rem"
       : isMobile
       ? isMagicMode
-        ? "100%" // Chiếm toàn màn hình khi ở chế độ magic trên mobile
+        ? "100%"
         : "80%"
       : isMagicMode
       ? "70vw"
       : "16rem",
     zIndex: isMobile ? 50 : 10,
     left: isMobile && isCollapsed ? "-100%" : 0,
+    height: "100vh",
   };
 
   // Thêm xử lý cho onSelectChat trong ChatHistoryList

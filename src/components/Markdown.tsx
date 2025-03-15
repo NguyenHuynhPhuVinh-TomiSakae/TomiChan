@@ -310,23 +310,23 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     },
 
     p: ({ children }) => {
-      // Kiểm tra và xử lý nội dung trong thẻ SYSTEM và SEARCH_QUERY
-      const content = React.Children.toArray(children).map((child) => {
+      // Xử lý nội dung để ẩn các tag đặc biệt khi hiển thị
+      const processedContent = React.Children.toArray(children).map((child) => {
         if (typeof child === "string") {
-          // Tìm và loại bỏ nội dung trong thẻ SYSTEM và SEARCH_QUERY
           return child
             .replace(/\[SYSTEM\].*?\[\/SYSTEM\]/g, "")
-            .replace(/\[SEARCH_QUERY\].*?\[\/SEARCH_QUERY\]/g, "");
+            .replace(/\[SEARCH_QUERY\].*?\[\/SEARCH_QUERY\]/g, "")
+            .replace(/\[IMAGE_PROMPT\].*?\[\/IMAGE_PROMPT\]/g, "");
         }
         return child;
       });
 
-      // Nếu sau khi xử lý mà đoạn văn rỗng thì không render
-      if (content.every((item) => item === "")) {
+      // Không render paragraph nếu chỉ có tag
+      if (processedContent.every((item) => item === "")) {
         return null;
       }
 
-      return <p className="my-2">{content}</p>;
+      return <p className="my-2">{processedContent}</p>;
     },
 
     math: ({ value }) => (

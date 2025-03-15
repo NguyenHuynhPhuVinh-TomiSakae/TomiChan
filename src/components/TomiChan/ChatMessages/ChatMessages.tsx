@@ -187,19 +187,13 @@ export default function ChatMessages({
     const imagePrompt = extractImagePrompt(message.content);
 
     if (imagePrompt && message.sender === "bot") {
-      // Lọc bỏ image prompt khỏi nội dung hiển thị
-      const cleanContent = message.content.replace(
-        /\[IMAGE_PROMPT\].*?\[\/IMAGE_PROMPT\]/,
-        ""
-      );
-
       // Kiểm tra xem có lỗi trong nội dung không
-      const hasError = cleanContent.includes("*Lỗi:");
+      const hasError = message.content.includes("*Lỗi:");
 
       return (
         <div>
           <div className="break-words">
-            <Markdown content={cleanContent} />
+            <Markdown content={message.content} />
           </div>
           {!hasError && message.images ? (
             <div className="mt-4">

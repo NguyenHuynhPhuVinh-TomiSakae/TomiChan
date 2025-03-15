@@ -4,6 +4,7 @@ import {
   IconX,
   IconDeviceFloppy,
   IconSettings,
+  IconPlayerPlay,
 } from "@tabler/icons-react";
 import type { CodeFile } from "../../../../../types";
 import { chatDB } from "../../../../../utils/db";
@@ -82,10 +83,14 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
   const settingsRef = useRef<HTMLDivElement>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const contentRef = useRef(file.content);
+  const originalContentRef = useRef(file.content);
 
   useEffect(() => {
     setContent(file.content);
     setOriginalContent(file.content);
+    contentRef.current = file.content;
+    originalContentRef.current = file.content;
   }, [file]);
 
   // Lưu cài đặt vào localStorage khi thay đổi
@@ -96,7 +101,12 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
   // Kiểm tra thay đổi chưa lưu
   useEffect(() => {
     setHasUnsavedChanges(content !== originalContent);
+    contentRef.current = content;
   }, [content, originalContent]);
+
+  useEffect(() => {
+    originalContentRef.current = originalContent;
+  }, [originalContent]);
 
   // Xử lý click outside
   useEffect(() => {
@@ -137,11 +147,12 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
     try {
       const updatedFile: CodeFile = {
         ...file,
-        content: content,
+        content: contentRef.current,
         updatedAt: new Date(),
       };
       await chatDB.saveCodeFile(updatedFile);
-      setOriginalContent(content);
+      setOriginalContent(contentRef.current);
+      originalContentRef.current = contentRef.current;
       setHasUnsavedChanges(false);
       if (!isAutoSave) {
         toast.success("Đã lưu file thành công!");
@@ -159,6 +170,7 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {
       setContent(value);
+      contentRef.current = value;
 
       // Xử lý tự động lưu
       if (settings.autoSave) {
@@ -167,11 +179,11 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
         }
 
         autoSaveTimeoutRef.current = setTimeout(() => {
-          if (value !== originalContent) {
-            // Chỉ lưu khi có thay đổi
-            handleSave(true); // Truyền tham số true để chỉ ra đây là tự động lưu
+          // Sử dụng ref để có giá trị mới nhất
+          if (contentRef.current !== originalContentRef.current) {
+            handleSave(true);
           }
-        }, 2000); // Tự động lưu sau 2 giây kể từ lần thay đổi cuối cùng
+        }, 2000);
       }
     }
   };
@@ -182,6 +194,21 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
       ...newSettings,
     }));
   };
+
+  // Hàm xử lý chạy file HTML trong tab mới
+  const handleRunHtml = () => {
+    // Tạo một Blob từ nội dung HTML
+    const blob = new Blob([content], { type: "text/html" });
+    // Tạo URL từ blob
+    const url = URL.createObjectURL(blob);
+    // Mở URL trong tab mới
+    window.open(url, "_blank");
+    // Giải phóng URL sau khi đã mở
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  };
+
+  // Kiểm tra xem file có phải là HTML không
+  const isHtmlFile = file.name.toLowerCase().endsWith(".html");
 
   return (
     <div className="flex flex-col h-full">
@@ -203,6 +230,18 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {/* Thêm nút chạy file HTML */}
+            {isHtmlFile && (
+              <button
+                onClick={handleRunHtml}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2 cursor-pointer"
+                title="Chạy file HTML trong tab mới"
+              >
+                <IconPlayerPlay size={20} />
+                Chạy
+              </button>
+            )}
+
             <div className="relative" ref={settingsRef}>
               <button
                 onClick={() => setShowSettings(!showSettings)}

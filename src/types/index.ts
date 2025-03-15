@@ -38,4 +38,13 @@ export interface CodeFile {
   createdAt: Date;
   updatedAt: Date;
   language: string;
+  folderId?: string; // thêm trường này
+}
+
+export interface CodeFolder {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+  parentId?: string; // thêm trường này
 }

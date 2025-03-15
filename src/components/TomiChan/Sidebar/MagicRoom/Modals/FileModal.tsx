@@ -1,14 +1,18 @@
-import { CodeFile } from "../../../../../types";
+import { CodeFile, CodeFolder } from "../../../../../types";
 import Portal from "../../../../Portal";
 
 interface FileModalProps {
-  type: "new" | "edit" | "delete";
+  type: "new" | "edit" | "delete" | "newFolder";
   isOpen: boolean;
   onClose: () => void;
   fileName: string;
   onFileNameChange: (name: string) => void;
   onSubmit: () => void;
   selectedFile?: CodeFile;
+  folders?: CodeFolder[];
+  selectedParentFolder?: string | null;
+  onParentFolderChange?: (folderId: string | null) => void;
+  selectedFolder?: CodeFolder | null;
 }
 
 export function FileModal({
@@ -19,12 +23,18 @@ export function FileModal({
   onFileNameChange,
   onSubmit,
   selectedFile,
+  selectedFolder,
 }: FileModalProps) {
   if (!isOpen) return null;
 
   const modalConfig = {
     new: {
       title: "Tạo tệp mới",
+      submitText: "Tạo",
+      submitClass: "bg-purple-500 hover:bg-purple-600",
+    },
+    newFolder: {
+      title: "Tạo thư mục mới",
       submitText: "Tạo",
       submitClass: "bg-purple-500 hover:bg-purple-600",
     },
@@ -48,23 +58,25 @@ export function FileModal({
             {modalConfig[type].title}
           </h3>
 
-          {type !== "delete" ? (
+          {type !== "delete" && (
             <input
               type="text"
               value={fileName}
               onChange={(e) => onFileNameChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-transparent cursor-text"
-              placeholder="Nhập tên tệp..."
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-transparent"
+              placeholder="Nhập tên..."
               autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  onSubmit();
-                }
-              }}
             />
-          ) : (
+          )}
+
+          {type === "delete" && (
             <p className="mb-4">
-              Bạn có chắc chắn muốn xóa tệp &quot;{selectedFile?.name}&quot;
+              Bạn có chắc chắn muốn xóa{" "}
+              {selectedFolder
+                ? `thư mục "${selectedFolder.name}" và tất cả nội dung bên trong`
+                : selectedFile
+                ? `tệp "${selectedFile.name}"`
+                : "mục này"}{" "}
               không?
             </p>
           )}
@@ -72,13 +84,13 @@ export function FileModal({
           <div className="flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
+              className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
             >
               Hủy
             </button>
             <button
               onClick={onSubmit}
-              className={`px-4 py-2 text-white rounded-lg cursor-pointer transition-colors ${modalConfig[type].submitClass}`}
+              className={`px-4 py-2 text-white rounded-lg ${modalConfig[type].submitClass} cursor-pointer`}
             >
               {modalConfig[type].submitText}
             </button>

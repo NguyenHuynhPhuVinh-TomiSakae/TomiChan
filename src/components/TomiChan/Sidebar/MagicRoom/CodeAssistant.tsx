@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React from "react";
 import {
   IconX,
   IconCode,
@@ -6,101 +7,141 @@ import {
   IconEdit,
   IconTrash,
   IconFolder,
+  IconFolderPlus,
 } from "@tabler/icons-react";
-import { nanoid } from "nanoid";
-import { chatDB } from "../../../../utils/db";
-import type { CodeFile } from "../../../../types";
 import { FileModal } from "./Modals/FileModal";
 import CodeEditor from "./CodeEditor";
+import { useCodeAssistant } from "../../../../hooks/useCodeAssistant";
 
 interface CodeAssistantProps {
   onClose: () => void;
 }
 
 export default function CodeAssistant({ onClose }: CodeAssistantProps) {
-  const [files, setFiles] = useState<CodeFile[]>([]);
-  const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [newFileName, setNewFileName] = useState("Untitled.js");
-  const [selectedFile, setSelectedFile] = useState<CodeFile | null>(null);
-  const [activeFile, setActiveFile] = useState<CodeFile | null>(null);
+  const {
+    files,
+    folders,
+    isNewFileModalOpen,
+    isEditModalOpen,
+    isDeleteModalOpen,
+    isNewFolderModalOpen,
+    setIsNewFolderModalOpen,
+    newFileName,
+    selectedFile,
+    activeFile,
+    selectedFolder,
+    selectedParentFolder,
+    currentFolder,
+    setIsNewFileModalOpen,
+    setIsEditModalOpen,
+    setIsDeleteModalOpen,
+    setNewFileName,
+    setSelectedFile,
+    setSelectedFolder,
+    setSelectedParentFolder,
+    createNewFile,
+    createNewFolder,
+    handleEditFile,
+    handleDeleteFile,
+    handleEditFolder,
+    handleDeleteFolder,
+    handleFileOpen,
+    handleEditorBack,
+    handleFolderClick,
+    handlePathClick,
+    openEditFolderModal,
+    openDeleteFolderModal,
+    getCurrentPath,
+  } = useCodeAssistant();
 
-  useEffect(() => {
-    loadFiles();
-  }, []);
-
-  const loadFiles = async () => {
-    const allFiles = await chatDB.getAllCodeFiles();
-    // Sắp xếp files theo thời gian cập nhật mới nhất
-    const sortedFiles = allFiles.sort((a, b) => {
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  const renderFolderContents = (folderId: string | null) => {
+    const foldersInCurrent = folders.filter((folder) => {
+      if (folderId === null) {
+        return folder.parentId === undefined || folder.parentId === null;
+      }
+      return folder.parentId === folderId;
     });
-    setFiles(sortedFiles);
-  };
 
-  const createNewFile = async () => {
-    if (!newFileName.trim()) return;
+    const filesInCurrent = files.filter((file) => {
+      if (folderId === null) {
+        return file.folderId === undefined || file.folderId === null;
+      }
+      return file.folderId === folderId;
+    });
 
-    const newFile: CodeFile = {
-      id: nanoid(),
-      name: newFileName,
-      content: "",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      language: newFileName.split(".").pop() || "javascript",
-    };
+    return (
+      <div className="space-y-2">
+        {foldersInCurrent.map((folder) => (
+          <div
+            key={folder.id}
+            className="flex items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group"
+            onClick={() => handleFolderClick(folder.id)}
+          >
+            <div className="flex items-center flex-1">
+              <IconFolder size={20} className="mr-2 text-yellow-500" />
+              <span className="flex-1">{folder.name}</span>
+              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
+                <button
+                  onClick={(e) => openEditFolderModal(folder, e)}
+                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
+                  title="Đổi tên"
+                >
+                  <IconEdit size={18} />
+                </button>
+                <button
+                  onClick={(e) => openDeleteFolderModal(folder, e)}
+                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-red-500 cursor-pointer"
+                  title="Xóa"
+                >
+                  <IconTrash size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
 
-    await chatDB.saveCodeFile(newFile);
-    await loadFiles();
-    setIsNewFileModalOpen(false);
-    setNewFileName("Untitled.js");
-  };
-
-  const handleEditFile = async () => {
-    if (!selectedFile || !newFileName.trim()) return;
-
-    const updatedFile: CodeFile = {
-      ...selectedFile,
-      name: newFileName,
-      updatedAt: new Date(),
-      language: newFileName.split(".").pop() || "javascript",
-    };
-
-    await chatDB.saveCodeFile(updatedFile);
-    await loadFiles();
-    setIsEditModalOpen(false);
-    setNewFileName("Untitled.js");
-    setSelectedFile(null);
-  };
-
-  const handleDeleteFile = async () => {
-    if (!selectedFile) return;
-
-    await chatDB.deleteCodeFile(selectedFile.id);
-    await loadFiles();
-    setIsDeleteModalOpen(false);
-    setSelectedFile(null);
-  };
-
-  const openEditModal = (file: CodeFile) => {
-    setSelectedFile(file);
-    setNewFileName(file.name);
-    setIsEditModalOpen(true);
-  };
-
-  const openDeleteModal = (file: CodeFile) => {
-    setSelectedFile(file);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleFileOpen = (file: CodeFile) => {
-    setActiveFile(file);
-  };
-
-  const handleEditorBack = async () => {
-    await loadFiles();
-    setActiveFile(null);
+        {filesInCurrent.map((file) => (
+          <div
+            key={file.id}
+            className="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 group cursor-pointer"
+            onClick={() => handleFileOpen(file)}
+          >
+            <div className="flex-1 flex items-center gap-3">
+              <IconCode size={20} className="text-purple-500" />
+              <span className="flex-1">{file.name}</span>
+              <span className="text-sm text-gray-500">
+                {new Date(file.updatedAt).toLocaleDateString()}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedFile(file);
+                  setNewFileName(file.name);
+                  setIsEditModalOpen(true);
+                }}
+                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
+                title="Chỉnh sửa"
+              >
+                <IconEdit size={18} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedFile(file);
+                  setIsDeleteModalOpen(true);
+                }}
+                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-red-500 cursor-pointer"
+                title="Xóa"
+              >
+                <IconTrash size={18} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -136,85 +177,118 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
             </div>
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Tệp của tôi</h2>
+          {/* Action buttons */}
+          <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex justify-end gap-2">
               <button
-                onClick={() => setIsNewFileModalOpen(true)}
+                onClick={() => {
+                  setSelectedParentFolder(currentFolder);
+                  setIsNewFolderModalOpen(true);
+                }}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
+              >
+                <IconFolderPlus className="inline-block mr-2" />
+                Tạo thư mục
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedParentFolder(currentFolder);
+                  setIsNewFileModalOpen(true);
+                }}
                 className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors cursor-pointer"
               >
                 Tạo tệp mới
               </button>
             </div>
-
-            <div className="space-y-2">
-              {files.map((file) => (
-                <div
-                  key={file.id}
-                  className="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 group cursor-pointer"
-                  onClick={() => handleFileOpen(file)}
-                >
-                  <div className="flex-1 flex items-center gap-3">
-                    <IconCode size={20} className="text-purple-500" />
-                    <span className="flex-1">{file.name}</span>
-                    <span className="text-sm text-gray-500">
-                      {new Date(file.updatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => openEditModal(file)}
-                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
-                      title="Chỉnh sửa"
-                    >
-                      <IconEdit size={18} />
-                    </button>
-                    <button
-                      onClick={() => openDeleteModal(file)}
-                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-red-500 cursor-pointer"
-                      title="Xóa"
-                    >
-                      <IconTrash size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-
-              {files.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <IconFolder size={48} className="mx-auto mb-2 opacity-50" />
-                  <p>Chưa có tệp nào. Hãy tạo tệp mới!</p>
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Unified Modal */}
+          {/* Navigation path */}
+          <div className="flex items-center p-4 gap-2 text-sm text-gray-500 border-b border-gray-200 dark:border-gray-800">
+            <button
+              onClick={() => handlePathClick(null)}
+              className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer"
+            >
+              Thư mục gốc
+            </button>
+            {currentFolder && folders.find((f) => f.id === currentFolder) && (
+              <>
+                {getCurrentPath()
+                  .split(" / ")
+                  .map((name, index, array) => {
+                    const folder = folders.find((f) => f.name === name);
+                    return (
+                      <React.Fragment key={folder?.id || index}>
+                        <span className="text-gray-400">\</span>
+                        <button
+                          onClick={() => handlePathClick(folder?.id || null)}
+                          className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer"
+                        >
+                          {name}
+                        </button>
+                      </React.Fragment>
+                    );
+                  })}
+              </>
+            )}
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {renderFolderContents(currentFolder)}
+          </div>
+
+          {/* Modal */}
           <FileModal
             type={
-              isNewFileModalOpen ? "new" : isEditModalOpen ? "edit" : "delete"
+              isNewFolderModalOpen
+                ? "newFolder"
+                : isNewFileModalOpen
+                ? "new"
+                : isEditModalOpen
+                ? "edit"
+                : "delete"
             }
-            isOpen={isNewFileModalOpen || isEditModalOpen || isDeleteModalOpen}
+            isOpen={
+              isNewFileModalOpen ||
+              isEditModalOpen ||
+              isDeleteModalOpen ||
+              isNewFolderModalOpen
+            }
             onClose={() => {
               setIsNewFileModalOpen(false);
               setIsEditModalOpen(false);
               setIsDeleteModalOpen(false);
-              setNewFileName("Untitled.js");
+              setIsNewFolderModalOpen(false);
+              setNewFileName("");
               setSelectedFile(null);
+              setSelectedFolder(null);
             }}
             fileName={newFileName}
             onFileNameChange={setNewFileName}
             onSubmit={() => {
               if (isNewFileModalOpen) {
                 createNewFile();
+              } else if (isNewFolderModalOpen) {
+                createNewFolder();
               } else if (isEditModalOpen) {
-                handleEditFile();
+                if (selectedFolder) {
+                  handleEditFolder();
+                } else {
+                  handleEditFile();
+                }
               } else if (isDeleteModalOpen) {
-                handleDeleteFile();
+                if (selectedFolder) {
+                  handleDeleteFolder();
+                } else {
+                  handleDeleteFile();
+                }
               }
             }}
             selectedFile={selectedFile || undefined}
+            selectedFolder={selectedFolder}
+            folders={folders}
+            selectedParentFolder={selectedParentFolder}
+            onParentFolderChange={setSelectedParentFolder}
           />
         </>
       )}

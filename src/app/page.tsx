@@ -174,7 +174,7 @@ export default function Home() {
               isMagicMode={isMagicMode}
             />
             {messages.length > 0 ? (
-              <div className="w-full max-w-4xl mx-auto flex-1 pb-42 sm:pb-126 pt-20">
+              <div className="w-full max-w-4xl mx-auto flex-1 pb-[22vh] sm:pb-[70vh] pt-20">
                 <ChatMessages
                   messages={messages}
                   isLoading={isLoading}

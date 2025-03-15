@@ -475,156 +475,163 @@ export default function ChatMessages({
                 </div>
               </div>
             )}
-            <div
-              className={`relative group ${
-                message.sender === "user"
-                  ? "self-end bg-gray-100 dark:bg-gray-900 text-black dark:text-white mx-4 sm:mx-8 rounded-tl-2xl rounded-bl-2xl rounded-br-2xl sm:rounded-tl-3xl sm:rounded-bl-3xl sm:rounded-br-3xl max-w-[85%]"
-                  : "self-start text-black dark:text-white w-full"
-              } ${
-                editingMessageId === message.id ? "!bg-transparent w-full" : ""
-              }`}
-            >
-              {editingMessageId === message.id ? (
-                <div className="flex flex-col gap-2 w-full">
-                  <textarea
-                    value={editContent}
-                    onChange={handleTextareaChange}
-                    className={`w-full p-4 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white resize-none overflow-hidden shadow-lg ${
-                      message.sender === "user" ? "mx-4 sm:mx-0" : ""
-                    }`}
-                    autoFocus
-                    style={{ height: "auto" }}
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <button
-                      onClick={() => setEditingMessageId(null)}
-                      className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors cursor-pointer"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleEdit(message.id, editContent);
-                        setEditingMessageId(null);
-                      }}
-                      className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors cursor-pointer"
-                    >
-                      Lưu
-                    </button>
+            {message.content.trim() && (
+              <div
+                className={`relative group ${
+                  message.sender === "user"
+                    ? "self-end bg-gray-100 dark:bg-gray-900 text-black dark:text-white mx-4 sm:mx-8 rounded-tl-2xl rounded-bl-2xl rounded-br-2xl sm:rounded-tl-3xl sm:rounded-bl-3xl sm:rounded-br-3xl max-w-[85%]"
+                    : "self-start text-black dark:text-white w-full"
+                } ${
+                  editingMessageId === message.id
+                    ? "!bg-transparent w-full"
+                    : ""
+                }`}
+              >
+                {editingMessageId === message.id ? (
+                  <div className="flex flex-col gap-2 w-full">
+                    <textarea
+                      value={editContent}
+                      onChange={handleTextareaChange}
+                      className={`w-full p-4 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white resize-none overflow-hidden shadow-lg ${
+                        message.sender === "user" ? "mx-4 sm:mx-0" : ""
+                      }`}
+                      autoFocus
+                      style={{ height: "auto" }}
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => setEditingMessageId(null)}
+                        className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors cursor-pointer"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleEdit(message.id, editContent);
+                          setEditingMessageId(null);
+                        }}
+                        className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors cursor-pointer"
+                      >
+                        Lưu
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="py-3 px-4">{renderMessage(message)}</div>
-              )}
+                ) : (
+                  <div className="py-3 px-4">{renderMessage(message)}</div>
+                )}
 
-              {editingMessageId !== message.id &&
-              (message.sender === "user" ||
-                (message.sender === "bot" && !isLoading)) ? (
-                <div
-                  className={`absolute flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ${
-                    message.sender === "user"
-                      ? "right-0 -bottom-8"
-                      : isMobile
-                      ? "left-2 -bottom-2"
-                      : "left-4 -bottom-2"
-                  }`}
-                >
-                  {message.sender !== "user" && (
+                {editingMessageId !== message.id &&
+                (message.sender === "user" ||
+                  (message.sender === "bot" && !isLoading)) ? (
+                  <div
+                    className={`absolute flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ${
+                      message.sender === "user"
+                        ? "right-0 -bottom-8"
+                        : isMobile
+                        ? "left-2 -bottom-2"
+                        : "left-4 -bottom-2"
+                    }`}
+                  >
+                    {message.sender !== "user" && (
+                      <button
+                        className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                        onClick={() => handleRegenerate(message.id)}
+                      >
+                        <IconRefresh
+                          size={16}
+                          className="text-gray-600 dark:text-gray-400"
+                        />
+                      </button>
+                    )}
                     <button
                       className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                      onClick={() => handleRegenerate(message.id)}
+                      onClick={() => handleCopy(message.content, message.id)}
                     >
-                      <IconRefresh
+                      {copiedMessageId === message.id ? (
+                        <IconCheck
+                          size={16}
+                          className="text-green-600 dark:text-green-400"
+                        />
+                      ) : (
+                        <IconCopy
+                          size={16}
+                          className="text-gray-600 dark:text-gray-400"
+                        />
+                      )}
+                    </button>
+                    <button
+                      className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setEditContent(message.content);
+                        setEditingMessageId(message.id);
+                      }}
+                    >
+                      <IconEdit
                         size={16}
                         className="text-gray-600 dark:text-gray-400"
                       />
                     </button>
-                  )}
-                  <button
-                    className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                    onClick={() => handleCopy(message.content, message.id)}
-                  >
-                    {copiedMessageId === message.id ? (
-                      <IconCheck
-                        size={16}
-                        className="text-green-600 dark:text-green-400"
-                      />
-                    ) : (
-                      <IconCopy
+                    <button
+                      className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setMessageToDelete(message.id);
+                        setDeleteModalOpen(true);
+                      }}
+                    >
+                      <IconTrash
                         size={16}
                         className="text-gray-600 dark:text-gray-400"
                       />
-                    )}
-                  </button>
-                  <button
-                    className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                    onClick={() => {
-                      setEditContent(message.content);
-                      setEditingMessageId(message.id);
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            )}
+            {isLoading && message === messages[messages.length - 1] && (
+              <div className="flex items-center gap-2 mt-2 mb-6 mx-2">
+                <Image
+                  src="/tomichan-icon.png"
+                  alt="TomiChan thinking"
+                  width={24}
+                  height={24}
+                  className="animate-bounce"
+                />
+                <motion.div
+                  className="flex gap-1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <motion.div
+                    className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-300"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: Infinity,
+                      delay: 0,
                     }}
-                  >
-                    <IconEdit
-                      size={16}
-                      className="text-gray-600 dark:text-gray-400"
-                    />
-                  </button>
-                  <button
-                    className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                    onClick={() => {
-                      setMessageToDelete(message.id);
-                      setDeleteModalOpen(true);
-                    }}
-                  >
-                    <IconTrash
-                      size={16}
-                      className="text-gray-600 dark:text-gray-400"
-                    />
-                  </button>
-                </div>
-              ) : null}
-
-              {isLoading && message === messages[messages.length - 1] && (
-                <div className="flex items-center gap-2 mt-2 mb-6 mx-2">
-                  <Image
-                    src="/tomichan-icon.png"
-                    alt="TomiChan thinking"
-                    width={24}
-                    height={24}
-                    className="animate-bounce"
                   />
                   <motion.div
-                    className="flex gap-1"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <motion.div
-                      className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-300"
-                      animate={{ y: [0, -6, 0] }}
-                      transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}
-                    />
-                    <motion.div
-                      className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-300"
-                      animate={{ y: [0, -6, 0] }}
-                      transition={{
-                        duration: 0.8,
-                        repeat: Infinity,
-                        delay: 0.2,
-                      }}
-                    />
-                    <motion.div
-                      className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-300"
-                      animate={{ y: [0, -6, 0] }}
-                      transition={{
-                        duration: 0.8,
-                        repeat: Infinity,
-                        delay: 0.4,
-                      }}
-                    />
-                  </motion.div>
-                </div>
-              )}
-            </div>
+                    className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-300"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: Infinity,
+                      delay: 0.2,
+                    }}
+                  />
+                  <motion.div
+                    className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-300"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: Infinity,
+                      delay: 0.4,
+                    }}
+                  />
+                </motion.div>
+              </div>
+            )}
           </div>
         ))}
       </div>

@@ -43,44 +43,60 @@ export function useCodeAssistant() {
     );
   };
 
-  const createNewFolder = async () => {
-    if (!newFileName.trim()) return;
+  const createNewFolder = async (folderData?: Partial<CodeFolder>) => {
+    if (!folderData && !newFileName.trim()) return;
 
     const newFolder: CodeFolder = {
       id: nanoid(),
-      name: newFileName,
+      name: folderData?.name || newFileName,
       createdAt: new Date(),
       updatedAt: new Date(),
-      parentId: selectedParentFolder || undefined,
+      parentId:
+        folderData?.parentId !== undefined
+          ? folderData.parentId
+          : selectedParentFolder || undefined,
     };
 
     try {
       await chatDB.saveFolder(newFolder);
       await loadFolders();
-      setIsNewFolderModalOpen(false);
-      setNewFileName("");
-      setSelectedParentFolder(null);
+
+      if (!folderData) {
+        setIsNewFolderModalOpen(false);
+        setNewFileName("");
+        setSelectedParentFolder(null);
+      }
+
+      return newFolder;
     } catch (error) {
       console.error("Error creating folder:", error);
+      throw error;
     }
   };
 
-  const createNewFile = async () => {
-    if (!newFileName.trim()) return;
+  const createNewFile = async (fileData?: Partial<CodeFile>) => {
+    if (!fileData && !newFileName.trim()) return;
 
     const newFile: CodeFile = {
       id: nanoid(),
-      name: newFileName,
-      content: "",
+      name: fileData?.name || newFileName,
+      content: fileData?.content || "",
       createdAt: new Date(),
       updatedAt: new Date(),
-      language: newFileName.split(".").pop() || "javascript",
-      folderId: currentFolder || undefined,
+      language:
+        (fileData?.name || newFileName).split(".").pop() || "javascript",
+      folderId: fileData?.folderId || currentFolder || undefined,
     };
 
     await chatDB.saveCodeFile(newFile);
     await loadFiles();
-    setIsNewFileModalOpen(false);
+
+    if (!fileData) {
+      setIsNewFileModalOpen(false);
+      setNewFileName("");
+    }
+
+    return newFile;
   };
 
   const handleEditFile = async () => {

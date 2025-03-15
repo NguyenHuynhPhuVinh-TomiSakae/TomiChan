@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React from "react";
+import React, { HTMLAttributes } from "react";
 import {
   IconX,
   IconCode,
@@ -11,10 +11,21 @@ import {
   IconFilePlus,
   IconLayoutGrid,
   IconLayoutList,
+  IconUpload,
+  IconFolderUp,
 } from "@tabler/icons-react";
 import { FileModal } from "./Modals/FileModal";
 import CodeEditor from "./CodeEditor";
 import { useCodeAssistant } from "../../../../hooks/useCodeAssistant";
+import { CodeFile } from "@/types";
+import MediaViewer from "./MediaViewer";
+
+declare module "react" {
+  interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
+    directory?: string;
+    webkitdirectory?: string;
+  }
+}
 
 interface CodeAssistantProps {
   onClose: () => void;
@@ -154,14 +165,166 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
     );
   };
 
+  const isMediaFile = (fileName: string) => {
+    const extension = fileName.split(".").pop()?.toLowerCase();
+    return [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "svg",
+      "mp3",
+      "wav",
+      "ogg",
+      "aac",
+      "mp4",
+      "webm",
+      "ogv",
+      "mov",
+      "pdf",
+    ].includes(extension || "");
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const reader = new FileReader();
+
+    if (isMediaFile(file.name)) {
+      // Đọc file dưới dạng base64 cho các file đa phương tiện
+      reader.readAsDataURL(file);
+    } else {
+      // Đọc file dưới dạng text cho các file code
+      reader.readAsText(file);
+    }
+
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        const content = e.target.result.toString();
+        const newFile: Partial<CodeFile> = {
+          name: file.name,
+          content: content,
+          folderId: currentFolder || undefined,
+          updatedAt: new Date(),
+        };
+        createNewFile(newFile);
+      }
+    };
+
+    // Reset input value để có thể tải lại cùng một file
+    event.target.value = "";
+  };
+
+  const handleFolderUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    // Tạo map để lưu trữ đường dẫn thư mục và ID tương ứng
+    const folderPathMap = new Map<string, string>();
+
+    // Thêm thư mục gốc hiện tại vào map
+    if (currentFolder) {
+      folderPathMap.set("", currentFolder);
+    } else {
+      folderPathMap.set("", "root");
+    }
+
+    // Xử lý từng file trong thư mục được tải lên
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const relativePath = file.webkitRelativePath;
+      const pathParts = relativePath.split("/");
+      const fileName = pathParts.pop() || "";
+      const folderPath = pathParts.join("/");
+
+      // Tạo các thư mục cần thiết
+      let parentId = currentFolder;
+      let currentPath = "";
+
+      for (let j = 0; j < pathParts.length; j++) {
+        const folderName = pathParts[j];
+        const previousPath = currentPath;
+        currentPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+
+        // Kiểm tra xem thư mục đã được tạo chưa
+        if (!folderPathMap.has(currentPath)) {
+          // Lấy ID thư mục cha
+          parentId =
+            folderPathMap.get(previousPath) === "root"
+              ? null
+              : folderPathMap.get(previousPath) || null;
+
+          // Tạo thư mục mới
+          const newFolder = await createNewFolder({
+            name: folderName,
+            parentId: parentId || undefined,
+          });
+
+          // Lưu ID thư mục mới vào map
+          folderPathMap.set(currentPath, newFolder?.id || "");
+          parentId = newFolder?.id || null;
+        } else {
+          parentId =
+            folderPathMap.get(currentPath) === "root"
+              ? null
+              : folderPathMap.get(currentPath) || null;
+        }
+      }
+
+      // Đọc và lưu file
+      const reader = new FileReader();
+
+      if (isMediaFile(fileName)) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
+      }
+
+      reader.onload = async (e) => {
+        if (e.target?.result) {
+          const content = e.target.result.toString();
+          const folderId =
+            folderPathMap.get(folderPath) === "root"
+              ? null
+              : folderPathMap.get(folderPath);
+
+          const newFile: Partial<CodeFile> = {
+            name: fileName,
+            content: content,
+            folderId: folderId || undefined,
+            updatedAt: new Date(),
+          };
+
+          await createNewFile(newFile);
+        }
+      };
+    }
+
+    // Reset input value
+    event.target.value = "";
+  };
+
   return (
     <div className="flex flex-col h-full">
       {activeFile ? (
-        <CodeEditor
-          file={activeFile}
-          onClose={onClose}
-          onBack={handleEditorBack}
-        />
+        isMediaFile(activeFile.name) ? (
+          <MediaViewer
+            file={activeFile}
+            onClose={onClose}
+            onBack={handleEditorBack}
+          />
+        ) : (
+          <CodeEditor
+            file={activeFile}
+            onClose={onClose}
+            onBack={handleEditorBack}
+          />
+        )
       ) : (
         <>
           {/* Header */}
@@ -212,6 +375,28 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
                   <IconFolderPlus className="inline-block mr-2" />
                   Tạo thư mục
                 </button>
+                <label className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer">
+                  <IconUpload className="inline-block mr-2" />
+                  Tải file lên
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                    accept=".txt,.js,.jsx,.ts,.tsx,.html,.css,.json,.md,.py,.java,.cpp,.c,.cs,.php,.rb,.rs,.sql,.swift,.go,.yml,.yaml,.jpg,.jpeg,.png,.gif,.webp,.svg,.mp3,.wav,.ogg,.aac,.mp4,.webm,.ogv,.mov,.pdf"
+                  />
+                </label>
+                <label className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors cursor-pointer">
+                  <IconFolderUp className="inline-block mr-2" />
+                  Tải thư mục lên
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={handleFolderUpload}
+                    webkitdirectory=""
+                    directory=""
+                    multiple
+                  />
+                </label>
                 <button
                   onClick={() => {
                     setSelectedParentFolder(currentFolder);

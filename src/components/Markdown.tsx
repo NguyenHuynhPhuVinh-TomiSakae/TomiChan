@@ -17,23 +17,36 @@ import {
 } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { useThemeContext } from "../providers/ThemeProvider";
 import { ThinkBlock } from "./ThinkBlock";
-import { IconCopy, IconCheck, IconPlayerPlay } from "@tabler/icons-react";
+import {
+  IconCopy,
+  IconCheck,
+  IconPlayerPlay,
+  IconExternalLink,
+} from "@tabler/icons-react";
 import "katex/dist/katex.min.css";
 import { MathJaxContext, MathJax } from "better-react-mathjax";
+import { SearchResultBlock } from "./SearchResultBlock";
+import { SearchLinkBlock } from "./SearchResultBlock";
+import { SearchingBlock } from "./SearchResultBlock";
 
 interface MarkdownProps {
   content: string;
   className?: string;
 }
 
-// Mở rộng schema để cho phép tag <think> không bị loại bỏ
+// Mở rộng schema để cho phép cả tag think và search-result
 const customSchema = {
   ...defaultSchema,
-  // Cho phép các tag đã có và thêm tag "think"
-  tagNames: [...(defaultSchema.tagNames || []), "think"],
+  tagNames: [
+    ...(defaultSchema.tagNames || []),
+    "think",
+    "search-result",
+    "search-link",
+    "search-block",
+  ],
 };
 
-// Định nghĩa interface mở rộng cho ReactMarkdown components để xử lý tag <think>
+// Mở rộng interface cho components
 interface CustomComponents extends Components {
   think: ({
     node,
@@ -42,8 +55,29 @@ interface CustomComponents extends Components {
     node: any;
     children: React.ReactNode;
   }) => JSX.Element;
+  "search-result": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
   math: ({ value }: { value: string }) => JSX.Element;
   inlineMath: ({ value }: { value: string }) => JSX.Element;
+  "search-link": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "search-block": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
 }
 
 export default function Markdown({ content, className = "" }: MarkdownProps) {
@@ -54,9 +88,35 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     (theme === "system" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
 
+  // Tiền xử lý content để chuyển đổi cả [SEARCH_RESULT] và [SEARCH_LINK] thành thẻ HTML
+  const processedContent = content
+    .replace(
+      /\[SEARCH_RESULT\]([\s\S]*?)\[\/SEARCH_RESULT\]/g,
+      (_, p1) => `<search-result>${p1}</search-result>`
+    )
+    .replace(
+      /\[SEARCH_LINK\]([\s\S]*?)\[\/SEARCH_LINK\]/g,
+      (_, p1) => `<search-link>${p1}</search-link>`
+    )
+    .replace(
+      /\[SEARCH_BLOCK\]([\s\S]*?)\[\/SEARCH_BLOCK\]/g,
+      (_, p1) => `<search-block>${p1}</search-block>`
+    );
+
   const components: CustomComponents = {
-    // Mapping tag "think" thành component ThinkBlock
-    think: ({ node, children }) => {
+    "search-result": ({ children }) => {
+      return <SearchResultBlock>{children}</SearchResultBlock>;
+    },
+
+    "search-link": ({ children }) => {
+      return <SearchLinkBlock content={children?.toString() || ""} />;
+    },
+
+    "search-block": () => {
+      return <SearchingBlock />;
+    },
+
+    think: ({ children }) => {
       return <ThinkBlock>{children}</ThinkBlock>;
     },
 
@@ -310,7 +370,7 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     },
 
     p: ({ children }) => {
-      // Xử lý nội dung để ẩn các tag đặc biệt khi hiển thị
+      // Xử lý các paragraph thông thường
       const processedContent = React.Children.toArray(children).map((child) => {
         if (typeof child === "string") {
           return child
@@ -321,7 +381,6 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
         return child;
       });
 
-      // Không render paragraph nếu chỉ có tag
       if (processedContent.every((item) => item === "")) {
         return null;
       }
@@ -369,7 +428,7 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
           ]}
           components={components}
         >
-          {content}
+          {processedContent}
         </ReactMarkdown>
       </div>
     </MathJaxContext>

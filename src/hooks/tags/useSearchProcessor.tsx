@@ -77,7 +77,8 @@ export function useSearchProcessor() {
         setMessages((prev) => {
           // Lọc bỏ tin nhắn "đang tìm kiếm" cũ nếu có
           const filteredMessages = prev.filter(
-            (msg) => msg.content !== "*Đang tìm kiếm...*"
+            (msg) =>
+              msg.content !== "*[SEARCH_BLOCK]Đang tìm kiếm...[/SEARCH_BLOCK]*"
           );
 
           const baseMessages = isFollowUpSearch
@@ -87,7 +88,7 @@ export function useSearchProcessor() {
           // Thêm trạng thái "đang tìm kiếm" với ID duy nhất
           const searchingMessage: Message = {
             id: `searching-${Date.now()}`,
-            content: "*Đang tìm kiếm...*",
+            content: "*[SEARCH_BLOCK]Đang tìm kiếm...[/SEARCH_BLOCK]*",
             sender: "bot",
           };
 
@@ -97,28 +98,91 @@ export function useSearchProcessor() {
         searchTimeoutRef.current = setTimeout(() => {
           searchGoogle(searchQuery)
             .then((searchResults) => {
-              let searchResultsForAI = `Kết quả tìm kiếm cho "${searchQuery}" [SYSTEM]Lần tìm kiếm thứ ${searchCountRef.current}/10[/SYSTEM]:\n\n`;
+              let searchResultsForAI = `[SEARCH_RESULT]\n\n`;
+              searchResultsForAI += `Kết quả tìm kiếm cho "${searchQuery}" [SYSTEM]Lần tìm kiếm thứ ${searchCountRef.current}/10[/SYSTEM]:\n\n`;
+
+              // Tạo mảng để lưu các link tham khảo
+              const references: string[] = [];
 
               if (searchResults.length > 0) {
                 searchResults.forEach((result, index) => {
-                  searchResultsForAI += `${index + 1}. Tiêu đề: ${
-                    result.title
-                  }\nTrích đoạn: ${result.snippet}\nNguồn: ${
-                    result.displayLink
-                  }\n\n`;
+                  // Thêm link vào mảng references nếu có
+                  if (result.link) {
+                    references.push(result.link);
+                  }
+
+                  searchResultsForAI += `${index + 1}.`;
+
+                  if (result.title) {
+                    searchResultsForAI += ` Tiêu đề: ${result.title}\n`;
+                  }
+
+                  if (result.snippet) {
+                    searchResultsForAI += `Trích đoạn: ${result.snippet}\n`;
+                  }
+
+                  if (result.link) {
+                    searchResultsForAI += `Nguồn: ${result.link}\n`;
+                  }
+
+                  // Kiểm tra và thêm thông tin metatags
+                  if (result.pagemap?.metatags?.[0]) {
+                    const metatags = result.pagemap.metatags[0];
+
+                    if (metatags["og:description"] || metatags.description) {
+                      searchResultsForAI += `Mô tả: ${
+                        metatags["og:description"] || metatags.description
+                      }\n`;
+                    }
+
+                    if (metatags.author) {
+                      searchResultsForAI += `Tác giả: ${metatags.author}\n`;
+                    }
+
+                    if (metatags["article:published_time"]) {
+                      searchResultsForAI += `Ngày xuất bản: ${metatags["article:published_time"]}\n`;
+                    }
+                  }
+
+                  if (result.htmlSnippet) {
+                    searchResultsForAI += `HTML Snippet: ${result.htmlSnippet}\n`;
+                  }
+
+                  if (result.cacheId) {
+                    searchResultsForAI += `Cache ID: ${result.cacheId}\n`;
+                  }
+
+                  searchResultsForAI += "\n";
                 });
+
+                // Đóng tag SEARCH_RESULT trước khi thêm SEARCH_LINK
+                searchResultsForAI += "[/SEARCH_RESULT]\n\n";
+
+                // Thêm phần references như một block riêng biệt
+                if (references.length > 0) {
+                  searchResultsForAI += "[SEARCH_LINK]\n";
+                  searchResultsForAI += "Tài liệu tham khảo:\n";
+                  references.forEach((link, index) => {
+                    searchResultsForAI += `[${index + 1}] ${link}\n`;
+                  });
+                  searchResultsForAI += "[/SEARCH_LINK]\n\n";
+                }
               } else {
-                searchResultsForAI = "Không tìm thấy kết quả tìm kiếm phù hợp.";
+                searchResultsForAI +=
+                  "Không tìm thấy kết quả tìm kiếm phù hợp.";
+                searchResultsForAI += "[/SEARCH_RESULT]\n\n";
               }
 
               // Xóa tin nhắn "đang tìm kiếm"
               setMessages((prev) => {
                 return prev.filter(
-                  (msg) => msg.content !== "*Đang tìm kiếm...*"
+                  (msg) =>
+                    msg.content !==
+                    "*[SEARCH_BLOCK]Đang tìm kiếm...[/SEARCH_BLOCK]*"
                 );
               });
 
-              // Thêm thông báo nếu đã đạt giới hạn
+              // Thêm thông báo giới hạn tìm kiếm nếu cần
               if (searchCountRef.current >= 10) {
                 searchResultsForAI +=
                   "\n\n[SYSTEM]Đã đạt giới hạn 10 lần tìm kiếm. Hãy tổng hợp tất cả thông tin đã thu thập và đưa ra kết luận cuối cùng. Không thực hiện thêm tìm kiếm nào nữa.[/SYSTEM]";
@@ -137,7 +201,9 @@ export function useSearchProcessor() {
                     : "Lỗi không xác định khi tìm kiếm";
 
                 const newMessages = prev.filter(
-                  (msg) => msg.content !== "*Đang tìm kiếm...*"
+                  (msg) =>
+                    msg.content !==
+                    "*[SEARCH_BLOCK]Đang tìm kiếm...[/SEARCH_BLOCK]*"
                 );
                 return [
                   ...newMessages,

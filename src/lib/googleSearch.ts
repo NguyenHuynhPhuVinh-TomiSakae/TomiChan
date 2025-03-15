@@ -47,6 +47,13 @@ export async function searchGoogle(
       snippet: item.snippet,
       displayLink: item.displayLink,
       source: item.displayLink,
+      pagemap: item.pagemap,
+      htmlSnippet: item.htmlSnippet,
+      htmlTitle: item.htmlTitle,
+      kind: item.kind,
+      htmlFormattedUrl: item.htmlFormattedUrl,
+      formattedUrl: item.formattedUrl,
+      cacheId: item.cacheId,
     }));
   } catch (error) {
     console.error("Lỗi khi tìm kiếm Google:", error);

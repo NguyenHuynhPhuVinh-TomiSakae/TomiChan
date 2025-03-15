@@ -81,9 +81,6 @@ export default function Sidebar({
 
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
-  // Thêm state để quản lý việc hiển thị header của sidebar
-  const [isSidebarHeaderVisible, setIsSidebarHeaderVisible] = useState(true);
-
   React.useEffect(() => {
     setIsFirstRender(false);
     loadChatHistory();
@@ -95,15 +92,6 @@ export default function Sidebar({
   React.useEffect(() => {
     loadChatHistory();
   }, [messages, updateTrigger]);
-
-  // Cập nhật effect để ẩn header khi bật magic mode
-  React.useEffect(() => {
-    if (isMagicMode) {
-      setIsSidebarHeaderVisible(false);
-    } else {
-      setIsSidebarHeaderVisible(true);
-    }
-  }, [isMagicMode]);
 
   const loadChatHistory = async () => {
     const history = await chatDB.getAllChats();
@@ -192,8 +180,8 @@ export default function Sidebar({
         }`}
         style={sidebarStyle}
       >
-        {/* Header with Title and Collapse button - Thêm điều kiện hiển thị */}
-        {isSidebarHeaderVisible && (
+        {/* Header with Title and Collapse button */}
+        {!isMagicMode && (
           <div className="p-4 flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <AnimatePresence mode="wait">
@@ -333,12 +321,10 @@ export default function Sidebar({
           </>
         )}
 
-        {/* Settings and Header Toggle Buttons */}
+        {/* Settings Button - Xóa phần header toggle button */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-800">
           <div
-            className={`w-full flex gap-2 ${
-              isCollapsed ? "justify-center" : "px-4"
-            }`}
+            className={`w-full flex ${isCollapsed ? "justify-center" : "px-4"}`}
           >
             <button
               onClick={handleOpenSettings}
@@ -367,35 +353,6 @@ export default function Sidebar({
                 )}
               </AnimatePresence>
             </button>
-
-            {/* Header Toggle Button - Only show in magic mode */}
-            {isMagicMode && !isCollapsed && (
-              <button
-                onClick={() =>
-                  setIsSidebarHeaderVisible(!isSidebarHeaderVisible)
-                }
-                className="flex items-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 px-2 py-1 rounded transition-colors"
-              >
-                <IconLayoutSidebarLeftCollapse
-                  size={20}
-                  className={`flex-shrink-0 ${
-                    isSidebarHeaderVisible ? "" : "rotate-180"
-                  }`}
-                />
-                <AnimatePresence mode="wait">
-                  {!isCollapsed && (
-                    <motion.span
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      className="ml-2 truncate"
-                    >
-                      {isSidebarHeaderVisible ? "Ẩn tiêu đề" : "Hiện tiêu đề"}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
-            )}
           </div>
         </div>
 

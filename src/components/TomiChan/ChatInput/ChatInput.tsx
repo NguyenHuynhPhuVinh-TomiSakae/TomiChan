@@ -543,7 +543,7 @@ export default function ChatInput({
           </div>
         </div>
         <div
-          className={`text-center mt-2 text-xs ${
+          className={`text-center text-xs ${
             isMagicMode ? "" : "sm:text-sm"
           } text-gray-500 dark:text-gray-400`}
         >

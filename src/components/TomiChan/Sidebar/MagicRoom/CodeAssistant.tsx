@@ -8,6 +8,9 @@ import {
   IconTrash,
   IconFolder,
   IconFolderPlus,
+  IconFilePlus,
+  IconLayoutGrid,
+  IconLayoutList,
 } from "@tabler/icons-react";
 import { FileModal } from "./Modals/FileModal";
 import CodeEditor from "./CodeEditor";
@@ -18,6 +21,8 @@ interface CodeAssistantProps {
 }
 
 export default function CodeAssistant({ onClose }: CodeAssistantProps) {
+  const [isGridView, setIsGridView] = React.useState(false);
+
   const {
     files,
     folders,
@@ -70,16 +75,20 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
     });
 
     return (
-      <div className="space-y-2">
+      <>
         {foldersInCurrent.map((folder) => (
           <div
             key={folder.id}
-            className="flex items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group"
+            className={`${
+              isGridView
+                ? "p-4 border rounded-lg border-gray-200 dark:border-gray-800"
+                : "p-2"
+            } hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group`}
             onClick={() => handleFolderClick(folder.id)}
           >
             <div className="flex items-center flex-1">
               <IconFolder size={20} className="mr-2 text-yellow-500" />
-              <span className="flex-1">{folder.name}</span>
+              <span className="flex-1 truncate">{folder.name}</span>
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
                 <button
                   onClick={(e) => openEditFolderModal(folder, e)}
@@ -103,44 +112,45 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
         {filesInCurrent.map((file) => (
           <div
             key={file.id}
-            className="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 group cursor-pointer"
+            className={`${
+              isGridView
+                ? "p-4 border rounded-lg border-gray-200 dark:border-gray-800"
+                : "p-3 flex items-center"
+            } hover:bg-gray-50 dark:hover:bg-gray-900 group cursor-pointer`}
             onClick={() => handleFileOpen(file)}
           >
-            <div className="flex-1 flex items-center gap-3">
-              <IconCode size={20} className="text-purple-500" />
-              <span className="flex-1">{file.name}</span>
-              <span className="text-sm text-gray-500">
-                {new Date(file.updatedAt).toLocaleDateString()}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedFile(file);
-                  setNewFileName(file.name);
-                  setIsEditModalOpen(true);
-                }}
-                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
-                title="Chỉnh sửa"
-              >
-                <IconEdit size={18} />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedFile(file);
-                  setIsDeleteModalOpen(true);
-                }}
-                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-red-500 cursor-pointer"
-                title="Xóa"
-              >
-                <IconTrash size={18} />
-              </button>
+            <div className={`${isGridView ? "" : "flex-1"} flex items-center`}>
+              <IconCode size={20} className="mr-2 text-purple-500" />
+              <span className="flex-1 truncate">{file.name}</span>
+              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFile(file);
+                    setNewFileName(file.name);
+                    setIsEditModalOpen(true);
+                  }}
+                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
+                  title="Chỉnh sửa"
+                >
+                  <IconEdit size={18} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFile(file);
+                    setIsDeleteModalOpen(true);
+                  }}
+                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-red-500 cursor-pointer"
+                  title="Xóa"
+                >
+                  <IconTrash size={18} />
+                </button>
+              </div>
             </div>
           </div>
         ))}
-      </div>
+      </>
     );
   };
 
@@ -179,26 +189,40 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
 
           {/* Action buttons */}
           <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-between items-center">
               <button
-                onClick={() => {
-                  setSelectedParentFolder(currentFolder);
-                  setIsNewFolderModalOpen(true);
-                }}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
+                onClick={() => setIsGridView(!isGridView)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded transition-colors"
+                title={isGridView ? "Chế độ danh sách" : "Chế độ lưới"}
               >
-                <IconFolderPlus className="inline-block mr-2" />
-                Tạo thư mục
+                {isGridView ? (
+                  <IconLayoutList size={20} />
+                ) : (
+                  <IconLayoutGrid size={20} />
+                )}
               </button>
-              <button
-                onClick={() => {
-                  setSelectedParentFolder(currentFolder);
-                  setIsNewFileModalOpen(true);
-                }}
-                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors cursor-pointer"
-              >
-                Tạo tệp mới
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedParentFolder(currentFolder);
+                    setIsNewFolderModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
+                >
+                  <IconFolderPlus className="inline-block mr-2" />
+                  Tạo thư mục
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedParentFolder(currentFolder);
+                    setIsNewFileModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors cursor-pointer"
+                >
+                  <IconFilePlus className="inline-block mr-2" />
+                  Tạo tệp mới
+                </button>
+              </div>
             </div>
           </div>
 
@@ -234,7 +258,15 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
 
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto p-4">
-            {renderFolderContents(currentFolder)}
+            <div
+              className={`${
+                isGridView
+                  ? "grid grid-cols-2 md:grid-cols-3 gap-4"
+                  : "space-y-2"
+              }`}
+            >
+              {renderFolderContents(currentFolder)}
+            </div>
           </div>
 
           {/* Modal */}

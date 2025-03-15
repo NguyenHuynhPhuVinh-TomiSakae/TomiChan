@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import {
@@ -17,6 +18,7 @@ import {
   useFileUpload,
   useVideoUpload,
   useAudioUpload,
+  useFileValidator,
 } from "@/hooks/useUploadFiles";
 import { scrollToBottom } from "../ChatMessages/ChatMessages";
 import { useMediaQuery } from "react-responsive";
@@ -55,6 +57,9 @@ export default function ChatInput({
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [textareaHeight, setTextareaHeight] = useState(56);
+  const [isDragging, setIsDragging] = useState(false);
+  const [hasUnsupportedFile, setHasUnsupportedFile] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const {
     selectedImages,
     fileInputRef: imageInputRef,
@@ -96,6 +101,8 @@ export default function ChatInput({
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
   const [isTouching, setIsTouching] = useState(false);
   const touchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { validateFiles, isFileTypeSupported } = useFileValidator();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,14 +315,163 @@ export default function ChatInput({
     setIsTouching(false);
   }, [selectedProvider]);
 
+  // Hàm kiểm tra loại file và xử lý tương ứng
+  const handleFiles = (files: File[]) => {
+    const {
+      imageFiles,
+      videoFiles,
+      audioFiles,
+      documentFiles,
+      hasUnsupported,
+    } = validateFiles(files);
+
+    setHasUnsupportedFile(hasUnsupported);
+
+    if (imageFiles.length > 0) {
+      handlePastedImages(imageFiles);
+    }
+
+    if (videoFiles.length > 0 && videoInputRef.current) {
+      const dataTransfer = new DataTransfer();
+      videoFiles.forEach((file) => dataTransfer.items.add(file));
+      videoInputRef.current.files = dataTransfer.files;
+      handleVideoInputChange({ target: { files: dataTransfer.files } } as any);
+    }
+
+    if (audioFiles.length > 0 && audioInputRef.current) {
+      const dataTransfer = new DataTransfer();
+      audioFiles.forEach((file) => dataTransfer.items.add(file));
+      audioInputRef.current.files = dataTransfer.files;
+      handleAudioInputChange({ target: { files: dataTransfer.files } } as any);
+    }
+
+    if (documentFiles.length > 0 && fileInputRef.current) {
+      const dataTransfer = new DataTransfer();
+      documentFiles.forEach((file) => dataTransfer.items.add(file));
+      fileInputRef.current.files = dataTransfer.files;
+      handleFileInputChange({ target: { files: dataTransfer.files } } as any);
+    }
+
+    // Nếu có file không hỗ trợ, hiển thị cảnh báo trong 3 giây
+    if (hasUnsupported) {
+      setTimeout(() => {
+        setHasUnsupportedFile(false);
+      }, 3000);
+    }
+  };
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isDragging) {
+        setIsDragging(true);
+      }
+
+      // Kiểm tra xem có file nào không được hỗ trợ không
+      if (e.dataTransfer?.items) {
+        let hasUnsupported = false;
+        for (let i = 0; i < e.dataTransfer.items.length; i++) {
+          const item = e.dataTransfer.items[i];
+          if (!isFileTypeSupported(item.type)) {
+            hasUnsupported = true;
+            break;
+          }
+        }
+        setHasUnsupportedFile(hasUnsupported);
+      }
+    };
+
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Kiểm tra xem chuột có thực sự rời khỏi form hay không
+      // bằng cách kiểm tra relatedTarget
+      const rect = form.getBoundingClientRect();
+      const x = e.clientX;
+      const y = e.clientY;
+
+      // Chỉ set isDragging = false khi chuột thực sự ra khỏi vùng form
+      if (
+        x <= rect.left ||
+        x >= rect.right ||
+        y <= rect.top ||
+        y >= rect.bottom
+      ) {
+        setIsDragging(false);
+      }
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        handleFiles(Array.from(e.dataTransfer.files));
+      }
+    };
+
+    form.addEventListener("dragover", handleDragOver);
+    form.addEventListener("dragenter", handleDragEnter);
+    form.addEventListener("dragleave", handleDragLeave);
+    form.addEventListener("drop", handleDrop);
+
+    return () => {
+      form.removeEventListener("dragover", handleDragOver);
+      form.removeEventListener("dragenter", handleDragEnter);
+      form.removeEventListener("dragleave", handleDragLeave);
+      form.removeEventListener("drop", handleDrop);
+    };
+  }, [isDragging]);
+
   return (
     <motion.form
+      ref={formRef}
       onSubmit={handleSubmit}
-      className="relative w-full"
+      className={`relative w-full ${
+        isDragging
+          ? `ring-2 ${
+              hasUnsupportedFile ? "ring-red-500" : "ring-blue-500"
+            } ring-opacity-50`
+          : ""
+      }`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
     >
+      {isDragging && (
+        <div
+          className={`absolute inset-0 ${
+            hasUnsupportedFile
+              ? "bg-red-100 dark:bg-red-900 bg-opacity-30 dark:bg-opacity-30"
+              : "bg-blue-100 dark:bg-blue-900 bg-opacity-30 dark:bg-opacity-30"
+          } flex items-center justify-center rounded-2xl z-10 pointer-events-none`}
+        >
+          <div
+            className={`${
+              hasUnsupportedFile
+                ? "text-red-600 dark:text-red-300"
+                : "text-blue-600 dark:text-blue-300"
+            } font-medium`}
+          >
+            {hasUnsupportedFile
+              ? "Định dạng file không được hỗ trợ!"
+              : "Thả file để tải lên"}
+          </div>
+        </div>
+      )}
+
       <AnimatePresence>
         {showScrollButton && !isTouching && (
           <motion.button

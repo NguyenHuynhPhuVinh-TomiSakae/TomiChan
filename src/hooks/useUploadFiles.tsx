@@ -1,5 +1,100 @@
 import { useState, useRef } from "react";
 
+// Danh sách định dạng hỗ trợ
+export const supportedImageTypes = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
+
+export const supportedVideoTypes = [
+  "video/mp4",
+  "video/mpeg",
+  "video/mov",
+  "video/avi",
+  "video/x-flv",
+  "video/mpg",
+  "video/webm",
+  "video/wmv",
+  "video/3gpp",
+];
+
+export const supportedAudioTypes = [
+  "audio/wav",
+  "audio/mp3",
+  "audio/mpeg",
+  "audio/aiff",
+  "audio/aac",
+  "audio/ogg",
+  "audio/flac",
+];
+
+export const supportedDocumentTypes = [
+  "application/pdf",
+  "application/x-javascript",
+  "text/javascript",
+  "application/x-python",
+  "text/x-python",
+  "text/plain",
+  "text/html",
+  "text/css",
+  "text/md",
+  "text/csv",
+  "text/xml",
+  "text/rtf",
+];
+
+export const allSupportedTypes = [
+  ...supportedImageTypes,
+  ...supportedVideoTypes,
+  ...supportedAudioTypes,
+  ...supportedDocumentTypes,
+];
+
+export function useFileValidator() {
+  const validateFiles = (files: File[]) => {
+    const imageFiles: File[] = [];
+    const videoFiles: File[] = [];
+    const audioFiles: File[] = [];
+    const documentFiles: File[] = [];
+    let hasUnsupported = false;
+
+    Array.from(files).forEach((file) => {
+      if (supportedImageTypes.includes(file.type)) {
+        imageFiles.push(file);
+      } else if (supportedVideoTypes.includes(file.type)) {
+        videoFiles.push(file);
+      } else if (supportedAudioTypes.includes(file.type)) {
+        audioFiles.push(file);
+      } else if (supportedDocumentTypes.includes(file.type)) {
+        documentFiles.push(file);
+      } else {
+        // File không được hỗ trợ
+        hasUnsupported = true;
+      }
+    });
+
+    return {
+      imageFiles,
+      videoFiles,
+      audioFiles,
+      documentFiles,
+      hasUnsupported,
+    };
+  };
+
+  const isFileTypeSupported = (fileType: string) => {
+    return allSupportedTypes.includes(fileType);
+  };
+
+  return {
+    validateFiles,
+    isFileTypeSupported,
+  };
+}
+
 export function useImageUpload(onImagesUpload?: (files: File[]) => void) {
   const [selectedImages, setSelectedImages] = useState<
     { file: File; preview: string }[]

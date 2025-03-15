@@ -1,5 +1,5 @@
-import { CodeFile, CodeFolder } from "../../../../../types";
-import Portal from "../../../../Portal";
+import { CodeFile, CodeFolder } from "../../../../../../types";
+import Portal from "../../../../../Portal";
 
 interface FileModalProps {
   type: "new" | "edit" | "delete" | "newFolder";

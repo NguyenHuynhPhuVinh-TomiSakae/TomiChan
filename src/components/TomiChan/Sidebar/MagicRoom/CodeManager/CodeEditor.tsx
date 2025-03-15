@@ -5,8 +5,8 @@ import {
   IconDeviceFloppy,
   IconSettings,
 } from "@tabler/icons-react";
-import type { CodeFile } from "../../../../types";
-import { chatDB } from "../../../../utils/db";
+import type { CodeFile } from "../../../../../types";
+import { chatDB } from "../../../../../utils/db";
 import { toast } from "sonner";
 import Editor from "@monaco-editor/react";
 

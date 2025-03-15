@@ -9,6 +9,11 @@ import type { CodeFile } from "../../../../../types";
 import { chatDB } from "../../../../../utils/db";
 import { toast } from "sonner";
 import Editor from "@monaco-editor/react";
+import {
+  getLocalStorage,
+  setLocalStorage,
+} from "../../../../../utils/localStorage";
+import Portal from "../../../../Portal";
 
 interface EditorSettings {
   fontSize: number;
@@ -16,6 +21,7 @@ interface EditorSettings {
   wordWrap: "on" | "off";
   theme: "vs-dark" | "light";
   tabSize: number;
+  autoSave: boolean;
 }
 
 interface CodeEditorProps {
@@ -55,23 +61,44 @@ const getLanguageFromFileName = (filename: string): string => {
 
 export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
   const [content, setContent] = useState(file.content);
+  const [originalContent, setOriginalContent] = useState(file.content);
   const [isSaving, setIsSaving] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [settings, setSettings] = useState<EditorSettings>({
-    fontSize: 14,
-    minimap: true,
-    wordWrap: "on",
-    theme: "vs-dark",
-    tabSize: 2,
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [settings, setSettings] = useState<EditorSettings>(() => {
+    const savedSettings = getLocalStorage("codeEditorSettings");
+    return savedSettings
+      ? JSON.parse(savedSettings)
+      : {
+          fontSize: 14,
+          minimap: true,
+          wordWrap: "on",
+          theme: "vs-dark",
+          tabSize: 2,
+          autoSave: false,
+        };
   });
   const language = getLanguageFromFileName(file.name);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setContent(file.content);
+    setOriginalContent(file.content);
   }, [file]);
 
-  // Thêm useEffect để xử lý click outside
+  // Lưu cài đặt vào localStorage khi thay đổi
+  useEffect(() => {
+    setLocalStorage("codeEditorSettings", JSON.stringify(settings));
+  }, [settings]);
+
+  // Kiểm tra thay đổi chưa lưu
+  useEffect(() => {
+    setHasUnsavedChanges(content !== originalContent);
+  }, [content, originalContent]);
+
+  // Xử lý click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -88,7 +115,24 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
     };
   }, []);
 
-  const handleSave = async () => {
+  // Xử lý khi người dùng cố gắng đóng editor khi có thay đổi chưa lưu
+  const handleCloseAttempt = () => {
+    if (hasUnsavedChanges) {
+      setShowUnsavedModal(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleBackAttempt = () => {
+    if (hasUnsavedChanges) {
+      setShowUnsavedModal(true);
+    } else {
+      onBack();
+    }
+  };
+
+  const handleSave = async (isAutoSave = false) => {
     setIsSaving(true);
     try {
       const updatedFile: CodeFile = {
@@ -97,13 +141,16 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
         updatedAt: new Date(),
       };
       await chatDB.saveCodeFile(updatedFile);
-      toast.success("Đã lưu file thành công!");
-      if (onBack) {
-        onBack();
+      setOriginalContent(content);
+      setHasUnsavedChanges(false);
+      if (!isAutoSave) {
+        toast.success("Đã lưu file thành công!");
       }
     } catch (error) {
       console.error("Lỗi khi lưu file:", error);
-      toast.error("Lỗi khi lưu file!");
+      if (!isAutoSave) {
+        toast.error("Lỗi khi lưu file!");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -112,6 +159,20 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {
       setContent(value);
+
+      // Xử lý tự động lưu
+      if (settings.autoSave) {
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
+
+        autoSaveTimeoutRef.current = setTimeout(() => {
+          if (value !== originalContent) {
+            // Chỉ lưu khi có thay đổi
+            handleSave(true); // Truyền tham số true để chỉ ra đây là tự động lưu
+          }
+        }, 2000); // Tự động lưu sau 2 giây kể từ lần thay đổi cuối cùng
+      }
     }
   };
 
@@ -129,12 +190,17 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <button
-              onClick={onBack}
+              onClick={handleBackAttempt}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
             >
               <IconArrowLeft size={24} />
             </button>
             <h2 className="text-2xl font-bold">{file.name}</h2>
+            {hasUnsavedChanges && (
+              <span className="text-xs bg-yellow-500 text-white px-2 py-1 rounded-full">
+                Chưa lưu
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <div className="relative" ref={settingsRef}>
@@ -228,21 +294,34 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
                         className="rounded"
                       />
                     </div>
+
+                    {/* Auto Save */}
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Tự động lưu</label>
+                      <input
+                        type="checkbox"
+                        checked={settings.autoSave}
+                        onChange={(e) =>
+                          updateSettings({ autoSave: e.target.checked })
+                        }
+                        className="rounded"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
             <button
-              onClick={handleSave}
-              disabled={isSaving}
+              onClick={() => handleSave()}
+              disabled={isSaving || !hasUnsavedChanges}
               className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <IconDeviceFloppy size={20} />
               {isSaving ? "Đang lưu..." : "Lưu"}
             </button>
             <button
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
             >
               <IconX size={24} />
@@ -286,6 +365,49 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
           }}
         />
       </div>
+
+      {/* Modal xác nhận khi có thay đổi chưa lưu */}
+      {showUnsavedModal && (
+        <Portal>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-lg shadow-xl">
+              <h3 className="text-xl font-semibold mb-4">
+                Thay đổi chưa được lưu
+              </h3>
+              <p className="mb-6">
+                Bạn có thay đổi chưa được lưu. Bạn muốn làm gì?
+              </p>
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowUnsavedModal(false);
+                    if (onBack) onBack();
+                  }}
+                  className="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
+                >
+                  Bỏ thay đổi
+                </button>
+                <button
+                  onClick={async () => {
+                    await handleSave();
+                    setShowUnsavedModal(false);
+                    if (onBack) onBack();
+                  }}
+                  className="px-5 py-2.5 text-white bg-purple-500 hover:bg-purple-600 rounded-lg cursor-pointer"
+                >
+                  Lưu và đóng
+                </button>
+                <button
+                  onClick={() => setShowUnsavedModal(false)}
+                  className="px-5 py-2.5 text-white bg-gray-500 hover:bg-gray-600 rounded-lg cursor-pointer"
+                >
+                  Tiếp tục chỉnh sửa
+                </button>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
     </div>
   );
 }

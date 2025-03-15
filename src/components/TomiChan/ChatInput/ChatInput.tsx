@@ -562,8 +562,8 @@ export default function ChatInput({
                   <motion.button
                     data-plus-button
                     type="button"
-                    className={`absolute left-2 bottom-8 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 transition-all duration-200 border border-black dark:border-white ${
-                      isMagicMode ? "" : "sm:left-3 sm:bottom-10 sm:p-2"
+                    className={`absolute left-2 bottom-6 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 transition-all duration-200 border border-black dark:border-white ${
+                      isMagicMode ? "" : "sm:left-3 sm:bottom-8 sm:p-2"
                     }`}
                     onClick={(e) => {
                       e.preventDefault();
@@ -597,8 +597,8 @@ export default function ChatInput({
                 {(message.trim() || isGenerating) && (
                   <motion.button
                     type="button"
-                    className={`absolute right-2 bottom-8 cursor-pointer rounded-full p-2 bg-black dark:bg-white ${
-                      isMagicMode ? "" : "sm:right-3 sm:bottom-10"
+                    className={`absolute right-2 bottom-6 cursor-pointer rounded-full p-2 bg-black dark:bg-white ${
+                      isMagicMode ? "" : "sm:right-3 sm:bottom-8"
                     }`}
                     onClick={(e) => {
                       e.preventDefault();

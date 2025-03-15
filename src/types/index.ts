@@ -30,3 +30,21 @@ export interface ChatHistory {
   updatedAt: Date;
   provider: string;
 }
+
+export interface CodeFile {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  language: string;
+  folderId?: string; // thêm trường này
+}
+
+export interface CodeFolder {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+  parentId?: string; // thêm trường này
+}

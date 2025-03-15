@@ -30,3 +30,12 @@ export interface ChatHistory {
   updatedAt: Date;
   provider: string;
 }
+
+export interface CodeFile {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  language: string;
+}

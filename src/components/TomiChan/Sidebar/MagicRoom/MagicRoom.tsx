@@ -7,12 +7,19 @@ import {
   IconLanguage,
   IconListCheck,
 } from "@tabler/icons-react";
+import CodeAssistant from "./CodeAssistant";
 
 interface MagicRoomProps {
   onToggleMagicMode?: () => void;
 }
 
 export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
+  const [showCodeAssistant, setShowCodeAssistant] = React.useState(false);
+
+  if (showCodeAssistant) {
+    return <CodeAssistant onClose={() => setShowCodeAssistant(false)} />;
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -51,12 +58,13 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
         </div>
 
         {/* Tools Grid */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="w-full p-6 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/20 flex items-center gap-4 transition-all"
+            onClick={() => setShowCodeAssistant(true)}
+            className="w-full p-6 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/20 flex items-center gap-4 transition-all cursor-pointer"
           >
             <IconWand className="text-purple-500 w-8 h-8" />
             <div className="text-left">
@@ -71,7 +79,7 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="w-full p-6 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border border-blue-500/20 flex items-center gap-4 transition-all"
+            className="w-full p-6 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border border-blue-500/20 flex items-center gap-4 transition-all opacity-30"
           >
             <IconBook className="text-blue-500 w-8 h-8" />
             <div className="text-left">
@@ -86,7 +94,7 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="w-full p-6 rounded-xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 hover:from-green-500/20 hover:to-emerald-500/20 border border-green-500/20 flex items-center gap-4 transition-all"
+            className="w-full p-6 rounded-xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 hover:from-green-500/20 hover:to-emerald-500/20 border border-green-500/20 flex items-center gap-4 transition-all opacity-30"
           >
             <IconLanguage className="text-green-500 w-8 h-8" />
             <div className="text-left">
@@ -101,7 +109,7 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="w-full p-6 rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 hover:from-amber-500/20 hover:to-yellow-500/20 border border-amber-500/20 flex items-center gap-4 transition-all"
+            className="w-full p-6 rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 hover:from-amber-500/20 hover:to-yellow-500/20 border border-amber-500/20 flex items-center gap-4 transition-all opacity-30"
           >
             <IconListCheck className="text-amber-500 w-8 h-8" />
             <div className="text-left">

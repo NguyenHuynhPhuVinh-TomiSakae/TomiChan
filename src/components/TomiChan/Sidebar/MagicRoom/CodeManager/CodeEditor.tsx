@@ -427,13 +427,15 @@ export default function CodeEditor({
       {/* Editor Area with File Explorer */}
       <div className="flex-1 flex">
         {showFileExplorer && (
-          <FileExplorer
-            onFileSelect={handleFileSelect}
-            activeFileId={file.id}
-            className="w-64 border-r border-gray-200 dark:border-gray-800 overflow-auto"
-          />
+          <div className="w-64 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-shrink-0">
+            <FileExplorer
+              onFileSelect={handleFileSelect}
+              activeFileId={file.id}
+              className="h-full"
+            />
+          </div>
         )}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <Editor
             height="100%"
             defaultLanguage={language}

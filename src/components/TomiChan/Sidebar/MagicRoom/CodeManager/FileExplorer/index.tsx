@@ -229,67 +229,68 @@ export default function FileExplorer({
         </div>
 
         <div className="overflow-y-auto max-h-[calc(100vh-100px)]">
-          {/* Thêm nội dung kiểm tra */}
-          {rootFolders.length === 0 &&
-            rootFiles.length === 0 &&
-            !creatingRootFolder &&
-            !creatingRootFile && (
-              <div className="text-gray-500 text-sm p-2">
-                Không có file hoặc thư mục nào. Hãy tạo file mới.
-              </div>
+          <div className="pb-32">
+            {rootFolders.length === 0 &&
+              rootFiles.length === 0 &&
+              !creatingRootFolder &&
+              !creatingRootFile && (
+                <div className="text-gray-500 text-sm p-2">
+                  Không có file hoặc thư mục nào. Hãy tạo file mới.
+                </div>
+              )}
+
+            {rootFolders.map((folder) => (
+              <FolderNode
+                key={folder.id}
+                folder={folder}
+                level={0}
+                folders={folders}
+                files={files}
+                onFileSelect={onFileSelect}
+                activeFileId={activeFileId}
+                expandedFolders={expandedFolders}
+                toggleFolder={toggleFolder}
+                onCreateFolder={handleCreateFolder}
+                onCreateFile={handleCreateFile}
+                creatingFolderId={creatingFolderId}
+                creatingFileId={creatingFileId}
+                onEditFolder={handleEditFolder}
+                onDeleteFolder={handleDeleteFolder}
+                onEditFile={handleEditFile}
+                onDeleteFile={handleDeleteFile}
+              />
+            ))}
+
+            {creatingRootFolder && (
+              <NewItemInput
+                type="folder"
+                level={0}
+                parentId=""
+                onCancel={handleCancelCreateFolder}
+              />
             )}
 
-          {rootFolders.map((folder) => (
-            <FolderNode
-              key={folder.id}
-              folder={folder}
-              level={0}
-              folders={folders}
-              files={files}
-              onFileSelect={onFileSelect}
-              activeFileId={activeFileId}
-              expandedFolders={expandedFolders}
-              toggleFolder={toggleFolder}
-              onCreateFolder={handleCreateFolder}
-              onCreateFile={handleCreateFile}
-              creatingFolderId={creatingFolderId}
-              creatingFileId={creatingFileId}
-              onEditFolder={handleEditFolder}
-              onDeleteFolder={handleDeleteFolder}
-              onEditFile={handleEditFile}
-              onDeleteFile={handleDeleteFile}
-            />
-          ))}
+            {rootFiles.map((file) => (
+              <FileItem
+                key={file.id}
+                file={file}
+                onClick={() => onFileSelect(file)}
+                isActive={activeFileId === file.id}
+                paddingLeft={0}
+                onEdit={(updatedFile) => handleEditFile(updatedFile)}
+                onDelete={() => handleDeleteFile(file)}
+              />
+            ))}
 
-          {creatingRootFolder && (
-            <NewItemInput
-              type="folder"
-              level={0}
-              parentId=""
-              onCancel={handleCancelCreateFolder}
-            />
-          )}
-
-          {rootFiles.map((file) => (
-            <FileItem
-              key={file.id}
-              file={file}
-              onClick={() => onFileSelect(file)}
-              isActive={activeFileId === file.id}
-              paddingLeft={0}
-              onEdit={(updatedFile) => handleEditFile(updatedFile)}
-              onDelete={() => handleDeleteFile(file)}
-            />
-          ))}
-
-          {creatingRootFile && (
-            <NewItemInput
-              type="file"
-              level={0}
-              parentId=""
-              onCancel={handleCancelCreateFile}
-            />
-          )}
+            {creatingRootFile && (
+              <NewItemInput
+                type="file"
+                level={0}
+                parentId=""
+                onCancel={handleCancelCreateFile}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -420,7 +420,11 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
                 <button
                   onClick={() => {
                     setShowUnsavedModal(false);
-                    if (onBack) onBack();
+                    if (onBack) {
+                      onBack();
+                    } else {
+                      onClose();
+                    }
                   }}
                   className="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
                 >
@@ -430,7 +434,11 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
                   onClick={async () => {
                     await handleSave();
                     setShowUnsavedModal(false);
-                    if (onBack) onBack();
+                    if (onBack) {
+                      onBack();
+                    } else {
+                      onClose();
+                    }
                   }}
                   className="px-5 py-2.5 text-white bg-purple-500 hover:bg-purple-600 rounded-lg cursor-pointer"
                 >

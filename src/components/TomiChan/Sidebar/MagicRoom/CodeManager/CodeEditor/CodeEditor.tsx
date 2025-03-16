@@ -227,8 +227,18 @@ export default function CodeEditor({
     return ext ? SUPPORTED_EXTENSIONS[ext] : null;
   };
 
-  // Trong component
-  const language = getLanguageFromFile(file.name);
+  // Thêm hàm để lấy file đang active
+  const getActiveFile = () => {
+    if (!activeFileId) return file;
+    const activeFile = openedFiles.find((f) => f.id === activeFileId);
+    return activeFile || file;
+  };
+
+  // Lấy file đang active
+  const activeFile = getActiveFile();
+
+  // Thay thế các tham chiếu đến file bằng activeFile
+  const language = getLanguageFromFile(activeFile.name);
   const canRun = !!language;
 
   // Thêm hàm xử lý cập nhật file
@@ -411,6 +421,7 @@ export default function CodeEditor({
             activeFileId={activeFileId}
             onTabClick={handleTabClick}
             onTabClose={handleTabClose}
+            activeFile={activeFile}
           />
 
           {/* Editor và Output */}
@@ -420,7 +431,7 @@ export default function CodeEditor({
             >
               <Editor
                 height="100%"
-                language={getLanguageFromFileName(file.name)}
+                language={getLanguageFromFileName(activeFile.name)}
                 value={content}
                 theme={settings.theme}
                 onChange={(value) => handleEditorChange(value, settings)}

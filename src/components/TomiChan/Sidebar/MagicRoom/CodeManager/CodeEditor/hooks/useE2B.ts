@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { getApiKey } from "../../../../../../../utils/getApiKey";
+import { chatDB } from "../../../../../../../utils/db";
 
 export function useE2B() {
   const [isRunning, setIsRunning] = useState(false);
@@ -11,6 +12,94 @@ export function useE2B() {
   const clearOutput = useCallback(() => {
     setOutput("");
     setError("");
+  }, []);
+
+  // Hàm để tìm và nhúng các file CSS và JS vào HTML
+  const processHtmlWithDependencies = useCallback(async (htmlCode: string) => {
+    try {
+      // Tìm tất cả các thẻ link CSS
+      const cssLinks =
+        htmlCode.match(/<link[^>]*href=["']([^"']+\.css)["'][^>]*>/g) || [];
+      const cssFiles = cssLinks
+        .map((link) => {
+          const match = link.match(/href=["']([^"']+\.css)["']/);
+          return match ? match[1] : null;
+        })
+        .filter(Boolean);
+
+      // Tìm tất cả các thẻ script JS
+      const scriptTags =
+        htmlCode.match(/<script[^>]*src=["']([^"']+\.js)["'][^>]*>/g) || [];
+      const jsFiles = scriptTags
+        .map((script) => {
+          const match = script.match(/src=["']([^"']+\.js)["']/);
+          return match ? match[1] : null;
+        })
+        .filter(Boolean);
+
+      let processedHtml = htmlCode;
+
+      // Xử lý các file CSS
+      for (const cssFile of cssFiles) {
+        try {
+          // Tìm file CSS trong database
+          const allFiles = await chatDB.getAllCodeFiles();
+          const cssFileObj = allFiles.find(
+            (f) => f.name === cssFile || f.name.endsWith(`/${cssFile}`)
+          );
+
+          if (cssFileObj) {
+            // Thay thế link bằng style inline
+            const styleTag = `<style>\n${cssFileObj.content}\n</style>`;
+            processedHtml = processedHtml.replace(
+              new RegExp(
+                `<link[^>]*href=["']${cssFile?.replace(
+                  /[.*+?^${}()|[\]\\]/g,
+                  "\\$&"
+                )}["'][^>]*>`,
+                "g"
+              ),
+              styleTag
+            );
+          }
+        } catch (e) {
+          console.error(`Lỗi khi xử lý file CSS ${cssFile}:`, e);
+        }
+      }
+
+      // Xử lý các file JS
+      for (const jsFile of jsFiles) {
+        try {
+          // Tìm file JS trong database
+          const allFiles = await chatDB.getAllCodeFiles();
+          const jsFileObj = allFiles.find(
+            (f) => f.name === jsFile || f.name.endsWith(`/${jsFile}`)
+          );
+
+          if (jsFileObj) {
+            // Thay thế script src bằng script inline
+            const scriptTag = `<script>\n${jsFileObj.content}\n</script>`;
+            processedHtml = processedHtml.replace(
+              new RegExp(
+                `<script[^>]*src=["']${jsFile?.replace(
+                  /[.*+?^${}()|[\]\\]/g,
+                  "\\$&"
+                )}["'][^>]*></script>`,
+                "g"
+              ),
+              scriptTag
+            );
+          }
+        } catch (e) {
+          console.error(`Lỗi khi xử lý file JS ${jsFile}:`, e);
+        }
+      }
+
+      return processedHtml;
+    } catch (e) {
+      console.error("Lỗi khi xử lý HTML:", e);
+      return htmlCode; // Trả về HTML gốc nếu có lỗi
+    }
   }, []);
 
   const runCommand = useCallback(
@@ -53,11 +142,17 @@ export function useE2B() {
 
       try {
         if (language === "html") {
-          const blob = new Blob([code], { type: "text/html" });
+          // Xử lý HTML với các dependencies
+          const processedHtml = await processHtmlWithDependencies(code);
+
+          // Tạo blob và mở trong tab mới
+          const blob = new Blob([processedHtml], { type: "text/html" });
           const url = URL.createObjectURL(blob);
           window.open(url, "_blank");
           setTimeout(() => URL.revokeObjectURL(url), 1000);
-          setOutput("Đã mở HTML trong tab mới");
+          setOutput(
+            "Đã mở HTML trong tab mới (với các file CSS và JS đã nhúng)"
+          );
           return;
         }
 
@@ -88,7 +183,7 @@ export function useE2B() {
         setIsRunning(false);
       }
     },
-    [clearOutput]
+    [clearOutput, processHtmlWithDependencies]
   );
 
   return {

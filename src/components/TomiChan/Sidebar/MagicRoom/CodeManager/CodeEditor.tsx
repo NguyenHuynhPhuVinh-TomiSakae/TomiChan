@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useRef } from "react";
 import {
   IconArrowLeft,
@@ -18,6 +19,8 @@ import {
 import Portal from "../../../../Portal";
 import FileExplorer from "./FileExplorer";
 import { useCodeAssistant } from "../../../../../hooks/useCodeAssistant";
+import { useOpenedFiles } from "../../../../../hooks/useOpenedFiles";
+import FileIcon from "./FileIcon";
 
 interface EditorSettings {
   fontSize: number;
@@ -89,7 +92,6 @@ export default function CodeEditor({
           autoSave: false,
         };
   });
-  const language = getLanguageFromFileName(file.name);
   const settingsRef = useRef<HTMLDivElement>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -99,12 +101,66 @@ export default function CodeEditor({
   // Lấy hàm loadFiles từ useCodeAssistant để cập nhật danh sách file
   const { loadFiles } = useCodeAssistant();
 
+  // Sử dụng hook useOpenedFiles để quản lý các file đã mở
+  const { openedFiles, activeFileId, openFile, closeFile, setActiveFileId } =
+    useOpenedFiles();
+
+  // Lấy file hiện tại từ activeFileId
+  const currentFile = openedFiles.find((f) => f.id === activeFileId) || file;
+  const language = getLanguageFromFileName(currentFile.name);
+
   useEffect(() => {
-    setContent(file.content);
-    setOriginalContent(file.content);
-    contentRef.current = file.content;
-    originalContentRef.current = file.content;
-  }, [file]);
+    // Khởi tạo state ban đầu với một file duy nhất
+    if (openedFiles.length === 0) {
+      openFile(file);
+    } else if (file.id !== activeFileId) {
+      // Nếu nhận được một file mới khác với file hiện tại
+      if (!openedFiles.some((f) => f.id === file.id)) {
+        openFile(file);
+      } else {
+        // Nếu file đã có trong danh sách, chỉ cần active nó
+        setActiveFileId(file.id);
+
+        // Cập nhật content ngay lập tức cho file này
+        setContent(file.content);
+        setOriginalContent(file.content);
+        contentRef.current = file.content;
+        originalContentRef.current = file.content;
+      }
+    }
+  }, [file.id]); // Chỉ chạy khi file.id thay đổi
+
+  useEffect(() => {
+    if (activeFileId) {
+      // Tìm file trong danh sách đã mở
+      const openedFile = openedFiles.find((f) => f.id === activeFileId);
+
+      if (openedFile) {
+        // Nếu đã có nội dung trong danh sách đã mở, sử dụng ngay
+        setContent(openedFile.content);
+        setOriginalContent(openedFile.content);
+        contentRef.current = openedFile.content;
+        originalContentRef.current = openedFile.content;
+      } else {
+        // Nếu không có, tải từ database
+        const loadFileContent = async () => {
+          try {
+            const loadedFile = await chatDB.getCodeFile(activeFileId);
+            if (loadedFile) {
+              setContent(loadedFile.content);
+              setOriginalContent(loadedFile.content);
+              contentRef.current = loadedFile.content;
+              originalContentRef.current = loadedFile.content;
+            }
+          } catch (error) {
+            console.error("Lỗi khi tải nội dung file:", error);
+            toast.error("Không thể tải nội dung file!");
+          }
+        };
+        loadFileContent();
+      }
+    }
+  }, [activeFileId, openedFiles]);
 
   // Lưu cài đặt vào localStorage khi thay đổi
   useEffect(() => {
@@ -256,6 +312,28 @@ export default function CodeEditor({
     }
   };
 
+  const handleCloseFile = (fileId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+
+    const targetFile = openedFiles.find((f) => f.id === fileId);
+    if (!targetFile) return;
+
+    const isContentChanged =
+      targetFile.id === activeFileId ? content !== originalContent : false;
+
+    if (isContentChanged) {
+      // Lưu file hiện tại trước khi đóng
+      setShowUnsavedModal(true);
+      // Lưu fileId để đóng sau khi xử lý
+      setLocalStorage("pendingFileToClose", fileId);
+    } else {
+      closeFile(fileId);
+      if (openedFiles.length <= 1) {
+        onBack();
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -270,153 +348,53 @@ export default function CodeEditor({
             </button>
             <button
               onClick={() => setShowFileExplorer(!showFileExplorer)}
-              className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer ${
-                showFileExplorer ? "bg-gray-100 dark:bg-gray-900" : ""
+              className={`p-2 rounded transition-colors ${
+                showFileExplorer
+                  ? "bg-gray-200 dark:bg-gray-700"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-900"
               }`}
-              title="Hiển thị cây thư mục"
+              title="File Explorer"
             >
-              <IconFolders size={24} />
+              <IconFolders size={20} />
             </button>
-            <h2 className="text-2xl font-bold">{file.name}</h2>
-            {hasUnsavedChanges && (
-              <span className="text-xs bg-yellow-500 text-white px-2 py-1 rounded-full">
-                Chưa lưu
-              </span>
-            )}
+            <h2 className="text-xl font-bold">Code Editor</h2>
           </div>
           <div className="flex items-center gap-2">
-            {/* Thêm nút chạy file HTML */}
+            <button
+              onClick={() => handleSave()}
+              className={`p-2 rounded transition-colors ${
+                hasUnsavedChanges
+                  ? "bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 dark:hover:bg-yellow-800"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-900"
+              }`}
+              disabled={isSaving || !hasUnsavedChanges}
+              title="Lưu file"
+            >
+              <IconDeviceFloppy size={20} />
+            </button>
             {isHtmlFile && (
               <button
                 onClick={handleRunHtml}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2 cursor-pointer"
-                title="Chạy file HTML trong tab mới"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded transition-colors"
+                title="Chạy HTML"
               >
                 <IconPlayerPlay size={20} />
-                Chạy
               </button>
             )}
-
-            <div className="relative" ref={settingsRef}>
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
-              >
-                <IconSettings size={24} />
-              </button>
-
-              {/* Settings Dropdown */}
-              {showSettings && (
-                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-                  <div className="p-4 space-y-4">
-                    {/* Font Size */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Font Size: {settings.fontSize}px
-                      </label>
-                      <input
-                        type="range"
-                        min="10"
-                        max="30"
-                        value={settings.fontSize}
-                        onChange={(e) =>
-                          updateSettings({ fontSize: Number(e.target.value) })
-                        }
-                        className="w-full"
-                      />
-                    </div>
-
-                    {/* Tab Size */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Tab Size</label>
-                      <select
-                        value={settings.tabSize}
-                        onChange={(e) =>
-                          updateSettings({ tabSize: Number(e.target.value) })
-                        }
-                        className="w-full p-2 rounded border dark:bg-gray-700 dark:border-gray-600"
-                      >
-                        <option value={2}>2 spaces</option>
-                        <option value={4}>4 spaces</option>
-                        <option value={8}>8 spaces</option>
-                      </select>
-                    </div>
-
-                    {/* Theme */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Theme</label>
-                      <select
-                        value={settings.theme}
-                        onChange={(e) =>
-                          updateSettings({
-                            theme: e.target.value as "vs-dark" | "light",
-                          })
-                        }
-                        className="w-full p-2 rounded border dark:bg-gray-700 dark:border-gray-600"
-                      >
-                        <option value="vs-dark">Dark</option>
-                        <option value="light">Light</option>
-                      </select>
-                    </div>
-
-                    {/* Minimap */}
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium">
-                        Hiện Minimap
-                      </label>
-                      <input
-                        type="checkbox"
-                        checked={settings.minimap}
-                        onChange={(e) =>
-                          updateSettings({ minimap: e.target.checked })
-                        }
-                        className="rounded"
-                      />
-                    </div>
-
-                    {/* Word Wrap */}
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium">Word Wrap</label>
-                      <input
-                        type="checkbox"
-                        checked={settings.wordWrap === "on"}
-                        onChange={(e) =>
-                          updateSettings({
-                            wordWrap: e.target.checked ? "on" : "off",
-                          })
-                        }
-                        className="rounded"
-                      />
-                    </div>
-
-                    {/* Auto Save */}
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium">Tự động lưu</label>
-                      <input
-                        type="checkbox"
-                        checked={settings.autoSave}
-                        onChange={(e) =>
-                          updateSettings({ autoSave: e.target.checked })
-                        }
-                        className="rounded"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
             <button
-              onClick={() => handleSave()}
-              disabled={isSaving || !hasUnsavedChanges}
-              className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => setShowSettings(!showSettings)}
+              className={`p-2 rounded transition-colors ${
+                showSettings
+                  ? "bg-gray-200 dark:bg-gray-700"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-900"
+              }`}
+              title="Cài đặt"
             >
-              <IconDeviceFloppy size={20} />
-              {isSaving ? "Đang lưu..." : "Lưu"}
+              <IconSettings size={20} />
             </button>
             <button
               onClick={handleCloseAttempt}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors"
             >
               <IconX size={24} />
             </button>
@@ -424,13 +402,40 @@ export default function CodeEditor({
         </div>
       </div>
 
-      {/* Editor Area with File Explorer */}
-      <div className="flex-1 flex">
+      {/* Tabs for opened files */}
+      <div className="flex items-center border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 overflow-x-auto">
+        {openedFiles.map((openedFile) => (
+          <div
+            key={openedFile.id}
+            onClick={() => setActiveFileId(openedFile.id)}
+            className={`
+              flex items-center gap-2 px-4 py-2 cursor-pointer border-r border-gray-200 dark:border-gray-700
+              ${
+                openedFile.id === activeFileId
+                  ? "bg-white dark:bg-gray-800"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-800"
+              }
+            `}
+          >
+            <FileIcon fileName={openedFile.name} size={16} />
+            <span className="truncate max-w-[120px]">{openedFile.name}</span>
+            <button
+              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full"
+              onClick={(e) => handleCloseFile(openedFile.id, e)}
+            >
+              <IconX size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Editor Area */}
+      <div className="flex-1 flex overflow-hidden">
         {showFileExplorer && (
           <div className="w-64 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-shrink-0">
             <FileExplorer
               onFileSelect={handleFileSelect}
-              activeFileId={file.id}
+              activeFileId={activeFileId || file.id}
               className="h-full"
             />
           </div>
@@ -439,92 +444,210 @@ export default function CodeEditor({
           <Editor
             height="100%"
             defaultLanguage={language}
+            language={language}
             value={content}
             onChange={handleEditorChange}
             theme={settings.theme}
             options={{
               fontSize: settings.fontSize,
-              minimap: { enabled: settings.minimap },
-              wordWrap: settings.wordWrap,
-              lineNumbers: "on",
-              folding: true,
-              autoIndent: "full",
-              formatOnPaste: true,
-              formatOnType: true,
-              suggestOnTriggerCharacters: true,
-              acceptSuggestionOnEnter: "on",
-              tabSize: settings.tabSize,
-              automaticLayout: true,
-              scrollBeyondLastLine: true,
-              smoothScrolling: true,
-              cursorBlinking: "smooth",
-              cursorSmoothCaretAnimation: "on",
-              bracketPairColorization: {
-                enabled: true,
+              minimap: {
+                enabled: settings.minimap,
               },
-              padding: {
-                top: 16,
-                bottom: 16,
+              wordWrap: settings.wordWrap,
+              tabSize: settings.tabSize,
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+              lineNumbers: "on",
+              glyphMargin: true,
+              folding: true,
+              contextmenu: true,
+              scrollbar: {
+                verticalScrollbarSize: 12,
+                horizontalScrollbarSize: 12,
               },
             }}
           />
         </div>
       </div>
 
-      {/* Modal xác nhận khi có thay đổi chưa lưu */}
+      {/* Settings Panel */}
+      {showSettings && (
+        <div
+          ref={settingsRef}
+          className="absolute right-4 top-20 bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-200 dark:border-gray-700 p-4 w-80 z-10"
+        >
+          <h3 className="font-bold mb-4 text-gray-900 dark:text-gray-100">
+            Cài đặt Editor
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Font Size: {settings.fontSize}px
+              </label>
+              <input
+                type="range"
+                min="12"
+                max="24"
+                value={settings.fontSize}
+                onChange={(e) =>
+                  updateSettings({ fontSize: Number(e.target.value) })
+                }
+                className="w-full"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Minimap
+              </label>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.minimap}
+                  onChange={(e) =>
+                    updateSettings({ minimap: e.target.checked })
+                  }
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Word Wrap
+              </label>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.wordWrap === "on"}
+                  onChange={(e) =>
+                    updateSettings({
+                      wordWrap: e.target.checked ? "on" : "off",
+                    })
+                  }
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Auto Save
+              </label>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.autoSave}
+                  onChange={(e) =>
+                    updateSettings({ autoSave: e.target.checked })
+                  }
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+            <div>
+              <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Tab Size: {settings.tabSize}
+              </label>
+              <input
+                type="range"
+                min="2"
+                max="8"
+                step="2"
+                value={settings.tabSize}
+                onChange={(e) =>
+                  updateSettings({ tabSize: Number(e.target.value) })
+                }
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Theme
+              </label>
+              <select
+                value={settings.theme}
+                onChange={(e) =>
+                  updateSettings({
+                    theme: e.target.value as "vs-dark" | "light",
+                  })
+                }
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-purple-500 dark:focus:border-purple-500"
+              >
+                <option value="vs-dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unsaved changes modal */}
       {showUnsavedModal && (
         <Portal>
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-lg shadow-xl">
-              <h3 className="text-xl font-semibold mb-4">
-                Thay đổi chưa được lưu
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+                Lưu thay đổi?
               </h3>
-              <p className="mb-6">
-                Bạn có thay đổi chưa được lưu. Bạn muốn làm gì?
+              <p className="mb-6 text-gray-700 dark:text-gray-300">
+                File có nội dung đã được thay đổi nhưng chưa được lưu. Bạn có
+                muốn lưu trước khi đóng?
               </p>
-              <div className="flex flex-col sm:flex-row justify-end gap-3">
+              <div className="flex justify-end gap-3">
                 <button
                   onClick={() => {
                     setShowUnsavedModal(false);
-                    // Nếu có file đang chờ mở, mở nó
-                    if (getLocalStorage("pendingFileToOpen")) {
-                      handleOpenPendingFile();
-                    } else if (onBack) {
-                      onBack();
+                    // Nếu đang có file chờ đóng
+                    const pendingFileId = getLocalStorage("pendingFileToClose");
+                    if (pendingFileId) {
+                      closeFile(pendingFileId);
+                      localStorage.removeItem("pendingFileToClose");
+                      if (openedFiles.length <= 1) {
+                        onBack();
+                      }
                     } else {
-                      onClose();
+                      // Xử lý đóng editor
+                      onBack();
                     }
                   }}
-                  className="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
                 >
-                  Bỏ thay đổi
+                  Không lưu
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUnsavedModal(false);
+                  }}
+                  className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+                >
+                  Hủy
                 </button>
                 <button
                   onClick={async () => {
                     await handleSave();
                     setShowUnsavedModal(false);
-                    // Nếu có file đang chờ mở, mở nó
-                    if (getLocalStorage("pendingFileToOpen")) {
-                      handleOpenPendingFile();
-                    } else if (onBack) {
-                      onBack();
+
+                    // Xử lý file đang chờ đóng
+                    const pendingFileId = getLocalStorage("pendingFileToClose");
+                    if (pendingFileId) {
+                      closeFile(pendingFileId);
+                      localStorage.removeItem("pendingFileToClose");
+                      if (openedFiles.length <= 1) {
+                        onBack();
+                      }
                     } else {
-                      onClose();
+                      // Xử lý mở file đang chờ
+                      handleOpenPendingFile();
+                      // Nếu không có file đang chờ, đóng editor
+                      if (!getLocalStorage("pendingFileToOpen")) {
+                        onBack();
+                      }
                     }
                   }}
-                  className="px-5 py-2.5 text-white bg-purple-500 hover:bg-purple-600 rounded-lg cursor-pointer"
+                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
                 >
-                  Lưu và đóng
-                </button>
-                <button
-                  onClick={() => {
-                    setShowUnsavedModal(false);
-                    // Xóa file đang chờ nếu người dùng chọn tiếp tục chỉnh sửa
-                    localStorage.removeItem("pendingFileToOpen");
-                  }}
-                  className="px-5 py-2.5 text-white bg-gray-500 hover:bg-gray-600 rounded-lg cursor-pointer"
-                >
-                  Tiếp tục chỉnh sửa
+                  Lưu
                 </button>
               </div>
             </div>

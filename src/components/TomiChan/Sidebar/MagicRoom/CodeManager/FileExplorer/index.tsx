@@ -201,7 +201,7 @@ export default function FileExplorer({
 
   return (
     <div
-      className={`overflow-auto h-full min-w-[250px] bg-white dark:bg-gray-900 ${className}`}
+      className={`h-full min-w-[250px] bg-white dark:bg-gray-900 ${className}`}
     >
       <div className="p-2">
         <div className="flex items-center justify-between mb-2">

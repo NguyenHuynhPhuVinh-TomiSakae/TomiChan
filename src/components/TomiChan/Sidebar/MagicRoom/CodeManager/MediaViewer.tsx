@@ -2,6 +2,7 @@
 import React from "react";
 import { IconArrowLeft, IconX, IconDownload } from "@tabler/icons-react";
 import { CodeFile } from "@/types";
+import Image from "next/image";
 
 interface MediaViewerProps {
   file: CodeFile;
@@ -35,36 +36,17 @@ export default function MediaViewer({
 
   const fileType = getFileType();
 
-  // Tối ưu hóa việc xử lý URL
+  // Đơn giản hóa việc xử lý URL
   const [fileUrl, setFileUrl] = React.useState<string>("");
 
+  // Xử lý file ngay sau khi render đầu tiên
   React.useEffect(() => {
-    setIsLoading(true);
-    setError(null);
+    // Hiển thị UI trước, xử lý nội dung sau
+    let isMounted = true;
 
-    // Kiểm tra kích thước của nội dung
-    const isLargeFile = file.content.length > 1000000; // Khoảng 1MB base64
-
-    // Nếu là file video hoặc audio lớn, hiển thị thông báo không hỗ trợ
-    if ((fileType === "video" || fileType === "audio") && isLargeFile) {
-      setError(
-        `Không thể phát trực tiếp file ${
-          fileType === "video" ? "video" : "âm thanh"
-        } này do kích thước quá lớn. Vui lòng tải xuống để xem.`
-      );
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      // Kiểm tra nếu nội dung đã là data URL
-      if (file.content.startsWith("data:")) {
-        setFileUrl(file.content);
-        setIsLoading(false);
-        return;
-      }
-
-      // Tạo URL từ nội dung file
+    // Xử lý nhanh nội dung file để hiển thị ngay
+    const quickProcess = () => {
+      // Tạo mime type dựa trên loại file
       const extension = file.name.split(".").pop()?.toLowerCase();
       let mimeType = "";
 
@@ -78,25 +60,46 @@ export default function MediaViewer({
         mimeType = "application/pdf";
       }
 
-      // Luôn sử dụng data URL với base64
-      setFileUrl(`data:${mimeType};base64,${file.content}`);
-      setIsLoading(false);
-    } catch (err) {
-      console.error("Lỗi khi xử lý file:", err);
-      setError(
-        "Không thể hiển thị file này. Có thể file quá lớn hoặc bị hỏng."
-      );
-      setIsLoading(false);
-    }
+      // Kiểm tra nếu nội dung đã là data URL
+      if (file.content.startsWith("data:")) {
+        if (isMounted) {
+          setFileUrl(file.content);
+          setIsLoading(false);
+        }
+      } else {
+        // Tạo data URL và lưu
+        if (isMounted) {
+          setFileUrl(`data:${mimeType};base64,${file.content}`);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // Sử dụng requestAnimationFrame để tránh blocking UI
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        try {
+          quickProcess();
+        } catch (err) {
+          console.error("Lỗi khi xử lý file:", err);
+          if (isMounted) {
+            setError("Không thể hiển thị file này.");
+            setIsLoading(false);
+          }
+        }
+      }, 100); // Delay nhỏ để UI hiển thị trước
+    });
+
+    // Cleanup khi unmount
+    return () => {
+      isMounted = false;
+    };
   }, [file.content, file.name, fileType]);
 
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href =
-      fileUrl ||
-      (file.content.startsWith("data:")
-        ? file.content
-        : `data:application/octet-stream;base64,${file.content}`);
+      fileUrl || `data:application/octet-stream;base64,${file.content}`;
     link.download = file.name;
     document.body.appendChild(link);
     link.click();
@@ -137,10 +140,12 @@ export default function MediaViewer({
       case "image":
         return (
           <div className="flex items-center justify-center h-full">
-            <img
+            <Image
               src={fileUrl}
               alt={file.name}
               className="max-w-full max-h-full object-contain"
+              width={1000}
+              height={1000}
               onError={() => setError("Không thể hiển thị ảnh này.")}
             />
           </div>
@@ -153,11 +158,12 @@ export default function MediaViewer({
               <p className="text-gray-500">Tệp âm thanh</p>
             </div>
             <audio
+              src={fileUrl}
               controls
               className="w-full max-w-md"
               onError={() => setError("Không thể phát âm thanh này.")}
+              preload="auto"
             >
-              <source src={fileUrl} />
               Trình duyệt của bạn không hỗ trợ phát âm thanh.
             </audio>
           </div>
@@ -166,12 +172,12 @@ export default function MediaViewer({
         return (
           <div className="flex items-center justify-center h-full">
             <video
+              src={fileUrl}
               controls
               className="max-w-full max-h-full"
               onError={() => setError("Không thể phát video này.")}
-              preload="metadata"
+              preload="auto"
             >
-              <source src={fileUrl} />
               Trình duyệt của bạn không hỗ trợ phát video.
             </video>
           </div>

@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, Fragment, useEffect } from "react";
 import {
   IconChevronDown,
   IconAdjustmentsHorizontal,
   IconLayoutSidebarLeftCollapse,
 } from "@tabler/icons-react";
 import Image from "next/image";
+import { Menu, Transition } from "@headlessui/react";
 import ProviderSettingsModal from "../ProviderSettings/ProviderSettingsModal";
 import { getLocalStorage, setLocalStorage } from "../../utils/localStorage";
 
@@ -30,28 +31,12 @@ export default function Header({
       propSelectedProvider || getLocalStorage("selected_provider", "google")
     );
   });
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (propSelectedProvider && propSelectedProvider !== selectedProvider) {
       setSelectedProvider(propSelectedProvider);
     }
   }, [propSelectedProvider, selectedProvider]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const providers = [
     { id: "google", name: "Google", icon: "/google-logo.svg" },
@@ -70,7 +55,6 @@ export default function Header({
     if (onProviderChange) {
       onProviderChange(providerId);
     }
-    setIsDropdownOpen(false);
   };
 
   return (
@@ -100,11 +84,8 @@ export default function Header({
                 />
               </button>
             )}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                className="px-4 py-2 rounded-lg text-sm bg-white dark:bg-black flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              >
+            <Menu as="div" className="relative">
+              <Menu.Button className="px-4 py-2 rounded-lg text-sm bg-white dark:bg-black flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 border border-black dark:border-white transition-all duration-200">
                 <Image
                   src={
                     providers.find((p) => p.id === selectedProvider)?.icon ||
@@ -115,40 +96,91 @@ export default function Header({
                   width={20}
                   height={20}
                 />
-                {providers.find((p) => p.id === selectedProvider)?.name}
-                <IconChevronDown size={16} />
-              </button>
+                <span className="font-medium">
+                  {providers.find((p) => p.id === selectedProvider)?.name}
+                </span>
+                <IconChevronDown size={16} className="text-gray-500" />
+              </Menu.Button>
 
-              {isDropdownOpen && (
-                <div className="absolute mt-1 w-48 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg">
+              <Transition
+                as={Fragment}
+                enter="transition ease-out duration-75"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-50"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
+              >
+                <Menu.Items className="absolute mt-2 w-52 bg-white dark:bg-black border border-black dark:border-white rounded-xl z-10 focus:outline-none overflow-hidden backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
+                  <div className="px-4 py-3 border-b border-black dark:border-white">
+                    <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Chọn Nhà Cung Cấp AI
+                    </div>
+                  </div>
                   {providers.map((provider) => (
-                    <button
-                      key={provider.id}
-                      className={`w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-900 cursor-pointer ${
-                        provider.disabled
-                          ? "opacity-50 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        !provider.disabled && handleProviderSelect(provider.id)
-                      }
-                      disabled={provider.disabled}
-                    >
-                      <Image
-                        src={provider.icon}
-                        alt={provider.name}
-                        className={`w-5 h-5 ${
-                          provider.disabled ? "opacity-50" : ""
-                        }`}
-                        width={20}
-                        height={20}
-                      />
-                      {provider.name}
-                    </button>
+                    <Menu.Item key={provider.id}>
+                      {({ active }) => (
+                        <button
+                          className={`w-full px-4 py-3 text-left flex items-center gap-3 ${
+                            active ? "bg-gray-100 dark:bg-gray-800" : ""
+                          } ${
+                            provider.id === selectedProvider
+                              ? "bg-blue-50 dark:bg-blue-900/20"
+                              : ""
+                          } ${
+                            provider.disabled
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer"
+                          } transition-colors duration-150`}
+                          onClick={() =>
+                            !provider.disabled &&
+                            handleProviderSelect(provider.id)
+                          }
+                          disabled={provider.disabled}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center border ${
+                              provider.id === selectedProvider
+                                ? "bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800"
+                                : "bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+                            }`}
+                          >
+                            <Image
+                              src={provider.icon}
+                              alt={provider.name}
+                              className={`w-5 h-5 ${
+                                provider.disabled ? "opacity-50" : ""
+                              }`}
+                              width={20}
+                              height={20}
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <span
+                              className={`font-medium ${
+                                provider.id === selectedProvider
+                                  ? "text-blue-600 dark:text-blue-400"
+                                  : ""
+                              }`}
+                            >
+                              {provider.name}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {provider.id === "google" && "Đa Phương Tiện"}
+                              {provider.id === "groq" && "Phản Hồi Nhanh"}
+                              {provider.id === "openrouter" && "Nhiều Mô Hình"}
+                            </span>
+                          </div>
+                          {provider.id === selectedProvider && (
+                            <div className="ml-auto w-2 h-2 rounded-full bg-blue-500"></div>
+                          )}
+                        </button>
+                      )}
+                    </Menu.Item>
                   ))}
-                </div>
-              )}
-            </div>
+                </Menu.Items>
+              </Transition>
+            </Menu>
           </div>
 
           <button

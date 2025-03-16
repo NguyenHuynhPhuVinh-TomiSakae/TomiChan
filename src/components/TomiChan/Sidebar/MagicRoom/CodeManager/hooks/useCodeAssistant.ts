@@ -22,6 +22,17 @@ export function useCodeAssistant() {
   useEffect(() => {
     loadFiles();
     loadFolders();
+
+    // Lắng nghe sự kiện reload từ FileExplorer
+    const handleReload = () => {
+      loadFiles();
+      loadFolders();
+    };
+    window.addEventListener("fileExplorer:reload", handleReload);
+
+    return () => {
+      window.removeEventListener("fileExplorer:reload", handleReload);
+    };
   }, []);
 
   const loadFiles = async () => {

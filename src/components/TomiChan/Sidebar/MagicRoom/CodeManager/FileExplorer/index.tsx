@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { IconFolderPlus, IconFilePlus, IconDots } from "@tabler/icons-react";
+import { Menu, Transition } from "@headlessui/react";
+import { Fragment } from "react";
 import { chatDB } from "../../../../../../utils/db";
 import type { CodeFile, CodeFolder } from "../../../../../../types";
 import FolderNode from "./FolderNode";
 import FileItem from "./FileItem";
 import NewItemInput from "./NewItemInput";
-import { Menu, MenuItem } from "./Menu";
 import { toast } from "sonner";
 
 interface FileExplorerProps {
@@ -208,23 +209,52 @@ export default function FileExplorer({
           <h3 className="font-medium text-gray-700 dark:text-gray-300">
             EXPLORER
           </h3>
-          <Menu
-            trigger={
-              <button className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+          <Menu as="div" className="relative inline-block text-left">
+            <div>
+              <Menu.Button className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
                 <IconDots size={16} />
-              </button>
-            }
-          >
-            <MenuItem
-              icon={<IconFolderPlus size={16} />}
-              label="Tạo thư mục mới"
-              onClick={() => handleCreateFolder("")}
-            />
-            <MenuItem
-              icon={<IconFilePlus size={16} />}
-              label="Tạo file mới"
-              onClick={() => handleCreateFile("")}
-            />
+              </Menu.Button>
+            </div>
+            <Transition
+              as={Fragment}
+              enter="transition ease-out duration-100"
+              enterFrom="transform opacity-0 scale-95"
+              enterTo="transform opacity-100 scale-100"
+              leave="transition ease-in duration-75"
+              leaveFrom="transform opacity-100 scale-100"
+              leaveTo="transform opacity-0 scale-95"
+            >
+              <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <div className="py-1">
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={() => handleCreateFolder("")}
+                        className={`${
+                          active ? "bg-gray-100 dark:bg-gray-700" : ""
+                        } flex w-full items-center px-4 py-2 text-sm`}
+                      >
+                        <IconFolderPlus size={16} className="mr-2" />
+                        Tạo thư mục mới
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={() => handleCreateFile("")}
+                        className={`${
+                          active ? "bg-gray-100 dark:bg-gray-700" : ""
+                        } flex w-full items-center px-4 py-2 text-sm`}
+                      >
+                        <IconFilePlus size={16} className="mr-2" />
+                        Tạo file mới
+                      </button>
+                    )}
+                  </Menu.Item>
+                </div>
+              </Menu.Items>
+            </Transition>
           </Menu>
         </div>
 

@@ -7,7 +7,11 @@ import {
   IconTrash,
   IconCheck,
   IconX,
+  IconDownload,
 } from "@tabler/icons-react";
+import { Menu, Transition } from "@headlessui/react";
+import { Fragment } from "react";
+import { saveAs } from "file-saver";
 import type { CodeFile } from "../../../../../../types";
 import FileIcon from "../FileIcon";
 
@@ -28,62 +32,10 @@ const FileItem: React.FC<FileItemProps> = ({
   onEdit,
   onDelete,
 }) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [isEditing, setIsEditing] = useState(false);
   const [editingFileName, setEditingFileName] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
-
-  const handleMenuClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowMenu((prev) => !prev);
-    console.log("Menu button clicked for file:", file.name);
-  };
-
-  // Tính toán vị trí menu khi hiển thị
-  useEffect(() => {
-    if (showMenu && menuButtonRef.current) {
-      const rect = menuButtonRef.current.getBoundingClientRect();
-      setMenuPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.right - 150 + window.scrollX, // 150 là chiều rộng xấp xỉ của menu
-      });
-    }
-  }, [showMenu]);
-
-  // Thêm sự kiện đóng menu khi click ra ngoài
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Kiểm tra xem click có phải vào nút menu không
-      if (
-        menuButtonRef.current &&
-        menuButtonRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-
-      // Nếu click không phải vào menu content và không phải vào nút menu
-      if (
-        showMenu &&
-        !(event.target as Element).closest(".file-menu-content")
-      ) {
-        setShowMenu(false);
-      }
-    };
-
-    if (showMenu) {
-      // Cần delay một chút để tránh xung đột với sự kiện click hiện tại
-      setTimeout(() => {
-        document.addEventListener("mousedown", handleClickOutside);
-      }, 0);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showMenu]);
 
   // Thêm useEffect để focus vào input khi bắt đầu chỉnh sửa
   useEffect(() => {
@@ -97,7 +49,6 @@ const FileItem: React.FC<FileItemProps> = ({
     e.stopPropagation();
     setEditingFileName(file.name);
     setIsEditing(true);
-    setShowMenu(false);
   };
 
   const handleCancelEdit = (e: React.MouseEvent) => {
@@ -114,15 +65,14 @@ const FileItem: React.FC<FileItemProps> = ({
     setIsEditing(false);
   };
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowDeleteModal(true);
-    setShowMenu(false);
-  };
-
   const handleConfirmDelete = () => {
     onDelete();
     setShowDeleteModal(false);
+  };
+
+  const downloadFile = () => {
+    const blob = new Blob([file.content], { type: "text/plain;charset=utf-8" });
+    saveAs(blob, file.name);
   };
 
   return (
@@ -175,43 +125,75 @@ const FileItem: React.FC<FileItemProps> = ({
       )}
 
       {!isEditing && (
-        <div className="relative">
-          <button
-            ref={menuButtonRef}
-            onClick={handleMenuClick}
-            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+        <Menu as="div" className="relative inline-block text-left">
+          <div>
+            <Menu.Button
+              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <IconDots size={16} />
+            </Menu.Button>
+          </div>
+          <Transition
+            as={Fragment}
+            enter="transition ease-out duration-100"
+            enterFrom="transform opacity-0 scale-95"
+            enterTo="transform opacity-100 scale-100"
+            leave="transition ease-in duration-75"
+            leaveFrom="transform opacity-100 scale-100"
+            leaveTo="transform opacity-0 scale-95"
           >
-            <IconDots size={16} />
-          </button>
-
-          {showMenu &&
-            ReactDOM.createPortal(
-              <div
-                className="fixed py-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-[9999] border border-gray-200 dark:border-gray-700 file-menu-content"
-                style={{
-                  top: `${menuPosition.top}px`,
-                  left: `${menuPosition.left}px`,
-                }}
-              >
-                <div
-                  className="flex items-center w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={handleStartEdit}
-                >
-                  <IconEdit size={16} className="mr-2" />
-                  Đổi tên
-                </div>
-
-                <div
-                  className="flex items-center w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500"
-                  onClick={handleDeleteClick}
-                >
-                  <IconTrash size={16} className="mr-2" />
-                  Xóa
-                </div>
-              </div>,
-              document.body
-            )}
-        </div>
+            <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <div className="py-1">
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        downloadFile();
+                      }}
+                      className={`${
+                        active ? "bg-gray-100 dark:bg-gray-700" : ""
+                      } flex w-full items-center px-4 py-2 text-sm`}
+                    >
+                      <IconDownload size={16} className="mr-2" />
+                      Tải xuống
+                    </button>
+                  )}
+                </Menu.Item>
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={handleStartEdit}
+                      className={`${
+                        active ? "bg-gray-100 dark:bg-gray-700" : ""
+                      } flex w-full items-center px-4 py-2 text-sm`}
+                    >
+                      <IconEdit size={16} className="mr-2" />
+                      Đổi tên
+                    </button>
+                  )}
+                </Menu.Item>
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDeleteModal(true);
+                      }}
+                      className={`${
+                        active ? "bg-gray-100 dark:bg-gray-700" : ""
+                      } flex w-full items-center px-4 py-2 text-sm text-red-500`}
+                    >
+                      <IconTrash size={16} className="mr-2" />
+                      Xóa
+                    </button>
+                  )}
+                </Menu.Item>
+              </div>
+            </Menu.Items>
+          </Transition>
+        </Menu>
       )}
 
       {showDeleteModal &&

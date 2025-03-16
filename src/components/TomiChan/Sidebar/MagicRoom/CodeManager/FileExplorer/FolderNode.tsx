@@ -13,7 +13,12 @@ import {
   IconTrash,
   IconCheck,
   IconX,
+  IconDownload,
 } from "@tabler/icons-react";
+import { Menu, Transition } from "@headlessui/react";
+import { Fragment } from "react";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import type { CodeFile, CodeFolder } from "../../../../../../types";
 import FileItem from "./FileItem";
 import NewItemInput from "./NewItemInput";
@@ -58,9 +63,6 @@ const FolderNode: React.FC<FolderNodeProps> = ({
   const isExpanded = expandedFolders.has(folder.id);
   const childFolders = folders.filter((f) => f.parentId === folder.id);
   const childFiles = files.filter((f) => f.folderId === folder.id);
-  const [showMenu, setShowMenu] = useState(false);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [editingFolderName, setEditingFolderName] = useState("");
   const [isEditingFolder, setIsEditingFolder] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -69,49 +71,6 @@ const FolderNode: React.FC<FolderNodeProps> = ({
   const paddingLeft = level * 16;
   const isCreatingFolder = creatingFolderId === folder.id;
   const isCreatingFile = creatingFileId === folder.id;
-
-  // Tính toán vị trí menu khi hiển thị
-  useEffect(() => {
-    if (showMenu && menuButtonRef.current) {
-      const rect = menuButtonRef.current.getBoundingClientRect();
-      setMenuPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.right - 150 + window.scrollX, // 150 là chiều rộng xấp xỉ của menu
-      });
-    }
-  }, [showMenu]);
-
-  // Thêm sự kiện đóng menu khi click ra ngoài
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Kiểm tra xem click có phải vào nút menu không
-      if (
-        menuButtonRef.current &&
-        menuButtonRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-
-      // Nếu click không phải vào menu content và không phải vào nút menu
-      if (
-        showMenu &&
-        !(event.target as Element).closest(".folder-menu-content")
-      ) {
-        setShowMenu(false);
-      }
-    };
-
-    if (showMenu) {
-      // Cần delay một chút để tránh xung đột với sự kiện click hiện tại
-      setTimeout(() => {
-        document.addEventListener("mousedown", handleClickOutside);
-      }, 0);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showMenu]);
 
   // Thêm useEffect để focus vào input khi bắt đầu chỉnh sửa
   useEffect(() => {
@@ -133,13 +92,6 @@ const FolderNode: React.FC<FolderNodeProps> = ({
     toggleFolder(folder.id);
   };
 
-  // Hàm xử lý khi nhấn vào nút menu
-  const handleMenuClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowMenu((prev) => !prev);
-    console.log("Menu button clicked for folder:", folder.name);
-  };
-
   // Hàm xử lý khi hủy tạo thư mục con
   const handleCancelCreateFolder = () => {
     onCreateFolder(null);
@@ -155,7 +107,6 @@ const FolderNode: React.FC<FolderNodeProps> = ({
     e.stopPropagation();
     setEditingFolderName(folder.name);
     setIsEditingFolder(true);
-    setShowMenu(false);
   };
 
   // Hàm xử lý khi hủy chỉnh sửa tên thư mục
@@ -173,17 +124,40 @@ const FolderNode: React.FC<FolderNodeProps> = ({
     setIsEditingFolder(false);
   };
 
-  // Hàm xử lý khi nhấn nút xóa thư mục
-  const handleDeleteFolderClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowDeleteModal(true);
-    setShowMenu(false);
-  };
-
   // Hàm xử lý khi xác nhận xóa thư mục
   const handleConfirmDelete = () => {
     onDeleteFolder(folder);
     setShowDeleteModal(false);
+  };
+
+  // Hàm tải xuống thư mục
+  const downloadFolder = async () => {
+    const zip = new JSZip();
+
+    // Hàm đệ quy để thêm files và folders vào zip
+    const addToZip = async (currentFolderId: string, path: string = "") => {
+      // Thêm files trong folder hiện tại
+      const filesInFolder = files.filter(
+        (file) => file.folderId === currentFolderId
+      );
+      filesInFolder.forEach((file) => {
+        zip.file(`${path}${file.name}`, file.content);
+      });
+
+      // Thêm subfolders và files của chúng
+      const subFolders = folders.filter(
+        (folder) => folder.parentId === currentFolderId
+      );
+      for (const subFolder of subFolders) {
+        await addToZip(subFolder.id, `${path}${subFolder.name}/`);
+      }
+    };
+
+    await addToZip(folder.id);
+
+    // Tạo và tải xuống file zip
+    const content = await zip.generateAsync({ type: "blob" });
+    saveAs(content, `${folder.name}.zip`);
   };
 
   return (
@@ -244,75 +218,107 @@ const FolderNode: React.FC<FolderNodeProps> = ({
         )}
 
         {!isEditingFolder && (
-          <div className="relative">
-            <button
-              ref={menuButtonRef}
-              onClick={handleMenuClick}
-              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+          <Menu as="div" className="relative inline-block text-left">
+            <div>
+              <Menu.Button
+                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <IconDots size={16} />
+              </Menu.Button>
+            </div>
+            <Transition
+              as={Fragment}
+              enter="transition ease-out duration-100"
+              enterFrom="transform opacity-0 scale-95"
+              enterTo="transform opacity-100 scale-100"
+              leave="transition ease-in duration-75"
+              leaveFrom="transform opacity-100 scale-100"
+              leaveTo="transform opacity-0 scale-95"
             >
-              <IconDots size={16} />
-            </button>
-
-            {showMenu &&
-              ReactDOM.createPortal(
-                <div
-                  className="fixed py-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-[9999] border border-gray-200 dark:border-gray-700 folder-menu-content"
-                  style={{
-                    top: `${menuPosition.top}px`,
-                    left: `${menuPosition.left}px`,
-                  }}
-                >
-                  <div
-                    className="flex items-center w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      console.log(
-                        "Create folder clicked for parent:",
-                        folder.name
-                      );
-                      onCreateFolder(folder.id);
-                      setShowMenu(false);
-                    }}
-                  >
-                    <IconFolderPlus size={16} className="mr-2" />
-                    Tạo thư mục mới
-                  </div>
-
-                  <div
-                    className="flex items-center w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      console.log(
-                        "Create file clicked for folder:",
-                        folder.name
-                      );
-                      onCreateFile(folder.id);
-                      setShowMenu(false);
-                    }}
-                  >
-                    <IconFilePlus size={16} className="mr-2" />
-                    Tạo file mới
-                  </div>
-
-                  <div
-                    className="flex items-center w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={handleStartEditFolder}
-                  >
-                    <IconEdit size={16} className="mr-2" />
-                    Đổi tên
-                  </div>
-
-                  <div
-                    className="flex items-center w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500"
-                    onClick={handleDeleteFolderClick}
-                  >
-                    <IconTrash size={16} className="mr-2" />
-                    Xóa
-                  </div>
-                </div>,
-                document.body
-              )}
-          </div>
+              <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <div className="py-1">
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCreateFolder(folder.id);
+                        }}
+                        className={`${
+                          active ? "bg-gray-100 dark:bg-gray-700" : ""
+                        } flex w-full items-center px-4 py-2 text-sm`}
+                      >
+                        <IconFolderPlus size={16} className="mr-2" />
+                        Tạo thư mục mới
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCreateFile(folder.id);
+                        }}
+                        className={`${
+                          active ? "bg-gray-100 dark:bg-gray-700" : ""
+                        } flex w-full items-center px-4 py-2 text-sm`}
+                      >
+                        <IconFilePlus size={16} className="mr-2" />
+                        Tạo file mới
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          downloadFolder();
+                        }}
+                        className={`${
+                          active ? "bg-gray-100 dark:bg-gray-700" : ""
+                        } flex w-full items-center px-4 py-2 text-sm`}
+                      >
+                        <IconDownload size={16} className="mr-2" />
+                        Tải xuống
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={handleStartEditFolder}
+                        className={`${
+                          active ? "bg-gray-100 dark:bg-gray-700" : ""
+                        } flex w-full items-center px-4 py-2 text-sm`}
+                      >
+                        <IconEdit size={16} className="mr-2" />
+                        Đổi tên
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDeleteModal(true);
+                        }}
+                        className={`${
+                          active ? "bg-gray-100 dark:bg-gray-700" : ""
+                        } flex w-full items-center px-4 py-2 text-sm text-red-500`}
+                      >
+                        <IconTrash size={16} className="mr-2" />
+                        Xóa
+                      </button>
+                    )}
+                  </Menu.Item>
+                </div>
+              </Menu.Items>
+            </Transition>
+          </Menu>
         )}
       </div>
 

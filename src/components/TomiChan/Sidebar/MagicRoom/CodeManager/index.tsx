@@ -12,6 +12,7 @@ import {
   IconLayoutGrid,
   IconLayoutList,
   IconDownload,
+  IconDotsVertical,
 } from "@tabler/icons-react";
 import { FileModal } from "./Modals/FileModal";
 import CodeEditor from "./CodeEditor";
@@ -21,6 +22,8 @@ import FileUploadZone from "./FileUploadZone";
 import FileIcon from "./FileIcon";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { Menu, Transition } from "@headlessui/react";
+import { Fragment } from "react";
 
 declare module "react" {
   interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
@@ -134,37 +137,79 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
               isGridView
                 ? "p-4 border rounded-lg border-gray-200 dark:border-gray-800"
                 : "p-2"
-            } hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group`}
+            } hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group relative`}
             onClick={() => handleFolderClick(folder.id)}
           >
             <div className="flex items-center flex-1">
               <IconFolder size={20} className="mr-2 text-yellow-500" />
               <span className="flex-1 truncate">{folder.name}</span>
-              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    downloadFolder(folder.id);
-                  }}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
-                  title="Tải xuống"
-                >
-                  <IconDownload size={18} />
-                </button>
-                <button
-                  onClick={(e) => openEditFolderModal(folder, e)}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
-                  title="Đổi tên"
-                >
-                  <IconEdit size={18} />
-                </button>
-                <button
-                  onClick={(e) => openDeleteFolderModal(folder, e)}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-red-500 cursor-pointer"
-                  title="Xóa"
-                >
-                  <IconTrash size={18} />
-                </button>
+              <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 hover:opacity-100">
+                <Menu as="div" className="relative inline-block text-left">
+                  <div>
+                    <Menu.Button
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <IconDotsVertical size={18} />
+                    </Menu.Button>
+                  </div>
+                  <Transition
+                    as={Fragment}
+                    enter="transition ease-out duration-100"
+                    enterFrom="transform opacity-0 scale-95"
+                    enterTo="transform opacity-100 scale-100"
+                    leave="transition ease-in duration-75"
+                    leaveFrom="transform opacity-100 scale-100"
+                    leaveTo="transform opacity-0 scale-95"
+                  >
+                    <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <div className="py-1">
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                downloadFolder(folder.id);
+                              }}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm`}
+                            >
+                              <IconDownload size={16} className="mr-2" />
+                              Tải xuống
+                            </button>
+                          )}
+                        </Menu.Item>
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => openEditFolderModal(folder, e)}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm`}
+                            >
+                              <IconEdit size={16} className="mr-2" />
+                              Đổi tên
+                            </button>
+                          )}
+                        </Menu.Item>
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => openDeleteFolderModal(folder, e)}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm text-red-500`}
+                            >
+                              <IconTrash size={16} className="mr-2" />
+                              Xóa
+                            </button>
+                          )}
+                        </Menu.Item>
+                      </div>
+                    </Menu.Items>
+                  </Transition>
+                </Menu>
               </div>
             </div>
           </div>
@@ -177,46 +222,88 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
               isGridView
                 ? "p-4 border rounded-lg border-gray-200 dark:border-gray-800"
                 : "p-3 flex items-center"
-            } hover:bg-gray-50 dark:hover:bg-gray-900 group cursor-pointer`}
+            } hover:bg-gray-50 dark:hover:bg-gray-900 group cursor-pointer relative`}
             onClick={() => handleFileOpen(file)}
           >
             <div className={`${isGridView ? "" : "flex-1"} flex items-center`}>
               <FileIcon fileName={file.name} />
               <span className="flex-1 truncate">{file.name}</span>
-              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    downloadFile(file);
-                  }}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
-                  title="Tải xuống"
-                >
-                  <IconDownload size={18} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedFile(file);
-                    setNewFileName(file.name);
-                    setIsEditModalOpen(true);
-                  }}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
-                  title="Chỉnh sửa"
-                >
-                  <IconEdit size={18} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedFile(file);
-                    setIsDeleteModalOpen(true);
-                  }}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-red-500 cursor-pointer"
-                  title="Xóa"
-                >
-                  <IconTrash size={18} />
-                </button>
+              <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 hover:opacity-100">
+                <Menu as="div" className="relative inline-block text-left">
+                  <div>
+                    <Menu.Button
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <IconDotsVertical size={18} />
+                    </Menu.Button>
+                  </div>
+                  <Transition
+                    as={Fragment}
+                    enter="transition ease-out duration-100"
+                    enterFrom="transform opacity-0 scale-95"
+                    enterTo="transform opacity-100 scale-100"
+                    leave="transition ease-in duration-75"
+                    leaveFrom="transform opacity-100 scale-100"
+                    leaveTo="transform opacity-0 scale-95"
+                  >
+                    <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <div className="py-1">
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                downloadFile(file);
+                              }}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm`}
+                            >
+                              <IconDownload size={16} className="mr-2" />
+                              Tải xuống
+                            </button>
+                          )}
+                        </Menu.Item>
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFile(file);
+                                setNewFileName(file.name);
+                                setIsEditModalOpen(true);
+                              }}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm`}
+                            >
+                              <IconEdit size={16} className="mr-2" />
+                              Đổi tên
+                            </button>
+                          )}
+                        </Menu.Item>
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFile(file);
+                                setIsDeleteModalOpen(true);
+                              }}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm text-red-500`}
+                            >
+                              <IconTrash size={16} className="mr-2" />
+                              Xóa
+                            </button>
+                          )}
+                        </Menu.Item>
+                      </div>
+                    </Menu.Items>
+                  </Transition>
+                </Menu>
               </div>
             </div>
           </div>

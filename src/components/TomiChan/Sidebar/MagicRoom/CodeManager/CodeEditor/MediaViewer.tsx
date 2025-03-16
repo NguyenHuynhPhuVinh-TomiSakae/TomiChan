@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { IconArrowLeft, IconX, IconDownload } from "@tabler/icons-react";
+import { IconArrowLeft, IconDownload } from "@tabler/icons-react";
 import type { CodeFile } from "../../../../../../types";
 import { getMediaFileType } from "./utils";
 
@@ -134,7 +134,7 @@ export default function MediaViewer({
   };
 
   return (
-    <div className="absolute inset-0 bg-white dark:bg-gray-900 z-10 flex flex-col">
+    <div className="h-full flex flex-col">
       {/* Media Viewer Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-center">
@@ -146,21 +146,6 @@ export default function MediaViewer({
               <IconArrowLeft size={20} />
             </button>
             <h2 className="text-lg font-semibold truncate">{mediaFile.name}</h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onDownload}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
-              title="Tải xuống"
-            >
-              <IconDownload size={20} />
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
-            >
-              <IconX size={20} />
-            </button>
           </div>
         </div>
       </div>

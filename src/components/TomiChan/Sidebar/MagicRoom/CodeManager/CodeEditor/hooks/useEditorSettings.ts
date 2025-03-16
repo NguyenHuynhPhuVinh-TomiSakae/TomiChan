@@ -29,6 +29,7 @@ export function useEditorSettings() {
         };
   });
   const settingsRef = useRef<HTMLDivElement>(null);
+  const settingButtonRef = useRef<HTMLButtonElement>(null);
 
   // Lưu cài đặt vào localStorage khi thay đổi
   useEffect(() => {
@@ -40,7 +41,9 @@ export function useEditorSettings() {
     function handleClickOutside(event: MouseEvent) {
       if (
         settingsRef.current &&
-        !settingsRef.current.contains(event.target as Node)
+        !settingsRef.current.contains(event.target as Node) &&
+        settingButtonRef.current &&
+        !settingButtonRef.current.contains(event.target as Node)
       ) {
         setShowSettings(false);
       }
@@ -65,5 +68,6 @@ export function useEditorSettings() {
     setShowSettings,
     updateSettings,
     settingsRef,
+    settingButtonRef,
   };
 }

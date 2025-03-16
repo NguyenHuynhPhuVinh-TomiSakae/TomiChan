@@ -8,6 +8,8 @@ import {
   IconSettings,
   IconDeviceFloppy,
   IconFolders,
+  IconDownload,
+  IconX,
 } from "@tabler/icons-react";
 import type { CodeFile } from "../../../../../../types";
 import { isMediaFile, getLanguageFromFileName } from "./utils";
@@ -43,6 +45,7 @@ export default function CodeEditor({
     setShowSettings,
     updateSettings,
     settingsRef,
+    settingButtonRef,
   } = useEditorSettings();
 
   const {
@@ -186,14 +189,73 @@ export default function CodeEditor({
   // Hiển thị media viewer nếu đang xem file media
   if (showMediaViewer && mediaFile) {
     return (
-      <MediaViewer
-        mediaFile={mediaFile}
-        mediaFileUrl={mediaFileUrl}
-        isMediaLoading={isMediaLoading}
-        mediaError={mediaError}
-        onClose={closeMediaViewer}
-        onDownload={handleDownloadMedia}
-      />
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onBack}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
+            >
+              <IconArrowLeft size={20} />
+            </button>
+            {/* Nút File Explorer */}
+            <button
+              onClick={() => setShowFileExplorer(!showFileExplorer)}
+              className={`p-2 rounded transition-colors ${
+                showFileExplorer
+                  ? "bg-gray-200 dark:bg-gray-700"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-900"
+              }`}
+              title="File Explorer"
+            >
+              <IconFolders size={20} />
+            </button>
+            <h2 className="text-lg font-semibold">Media Viewer</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDownloadMedia}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
+              title="Tải xuống"
+            >
+              <IconDownload size={20} />
+            </button>
+            <button
+              onClick={closeMediaViewer}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
+              title="Đóng"
+            >
+              <IconX size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex h-[calc(100%-64px)]">
+          {/* File Explorer */}
+          {showFileExplorer && (
+            <div className="w-64 flex-shrink-0 border-r border-gray-200 dark:border-gray-700">
+              <FileExplorer
+                onFileSelect={handleFileSelect}
+                activeFileId={activeFileId || undefined}
+              />
+            </div>
+          )}
+
+          {/* Media Viewer Content */}
+          <div className="flex-1">
+            <MediaViewer
+              mediaFile={mediaFile}
+              mediaFileUrl={mediaFileUrl}
+              isMediaLoading={isMediaLoading}
+              mediaError={mediaError}
+              onClose={closeMediaViewer}
+              onDownload={handleDownloadMedia}
+            />
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -241,6 +303,7 @@ export default function CodeEditor({
             />
           </button>
           <button
+            ref={settingButtonRef}
             onClick={() => setShowSettings(!showSettings)}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
             title="Cài đặt"

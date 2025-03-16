@@ -79,6 +79,16 @@ export default function Sidebar({
         };
   });
 
+  // Thêm state cho E2B config
+  const [e2bConfig, setE2bConfig] = React.useState(() => {
+    const savedConfig = getLocalStorage("e2b_config", null);
+    return savedConfig
+      ? JSON.parse(savedConfig)
+      : {
+          apiKey: "",
+        };
+  });
+
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
   React.useEffect(() => {
@@ -158,6 +168,16 @@ export default function Sidebar({
   }) => {
     setSearchConfig(config);
     setLocalStorage("search_config", JSON.stringify(config));
+  };
+
+  // Thêm handler để cập nhật E2B config
+  const handleE2bConfigChange = (config: { apiKey?: string }) => {
+    setE2bConfig(config);
+    setLocalStorage("e2b_config", JSON.stringify(config));
+    // Lưu API key riêng để dễ truy cập
+    if (config.apiKey) {
+      setLocalStorage("e2b_api_key", config.apiKey);
+    }
   };
 
   const handleClearAllData = async () => {
@@ -376,6 +396,8 @@ export default function Sidebar({
           searchConfig={searchConfig}
           onSearchConfigChange={handleSearchConfigChange}
           onClearAllData={handleClearAllData}
+          e2bConfig={e2bConfig}
+          onE2bConfigChange={handleE2bConfigChange}
         />
       </div>
     </>

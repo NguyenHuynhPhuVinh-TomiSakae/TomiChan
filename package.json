@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@e2b/code-interpreter": "^1.0.4",
+    "@e2b/sdk": "^0.12.5",
     "@google/generative-ai": "^0.24.0",
     "@headlessui/react": "^2.2.0",
     "@monaco-editor/react": "^4.7.0",

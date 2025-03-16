@@ -29,6 +29,8 @@ export function useEditorContent(file: CodeFile) {
     closeFile,
     setActiveFileId,
     updateFileContent,
+    updateOpenedFile,
+    removeOpenedFile,
   } = useOpenedFiles();
 
   // Chỉ mở file ban đầu và file mới một lần
@@ -202,5 +204,7 @@ export function useEditorContent(file: CodeFile) {
     openFile,
     closeFile,
     setActiveFileId,
+    updateOpenedFile,
+    removeOpenedFile,
   };
 }

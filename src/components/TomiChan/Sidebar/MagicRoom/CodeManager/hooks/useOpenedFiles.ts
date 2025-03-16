@@ -67,6 +67,23 @@ export function useOpenedFiles() {
     );
   };
 
+  // Thêm hàm để cập nhật file trong danh sách đã mở
+  const updateOpenedFile = (updatedFile: CodeFile) => {
+    setOpenedFiles((prev) =>
+      prev.map((f) => (f.id === updatedFile.id ? updatedFile : f))
+    );
+  };
+
+  // Thêm hàm để xóa file khỏi danh sách đã mở
+  const removeOpenedFile = (fileId: string) => {
+    setOpenedFiles((prev) => prev.filter((f) => f.id !== fileId));
+    // Nếu file đang active bị xóa, chuyển sang file khác
+    if (activeFileId === fileId) {
+      const remainingFiles = openedFiles.filter((f) => f.id !== fileId);
+      setActiveFileId(remainingFiles.length > 0 ? remainingFiles[0].id : null);
+    }
+  };
+
   return {
     openedFiles,
     activeFileId,
@@ -74,5 +91,7 @@ export function useOpenedFiles() {
     closeFile,
     setActiveFileId,
     updateFileContent,
+    updateOpenedFile,
+    removeOpenedFile,
   };
 }

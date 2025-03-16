@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
 import { IconX } from "@tabler/icons-react";
 import type { CodeFile } from "../../../../../../types";
@@ -8,6 +9,7 @@ interface EditorTabsProps {
   activeFileId: string | null;
   onTabClick: (fileId: string) => void;
   onTabClose: (fileId: string, e: React.MouseEvent) => void;
+  activeFile: CodeFile | null;
 }
 
 export default function EditorTabs({
@@ -15,6 +17,7 @@ export default function EditorTabs({
   activeFileId,
   onTabClick,
   onTabClose,
+  activeFile,
 }: EditorTabsProps) {
   return (
     <div className="flex items-center border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 overflow-x-auto">

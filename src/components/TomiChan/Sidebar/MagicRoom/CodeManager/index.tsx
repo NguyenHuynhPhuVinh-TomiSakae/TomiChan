@@ -11,6 +11,7 @@ import {
   IconFilePlus,
   IconLayoutGrid,
   IconLayoutList,
+  IconDownload,
 } from "@tabler/icons-react";
 import { FileModal } from "./Modals/FileModal";
 import CodeEditor from "./CodeEditor";
@@ -18,6 +19,8 @@ import { useCodeAssistant } from "./hooks/useCodeAssistant";
 import MediaViewer from "./MediaViewer";
 import FileUploadZone from "./FileUploadZone";
 import FileIcon from "./FileIcon";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 declare module "react" {
   interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
@@ -69,6 +72,44 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
     getCurrentPath,
   } = useCodeAssistant();
 
+  const downloadFile = (file: any) => {
+    const blob = new Blob([file.content], { type: "text/plain;charset=utf-8" });
+    saveAs(blob, file.name);
+  };
+
+  const downloadFolder = async (folderId: string) => {
+    const zip = new JSZip();
+
+    // Hàm đệ quy để thêm files và folders vào zip
+    const addToZip = async (currentFolderId: string, path: string = "") => {
+      // Thêm files trong folder hiện tại
+      const filesInFolder = files.filter(
+        (file) => file.folderId === currentFolderId
+      );
+      filesInFolder.forEach((file) => {
+        zip.file(`${path}${file.name}`, file.content);
+      });
+
+      // Thêm subfolders và files của chúng
+      const subFolders = folders.filter(
+        (folder) => folder.parentId === currentFolderId
+      );
+      for (const subFolder of subFolders) {
+        await addToZip(subFolder.id, `${path}${subFolder.name}/`);
+      }
+    };
+
+    // Lấy thông tin folder hiện tại
+    const folder = folders.find((f) => f.id === folderId);
+    if (!folder) return;
+
+    await addToZip(folderId);
+
+    // Tạo và tải xuống file zip
+    const content = await zip.generateAsync({ type: "blob" });
+    saveAs(content, `${folder.name}.zip`);
+  };
+
   const renderFolderContents = (folderId: string | null) => {
     const foldersInCurrent = folders.filter((folder) => {
       if (folderId === null) {
@@ -100,6 +141,16 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
               <IconFolder size={20} className="mr-2 text-yellow-500" />
               <span className="flex-1 truncate">{folder.name}</span>
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    downloadFolder(folder.id);
+                  }}
+                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
+                  title="Tải xuống"
+                >
+                  <IconDownload size={18} />
+                </button>
                 <button
                   onClick={(e) => openEditFolderModal(folder, e)}
                   className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
@@ -133,6 +184,16 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
               <FileIcon fileName={file.name} />
               <span className="flex-1 truncate">{file.name}</span>
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    downloadFile(file);
+                  }}
+                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
+                  title="Tải xuống"
+                >
+                  <IconDownload size={18} />
+                </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

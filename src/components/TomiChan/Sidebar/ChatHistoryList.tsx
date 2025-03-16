@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, Fragment } from "react";
 import { IconEdit, IconTrash, IconDotsVertical } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatHistory } from "../../../types";
 import Portal from "../../Portal";
 import Image from "next/image";
+import { Menu, Transition } from "@headlessui/react";
 
 interface ChatHistoryListProps {
   isCollapsed: boolean;
@@ -86,22 +87,6 @@ function ChatGroup({
   setEditTitle,
   setEditingChatId,
 }: ChatGroupProps) {
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".menu-container")) {
-        setOpenMenuId(null);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
   // Map provider to icon path
   const getProviderIcon = (provider: string) => {
     switch (provider) {
@@ -168,43 +153,59 @@ function ChatGroup({
                       {new Date(chat.updatedAt).toLocaleDateString()}
                     </div>
                   </div>
-                  <div className="flex-shrink-0 relative ml-2 w-8 menu-container">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenMenuId(openMenuId === chat.id ? null : chat.id);
-                      }}
-                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer md:opacity-0 md:group-hover:opacity-100 transition-opacity"
-                    >
-                      <IconDotsVertical size={16} />
-                    </button>
-                    {openMenuId === chat.id && (
-                      <div
-                        className="absolute right-0 mt-1 py-1 w-32 bg-white dark:bg-black rounded-lg shadow-lg border dark:border-white z-10"
+                  <div className="flex-shrink-0 relative ml-2 w-8">
+                    <Menu as="div" className="relative inline-block text-left">
+                      <Menu.Button
                         onClick={(e) => e.stopPropagation()}
+                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded cursor-pointer md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                       >
-                        <button
-                          onClick={(e) => {
-                            onEditClick(chat, e);
-                            setOpenMenuId(null);
-                          }}
-                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center gap-2 cursor-pointer"
-                        >
-                          <IconEdit size={16} />
-                          <span>Sửa</span>
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            onDeleteClick(chat.id, e);
-                            setOpenMenuId(null);
-                          }}
-                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center gap-2 text-red-500 cursor-pointer"
-                        >
-                          <IconTrash size={16} />
-                          <span>Xóa</span>
-                        </button>
-                      </div>
-                    )}
+                        <IconDotsVertical size={16} />
+                      </Menu.Button>
+                      <Transition
+                        as={Fragment}
+                        enter="transition ease-out duration-100"
+                        enterFrom="transform opacity-0 scale-95"
+                        enterTo="transform opacity-100 scale-100"
+                        leave="transition ease-in duration-75"
+                        leaveFrom="transform opacity-100 scale-100"
+                        leaveTo="transform opacity-0 scale-95"
+                      >
+                        <Menu.Items className="absolute right-0 mt-1 py-1 w-32 bg-white dark:bg-black rounded-lg shadow-lg border dark:border-white z-10 focus:outline-none">
+                          <Menu.Item>
+                            {({ active }) => (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEditClick(chat, e);
+                                }}
+                                className={`w-full px-4 py-2 text-left text-sm ${
+                                  active ? "bg-gray-100 dark:bg-gray-900" : ""
+                                } flex items-center gap-2 cursor-pointer`}
+                              >
+                                <IconEdit size={16} />
+                                <span>Sửa</span>
+                              </button>
+                            )}
+                          </Menu.Item>
+                          <Menu.Item>
+                            {({ active }) => (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteClick(chat.id, e);
+                                }}
+                                className={`w-full px-4 py-2 text-left text-sm ${
+                                  active ? "bg-gray-100 dark:bg-gray-900" : ""
+                                } flex items-center gap-2 text-red-500 cursor-pointer`}
+                              >
+                                <IconTrash size={16} />
+                                <span>Xóa</span>
+                              </button>
+                            )}
+                          </Menu.Item>
+                        </Menu.Items>
+                      </Transition>
+                    </Menu>
                   </div>
                 </div>
               </div>

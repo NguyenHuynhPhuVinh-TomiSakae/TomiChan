@@ -199,6 +199,7 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
             file={activeFile}
             onClose={onClose}
             onBack={handleEditorBack}
+            onFileOpen={handleFileOpen}
           />
         )
       ) : (

@@ -5,6 +5,7 @@ import {
   IconDeviceFloppy,
   IconSettings,
   IconPlayerPlay,
+  IconFolders,
 } from "@tabler/icons-react";
 import type { CodeFile } from "../../../../../types";
 import { chatDB } from "../../../../../utils/db";
@@ -15,6 +16,8 @@ import {
   setLocalStorage,
 } from "../../../../../utils/localStorage";
 import Portal from "../../../../Portal";
+import FileExplorer from "./FileExplorer";
+import { useCodeAssistant } from "../../../../../hooks/useCodeAssistant";
 
 interface EditorSettings {
   fontSize: number;
@@ -29,6 +32,7 @@ interface CodeEditorProps {
   file: CodeFile;
   onClose: () => void;
   onBack: () => void;
+  onFileOpen?: (file: CodeFile) => void;
 }
 
 // Hàm để xác định ngôn ngữ dựa vào phần mở rộng của file
@@ -60,12 +64,18 @@ const getLanguageFromFileName = (filename: string): string => {
   return languageMap[ext || ""] || "plaintext";
 };
 
-export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
+export default function CodeEditor({
+  file,
+  onClose,
+  onBack,
+  onFileOpen,
+}: CodeEditorProps) {
   const [content, setContent] = useState(file.content);
   const [originalContent, setOriginalContent] = useState(file.content);
   const [isSaving, setIsSaving] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [showFileExplorer, setShowFileExplorer] = useState(false);
   const [settings, setSettings] = useState<EditorSettings>(() => {
     const savedSettings = getLocalStorage("codeEditorSettings");
     return savedSettings
@@ -85,6 +95,9 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const contentRef = useRef(file.content);
   const originalContentRef = useRef(file.content);
+
+  // Lấy hàm loadFiles từ useCodeAssistant để cập nhật danh sách file
+  const { loadFiles } = useCodeAssistant();
 
   useEffect(() => {
     setContent(file.content);
@@ -154,6 +167,10 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
       setOriginalContent(contentRef.current);
       originalContentRef.current = contentRef.current;
       setHasUnsavedChanges(false);
+
+      // Thêm dòng này để sử dụng loadFiles
+      await loadFiles();
+
       if (!isAutoSave) {
         toast.success("Đã lưu file thành công!");
       }
@@ -210,6 +227,35 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
   // Kiểm tra xem file có phải là HTML không
   const isHtmlFile = file.name.toLowerCase().endsWith(".html");
 
+  // Xử lý khi chọn file từ FileExplorer
+  const handleFileSelect = async (selectedFile: CodeFile) => {
+    // Kiểm tra nếu có thay đổi chưa lưu
+    if (hasUnsavedChanges) {
+      // Lưu file hiện tại và ID của file được chọn để mở sau khi xử lý
+      setShowUnsavedModal(true);
+      // Lưu file được chọn vào localStorage để mở sau khi xử lý
+      setLocalStorage("pendingFileToOpen", JSON.stringify(selectedFile));
+    } else if (onFileOpen) {
+      // Nếu không có thay đổi, mở file ngay lập tức
+      onFileOpen(selectedFile);
+    }
+  };
+
+  // Xử lý mở file sau khi xử lý thay đổi chưa lưu
+  const handleOpenPendingFile = () => {
+    const pendingFile = getLocalStorage("pendingFileToOpen");
+    if (pendingFile && onFileOpen) {
+      try {
+        const fileToOpen = JSON.parse(pendingFile);
+        onFileOpen(fileToOpen);
+        // Xóa file đang chờ sau khi đã mở
+        localStorage.removeItem("pendingFileToOpen");
+      } catch (error) {
+        console.error("Lỗi khi mở file:", error);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -221,6 +267,15 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
             >
               <IconArrowLeft size={24} />
+            </button>
+            <button
+              onClick={() => setShowFileExplorer(!showFileExplorer)}
+              className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer ${
+                showFileExplorer ? "bg-gray-100 dark:bg-gray-900" : ""
+              }`}
+              title="Hiển thị cây thư mục"
+            >
+              <IconFolders size={24} />
             </button>
             <h2 className="text-2xl font-bold">{file.name}</h2>
             {hasUnsavedChanges && (
@@ -369,40 +424,49 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
         </div>
       </div>
 
-      {/* Editor Area */}
-      <div className="flex-1">
-        <Editor
-          height="100%"
-          defaultLanguage={language}
-          value={content}
-          onChange={handleEditorChange}
-          theme={settings.theme}
-          options={{
-            fontSize: settings.fontSize,
-            minimap: { enabled: settings.minimap },
-            wordWrap: settings.wordWrap,
-            lineNumbers: "on",
-            folding: true,
-            autoIndent: "full",
-            formatOnPaste: true,
-            formatOnType: true,
-            suggestOnTriggerCharacters: true,
-            acceptSuggestionOnEnter: "on",
-            tabSize: settings.tabSize,
-            automaticLayout: true,
-            scrollBeyondLastLine: true,
-            smoothScrolling: true,
-            cursorBlinking: "smooth",
-            cursorSmoothCaretAnimation: "on",
-            bracketPairColorization: {
-              enabled: true,
-            },
-            padding: {
-              top: 16,
-              bottom: 16,
-            },
-          }}
-        />
+      {/* Editor Area with File Explorer */}
+      <div className="flex-1 flex">
+        {showFileExplorer && (
+          <FileExplorer
+            onFileSelect={handleFileSelect}
+            activeFileId={file.id}
+            className="w-64 border-r border-gray-200 dark:border-gray-800 overflow-auto"
+          />
+        )}
+        <div className="flex-1">
+          <Editor
+            height="100%"
+            defaultLanguage={language}
+            value={content}
+            onChange={handleEditorChange}
+            theme={settings.theme}
+            options={{
+              fontSize: settings.fontSize,
+              minimap: { enabled: settings.minimap },
+              wordWrap: settings.wordWrap,
+              lineNumbers: "on",
+              folding: true,
+              autoIndent: "full",
+              formatOnPaste: true,
+              formatOnType: true,
+              suggestOnTriggerCharacters: true,
+              acceptSuggestionOnEnter: "on",
+              tabSize: settings.tabSize,
+              automaticLayout: true,
+              scrollBeyondLastLine: true,
+              smoothScrolling: true,
+              cursorBlinking: "smooth",
+              cursorSmoothCaretAnimation: "on",
+              bracketPairColorization: {
+                enabled: true,
+              },
+              padding: {
+                top: 16,
+                bottom: 16,
+              },
+            }}
+          />
+        </div>
       </div>
 
       {/* Modal xác nhận khi có thay đổi chưa lưu */}
@@ -420,7 +484,10 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
                 <button
                   onClick={() => {
                     setShowUnsavedModal(false);
-                    if (onBack) {
+                    // Nếu có file đang chờ mở, mở nó
+                    if (getLocalStorage("pendingFileToOpen")) {
+                      handleOpenPendingFile();
+                    } else if (onBack) {
                       onBack();
                     } else {
                       onClose();
@@ -434,7 +501,10 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
                   onClick={async () => {
                     await handleSave();
                     setShowUnsavedModal(false);
-                    if (onBack) {
+                    // Nếu có file đang chờ mở, mở nó
+                    if (getLocalStorage("pendingFileToOpen")) {
+                      handleOpenPendingFile();
+                    } else if (onBack) {
                       onBack();
                     } else {
                       onClose();
@@ -445,7 +515,11 @@ export default function CodeEditor({ file, onClose, onBack }: CodeEditorProps) {
                   Lưu và đóng
                 </button>
                 <button
-                  onClick={() => setShowUnsavedModal(false)}
+                  onClick={() => {
+                    setShowUnsavedModal(false);
+                    // Xóa file đang chờ nếu người dùng chọn tiếp tục chỉnh sửa
+                    localStorage.removeItem("pendingFileToOpen");
+                  }}
                   className="px-5 py-2.5 text-white bg-gray-500 hover:bg-gray-600 rounded-lg cursor-pointer"
                 >
                   Tiếp tục chỉnh sửa

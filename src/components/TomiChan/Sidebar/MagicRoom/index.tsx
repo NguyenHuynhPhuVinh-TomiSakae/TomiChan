@@ -7,7 +7,7 @@ import {
   IconLanguage,
   IconListCheck,
 } from "@tabler/icons-react";
-import CodeAssistant from "./CodeManager/CodeAssistant";
+import CodeAssistant from "./CodeManager";
 
 interface MagicRoomProps {
   onToggleMagicMode?: () => void;

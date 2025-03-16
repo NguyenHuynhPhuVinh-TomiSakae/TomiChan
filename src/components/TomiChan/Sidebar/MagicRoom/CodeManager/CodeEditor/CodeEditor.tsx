@@ -287,7 +287,7 @@ export default function CodeEditor({
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleSave()}
-            className={`p-2 rounded transition-colors ${
+            className={`p-2 rounded transition-colors cursor-pointer ${
               hasUnsavedChanges
                 ? "bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 dark:hover:bg-yellow-800"
                 : "hover:bg-gray-100 dark:hover:bg-gray-900"
@@ -354,6 +354,7 @@ export default function CodeEditor({
       {/* Unsaved Changes Modal */}
       {showUnsavedModal && (
         <UnsavedChangesModal
+          isOpen={showUnsavedModal}
           onSave={handleSaveInModal}
           onDiscard={handleDiscardInModal}
           onCancel={handleCancelInModal}

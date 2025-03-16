@@ -211,7 +211,7 @@ export default function FileExplorer({
           </h3>
           <Menu as="div" className="relative inline-block text-left">
             <div>
-              <Menu.Button className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+              <Menu.Button className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer">
                 <IconDots size={16} />
               </Menu.Button>
             </div>
@@ -232,7 +232,7 @@ export default function FileExplorer({
                         onClick={() => handleCreateFolder("")}
                         className={`${
                           active ? "bg-gray-100 dark:bg-gray-700" : ""
-                        } flex w-full items-center px-4 py-2 text-sm`}
+                        } flex w-full items-center px-4 py-2 text-sm cursor-pointer`}
                       >
                         <IconFolderPlus size={16} className="mr-2" />
                         Tạo thư mục mới
@@ -245,7 +245,7 @@ export default function FileExplorer({
                         onClick={() => handleCreateFile("")}
                         className={`${
                           active ? "bg-gray-100 dark:bg-gray-700" : ""
-                        } flex w-full items-center px-4 py-2 text-sm`}
+                        } flex w-full items-center px-4 py-2 text-sm cursor-pointer`}
                       >
                         <IconFilePlus size={16} className="mr-2" />
                         Tạo file mới

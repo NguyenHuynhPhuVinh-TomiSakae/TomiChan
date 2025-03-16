@@ -14,15 +14,17 @@ export default function ProviderSettingsModal({
   onClose,
   selectedProvider,
 }: ProviderSettingsModalProps) {
-  if (!isOpen) return null;
-
-  if (selectedProvider === "google") {
-    return <GoogleSettings isOpen={isOpen} onClose={onClose} />;
-  } else if (selectedProvider === "groq") {
-    return <GroqSettings isOpen={isOpen} onClose={onClose} />;
-  } else if (selectedProvider === "openrouter") {
-    return <OpenRouterSettings isOpen={isOpen} onClose={onClose} />;
-  }
-
-  return null;
+  return (
+    <>
+      {selectedProvider === "google" && (
+        <GoogleSettings isOpen={isOpen} onClose={onClose} />
+      )}
+      {selectedProvider === "groq" && (
+        <GroqSettings isOpen={isOpen} onClose={onClose} />
+      )}
+      {selectedProvider === "openrouter" && (
+        <OpenRouterSettings isOpen={isOpen} onClose={onClose} />
+      )}
+    </>
+  );
 }

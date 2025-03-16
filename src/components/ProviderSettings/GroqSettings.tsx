@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { IconX, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
-import Portal from "../Portal";
+import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
+import ModalWrapper from "./ModalWrapper";
 import { getLocalStorage, setLocalStorage } from "../../utils/localStorage";
 
 interface GroqSettingsProps {
@@ -137,7 +137,7 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
     setIsGroupBOpen(false);
   };
 
-  const handleClose = () => {
+  const handleSave = () => {
     setLocalStorage("groq_api_key", apiKey);
     setLocalStorage("groq_model", model);
     setLocalStorage("groq_system_prompt", systemPrompt);
@@ -150,205 +150,177 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
   if (!isOpen) return null;
 
   return (
-    <Portal>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-        <div className="bg-white dark:bg-black sm:rounded-lg w-full max-w-4xl p-6 relative text-black dark:text-white dark:border dark:border-white">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Cài đặt Groq</h2>
-            <button
-              onClick={handleClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
-            >
-              <IconX size={20} />
-            </button>
-          </div>
-
-          <div className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2 scrollbar-hide">
-            <form>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Chọn mô hình
-                  </label>
-                  <div className="space-y-3">
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => setIsGroupAOpen(!isGroupAOpen)}
-                        className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
+    <ModalWrapper
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Cài đặt Groq"
+      maxWidth="4xl"
+      onReset={handleReset}
+      onSave={handleSave}
+    >
+      <form>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Chọn mô hình
+            </label>
+            <div className="space-y-3">
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setIsGroupAOpen(!isGroupAOpen)}
+                  className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
+                >
+                  <span>Nhóm AI phân tích tốt</span>
+                  {isGroupAOpen ? (
+                    <IconChevronUp size={18} />
+                  ) : (
+                    <IconChevronDown size={18} />
+                  )}
+                </button>
+                {isGroupAOpen && (
+                  <div className="mt-2 space-y-2">
+                    {groupAOptions.map((option) => (
+                      <label
+                        key={option.value}
+                        className="flex items-center p-2 border rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900"
                       >
-                        <span>Nhóm AI phân tích tốt</span>
-                        {isGroupAOpen ? (
-                          <IconChevronUp size={18} />
-                        ) : (
-                          <IconChevronDown size={18} />
-                        )}
-                      </button>
-                      {isGroupAOpen && (
-                        <div className="mt-2 space-y-2">
-                          {groupAOptions.map((option) => (
-                            <label
-                              key={option.value}
-                              className="flex items-center p-2 border rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900"
-                            >
-                              <input
-                                type="radio"
-                                name="groq_model"
-                                value={option.value}
-                                checked={model === option.value}
-                                onChange={() => handleModelChange(option.value)}
-                                className="mr-2"
-                              />
-                              <span>{option.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => setIsGroupBOpen(!isGroupBOpen)}
-                        className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
-                      >
-                        <span>Nhóm AI phản hồi nhanh</span>
-                        {isGroupBOpen ? (
-                          <IconChevronUp size={18} />
-                        ) : (
-                          <IconChevronDown size={18} />
-                        )}
-                      </button>
-                      {isGroupBOpen && (
-                        <div className="mt-2 space-y-2">
-                          {groupBOptions.map((option) => (
-                            <label
-                              key={option.value}
-                              className="flex items-center p-2 border rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900"
-                            >
-                              <input
-                                type="radio"
-                                name="groq_model"
-                                value={option.value}
-                                checked={model === option.value}
-                                onChange={() => handleModelChange(option.value)}
-                                className="mr-2"
-                              />
-                              <span>{option.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                        <input
+                          type="radio"
+                          name="groq_model"
+                          value={option.value}
+                          checked={model === option.value}
+                          onChange={() => handleModelChange(option.value)}
+                          className="mr-2"
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
                   </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      API Key
-                    </label>
-                    <input
-                      type="password"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-                      placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    />
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      Bạn có thể lấy API Key tại{" "}
-                      <a
-                        href="https://console.groq.com/keys"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        Groq Console
-                      </a>
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      System Prompt
-                    </label>
-                    <textarea
-                      value={systemPrompt}
-                      onChange={(e) => setSystemPrompt(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-                      rows={3}
-                      placeholder="Nhập system prompt cho AI..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Temperature ({temperature})
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="2"
-                      step="0.1"
-                      value={temperature}
-                      onChange={(e) => setTemperature(Number(e.target.value))}
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Top P ({topP})
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={topP}
-                      onChange={(e) => setTopP(Number(e.target.value))}
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Max Output Tokens ({maxOutputTokens})
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="32768"
-                      value={maxOutputTokens}
-                      onChange={(e) =>
-                        setMaxOutputTokens(Number(e.target.value))
-                      }
-                      className="w-full"
-                    />
-                  </div>
-                </div>
+                )}
               </div>
-            </form>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setIsGroupBOpen(!isGroupBOpen)}
+                  className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
+                >
+                  <span>Nhóm AI phản hồi nhanh</span>
+                  {isGroupBOpen ? (
+                    <IconChevronUp size={18} />
+                  ) : (
+                    <IconChevronDown size={18} />
+                  )}
+                </button>
+                {isGroupBOpen && (
+                  <div className="mt-2 space-y-2">
+                    {groupBOptions.map((option) => (
+                      <label
+                        key={option.value}
+                        className="flex items-center p-2 border rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900"
+                      >
+                        <input
+                          type="radio"
+                          name="groq_model"
+                          value={option.value}
+                          checked={model === option.value}
+                          onChange={() => handleModelChange(option.value)}
+                          className="mr-2"
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
-            >
-              Đặt lại mặc định
-            </button>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors cursor-pointer"
-            >
-              Xong
-            </button>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                API Key
+              </label>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+                placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              />
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                Bạn có thể lấy API Key tại{" "}
+                <a
+                  href="https://console.groq.com/keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Groq Console
+                </a>
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                System Prompt
+              </label>
+              <textarea
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+                rows={3}
+                placeholder="Nhập system prompt cho AI..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Temperature ({temperature})
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                value={temperature}
+                onChange={(e) => setTemperature(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Top P ({topP})
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={topP}
+                onChange={(e) => setTopP(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Max Output Tokens ({maxOutputTokens})
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="32768"
+                value={maxOutputTokens}
+                onChange={(e) => setMaxOutputTokens(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </Portal>
+      </form>
+    </ModalWrapper>
   );
 }

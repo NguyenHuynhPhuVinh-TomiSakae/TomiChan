@@ -131,6 +131,19 @@ class ChatDBManager {
     // Xóa folder hiện tại
     await db.delete(this.FOLDER_STORE, id);
   }
+
+  async clearAllData(): Promise<void> {
+    const db = await this.getDB();
+
+    // Xóa tất cả dữ liệu từ các object stores
+    await Promise.all([
+      db.clear(this.STORE_NAME),
+      db.clear(this.CODE_STORE),
+      db.clear(this.FOLDER_STORE),
+    ]);
+
+    console.log("Đã xóa toàn bộ dữ liệu từ IndexedDB");
+  }
 }
 
 export const chatDB = new ChatDBManager();

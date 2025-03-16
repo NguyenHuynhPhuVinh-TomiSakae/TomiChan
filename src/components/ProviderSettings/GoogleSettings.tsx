@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { IconX } from "@tabler/icons-react";
-import Portal from "../Portal";
+import ModalWrapper from "./ModalWrapper";
 import { getLocalStorage, setLocalStorage } from "../../utils/localStorage";
 
 interface GoogleSettingsProps {
@@ -105,8 +104,7 @@ export default function GoogleSettings({
     setApiKey(currentApiKey);
   };
 
-  // Hàm lưu cài đặt và đóng modal
-  const handleClose = () => {
+  const handleSave = () => {
     setLocalStorage("google_api_key", apiKey);
     setLocalStorage("selected_model", model);
     setLocalStorage("system_prompt", systemPrompt);
@@ -241,218 +239,184 @@ export default function GoogleSettings({
     );
   };
 
-  if (!isOpen) return null;
-
   return (
-    <Portal>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-        <div className="min-h-screen w-full py-8 px-4 flex items-center justify-center">
-          <div className="bg-white dark:bg-black sm:rounded-lg w-full max-w-4xl p-6 relative text-black dark:text-white dark:border dark:border-white">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Cài đặt Google AI</h2>
-              <button
-                onClick={handleClose}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
-              >
-                <IconX size={20} />
-              </button>
+    <ModalWrapper
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Cài đặt Google AI"
+      maxWidth="4xl"
+      onReset={handleReset}
+      onSave={handleSave}
+    >
+      <form>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Cài đặt chung */}
+          <div className="space-y-4">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                API Key
+              </label>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+                placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              />
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                Bạn có thể lấy API Key tại{" "}
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Google AI Studio
+                </a>
+              </p>
+            </div>
+            {/* Chọn mô hình bằng RadioGroup */}
+            <RadioGroup
+              label="Chọn mô hình"
+              name="model"
+              options={modelOptions}
+              selectedValue={model}
+              onChange={setModel}
+            />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                System Prompt
+              </label>
+              <textarea
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+                rows={3}
+                placeholder="Nhập system prompt cho AI..."
+              />
             </div>
 
-            <div className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2 scrollbar-hide">
-              <form>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Cài đặt chung */}
-                  <div className="space-y-4">
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        API Key
-                      </label>
-                      <input
-                        type="password"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-                        placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                      />
-                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        Bạn có thể lấy API Key tại{" "}
-                        <a
-                          href="https://aistudio.google.com/app/apikey"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          Google AI Studio
-                        </a>
-                      </p>
-                    </div>
-                    {/* Chọn mô hình bằng RadioGroup */}
-                    <RadioGroup
-                      label="Chọn mô hình"
-                      name="model"
-                      options={modelOptions}
-                      selectedValue={model}
-                      onChange={setModel}
-                    />
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        System Prompt
-                      </label>
-                      <textarea
-                        value={systemPrompt}
-                        onChange={(e) => setSystemPrompt(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-                        rows={3}
-                        placeholder="Nhập system prompt cho AI..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Temperature ({temperature})
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="2"
-                        step="0.1"
-                        value={temperature}
-                        onChange={(e) => setTemperature(Number(e.target.value))}
-                        className="w-full"
-                      />
-                      <div className="flex justify-between text-xs mt-1">
-                        <span>Ít sáng tạo hơn (0)</span>
-                        <span>Cân bằng (1)</span>
-                        <span>Sáng tạo hơn (2)</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Top P ({topP})
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={topP}
-                        onChange={(e) => setTopP(Number(e.target.value))}
-                        className="w-full"
-                      />
-                      <div className="flex justify-between text-xs mt-1">
-                        <span>Tập trung hơn (0)</span>
-                        <span>Cân bằng (0.95)</span>
-                        <span>Đa dạng hơn (1)</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Top K ({topK})
-                      </label>
-                      <input
-                        type="range"
-                        min="1"
-                        max="100"
-                        value={topK}
-                        onChange={(e) => setTopK(Number(e.target.value))}
-                        className="w-full"
-                      />
-                      <div className="flex justify-between text-xs mt-1">
-                        <span>Tập trung hơn (1)</span>
-                        <span>Cân bằng (40)</span>
-                        <span>Đa dạng hơn (100)</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Max Output Tokens ({maxOutputTokens})
-                      </label>
-                      <input
-                        type="range"
-                        min="1"
-                        max="8192"
-                        value={maxOutputTokens}
-                        onChange={(e) =>
-                          setMaxOutputTokens(Number(e.target.value))
-                        }
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Cài đặt an toàn */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium mb-3">
-                      Cài đặt an toàn
-                    </h3>
-
-                    <SafetySlider
-                      label="Quấy rối (Harassment)"
-                      value={safetySettings.harassment}
-                      onChange={(value) =>
-                        handleSafetySettingsChange("harassment", value)
-                      }
-                    />
-
-                    <SafetySlider
-                      label="Phát ngôn thù ghét (Hate Speech)"
-                      value={safetySettings.hateSpeech}
-                      onChange={(value) =>
-                        handleSafetySettingsChange("hateSpeech", value)
-                      }
-                    />
-
-                    <SafetySlider
-                      label="Nội dung khiêu dâm (Sexually Explicit)"
-                      value={safetySettings.sexuallyExplicit}
-                      onChange={(value) =>
-                        handleSafetySettingsChange("sexuallyExplicit", value)
-                      }
-                    />
-
-                    <SafetySlider
-                      label="Nội dung nguy hiểm (Dangerous Content)"
-                      value={safetySettings.dangerousContent}
-                      onChange={(value) =>
-                        handleSafetySettingsChange("dangerousContent", value)
-                      }
-                    />
-
-                    <SafetySlider
-                      label="Vi phạm tính toàn vẹn công dân (Civic Integrity)"
-                      value={safetySettings.civicIntegrity}
-                      onChange={(value) =>
-                        handleSafetySettingsChange("civicIntegrity", value)
-                      }
-                    />
-                  </div>
-                </div>
-              </form>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Temperature ({temperature})
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                value={temperature}
+                onChange={(e) => setTemperature(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs mt-1">
+                <span>Ít sáng tạo hơn (0)</span>
+                <span>Cân bằng (1)</span>
+                <span>Sáng tạo hơn (2)</span>
+              </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
-              >
-                Đặt lại mặc định
-              </button>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors cursor-pointer"
-              >
-                Xong
-              </button>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Top P ({topP})
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={topP}
+                onChange={(e) => setTopP(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs mt-1">
+                <span>Tập trung hơn (0)</span>
+                <span>Cân bằng (0.95)</span>
+                <span>Đa dạng hơn (1)</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Top K ({topK})
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="100"
+                value={topK}
+                onChange={(e) => setTopK(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs mt-1">
+                <span>Tập trung hơn (1)</span>
+                <span>Cân bằng (40)</span>
+                <span>Đa dạng hơn (100)</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Max Output Tokens ({maxOutputTokens})
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="8192"
+                value={maxOutputTokens}
+                onChange={(e) => setMaxOutputTokens(Number(e.target.value))}
+                className="w-full"
+              />
             </div>
           </div>
+
+          {/* Cài đặt an toàn */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium mb-3">Cài đặt an toàn</h3>
+
+            <SafetySlider
+              label="Quấy rối (Harassment)"
+              value={safetySettings.harassment}
+              onChange={(value) =>
+                handleSafetySettingsChange("harassment", value)
+              }
+            />
+
+            <SafetySlider
+              label="Phát ngôn thù ghét (Hate Speech)"
+              value={safetySettings.hateSpeech}
+              onChange={(value) =>
+                handleSafetySettingsChange("hateSpeech", value)
+              }
+            />
+
+            <SafetySlider
+              label="Nội dung khiêu dâm (Sexually Explicit)"
+              value={safetySettings.sexuallyExplicit}
+              onChange={(value) =>
+                handleSafetySettingsChange("sexuallyExplicit", value)
+              }
+            />
+
+            <SafetySlider
+              label="Nội dung nguy hiểm (Dangerous Content)"
+              value={safetySettings.dangerousContent}
+              onChange={(value) =>
+                handleSafetySettingsChange("dangerousContent", value)
+              }
+            />
+
+            <SafetySlider
+              label="Vi phạm tính toàn vẹn công dân (Civic Integrity)"
+              value={safetySettings.civicIntegrity}
+              onChange={(value) =>
+                handleSafetySettingsChange("civicIntegrity", value)
+              }
+            />
+          </div>
         </div>
-      </div>
-    </Portal>
+      </form>
+    </ModalWrapper>
   );
 }

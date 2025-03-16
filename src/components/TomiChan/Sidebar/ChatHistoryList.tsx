@@ -2,9 +2,8 @@ import React, { useState, Fragment } from "react";
 import { IconEdit, IconTrash, IconDotsVertical } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatHistory } from "../../../types";
-import Portal from "../../Portal";
 import Image from "next/image";
-import { Menu, Transition } from "@headlessui/react";
+import { Menu, Transition, Dialog } from "@headlessui/react";
 
 interface ChatHistoryListProps {
   isCollapsed: boolean;
@@ -24,39 +23,65 @@ interface DeleteModalProps {
 }
 
 function DeleteModal({ isOpen, onClose, onConfirm }: DeleteModalProps) {
-  if (!isOpen) return null;
-
   return (
-    <Portal>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-        <div className="bg-white dark:bg-black rounded-lg w-full max-w-md p-6 relative text-black dark:text-white dark:border dark:border-white">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Xác nhận xóa</h2>
-          </div>
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-[9999]" onClose={onClose}>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/50" />
+        </Transition.Child>
 
-          <div className="mb-4">
-            <p className="text-gray-600 dark:text-gray-400">
-              Bạn có chắc muốn xóa cuộc trò chuyện này?
-            </p>
-          </div>
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="w-full max-w-md transform bg-white dark:bg-black rounded-lg p-6 text-left align-middle shadow-xl transition-all text-black dark:text-white dark:border dark:border-white">
+                <div className="flex justify-between items-center mb-4">
+                  <Dialog.Title as="h2" className="text-xl font-semibold">
+                    Xác nhận xóa
+                  </Dialog.Title>
+                </div>
 
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors cursor-pointer"
-            >
-              Hủy
-            </button>
-            <button
-              onClick={onConfirm}
-              className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors cursor-pointer"
-            >
-              Xóa
-            </button>
+                <div className="mb-4">
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Bạn có chắc muốn xóa cuộc trò chuyện này?
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={onConfirm}
+                    className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors cursor-pointer"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
           </div>
         </div>
-      </div>
-    </Portal>
+      </Dialog>
+    </Transition>
   );
 }
 

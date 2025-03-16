@@ -20,7 +20,7 @@ import EditorTabs from "./EditorTabs";
 import EditorSettings from "./EditorSettings";
 import MediaViewer from "./MediaViewer";
 import UnsavedChangesModal from "./UnsavedChangesModal";
-import FileExplorer from "../FileExplorer";
+import FileExplorer from "../FileExplorer/FileExplorer";
 
 interface CodeEditorProps {
   file: CodeFile;
@@ -287,7 +287,7 @@ export default function CodeEditor({
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleSave()}
-            className={`p-2 rounded transition-colors ${
+            className={`p-2 rounded transition-colors cursor-pointer ${
               hasUnsavedChanges
                 ? "bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 dark:hover:bg-yellow-800"
                 : "hover:bg-gray-100 dark:hover:bg-gray-900"
@@ -302,14 +302,7 @@ export default function CodeEditor({
               }
             />
           </button>
-          <button
-            ref={settingButtonRef}
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
-            title="Cài đặt"
-          >
-            <IconSettings size={20} />
-          </button>
+          <EditorSettings settings={settings} updateSettings={updateSettings} />
         </div>
       </div>
 
@@ -358,18 +351,10 @@ export default function CodeEditor({
         </div>
       </div>
 
-      {/* Settings Panel */}
-      {showSettings && (
-        <EditorSettings
-          settings={settings}
-          updateSettings={updateSettings}
-          settingsRef={settingsRef as React.RefObject<HTMLDivElement>}
-        />
-      )}
-
       {/* Unsaved Changes Modal */}
       {showUnsavedModal && (
         <UnsavedChangesModal
+          isOpen={showUnsavedModal}
           onSave={handleSaveInModal}
           onDiscard={handleDiscardInModal}
           onCancel={handleCancelInModal}

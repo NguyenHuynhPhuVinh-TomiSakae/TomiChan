@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect } from "react";
-import ReactDOM from "react-dom";
 import {
   IconFolder,
   IconFolderOpen,
@@ -15,7 +14,7 @@ import {
   IconX,
   IconDownload,
 } from "@tabler/icons-react";
-import { Menu, Transition } from "@headlessui/react";
+import { Menu, Transition, Dialog } from "@headlessui/react";
 import { Fragment } from "react";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -197,14 +196,14 @@ const FolderNode: React.FC<FolderNodeProps> = ({
             <div className="flex justify-end mt-1 gap-1">
               <button
                 onClick={handleSaveEditFolder}
-                className="px-2 py-1 bg-green-500 text-white rounded text-xs"
+                className="px-2 py-1 bg-green-500 text-white rounded text-xs cursor-pointer"
                 title="Lưu"
               >
                 <IconCheck size={14} className="mr-1 inline" /> Lưu
               </button>
               <button
                 onClick={handleCancelEditFolder}
-                className="px-2 py-1 bg-gray-500 text-white rounded text-xs"
+                className="px-2 py-1 bg-gray-500 text-white rounded text-xs cursor-pointer"
                 title="Hủy"
               >
                 <IconX size={14} className="mr-1 inline" /> Hủy
@@ -221,7 +220,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
           <Menu as="div" className="relative inline-block text-left">
             <div>
               <Menu.Button
-                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                 onClick={(e) => e.stopPropagation()}
               >
                 <IconDots size={16} />
@@ -247,7 +246,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
                         }}
                         className={`${
                           active ? "bg-gray-100 dark:bg-gray-700" : ""
-                        } flex w-full items-center px-4 py-2 text-sm`}
+                        } flex w-full items-center px-4 py-2 text-sm cursor-pointer`}
                       >
                         <IconFolderPlus size={16} className="mr-2" />
                         Tạo thư mục mới
@@ -263,7 +262,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
                         }}
                         className={`${
                           active ? "bg-gray-100 dark:bg-gray-700" : ""
-                        } flex w-full items-center px-4 py-2 text-sm`}
+                        } flex w-full items-center px-4 py-2 text-sm cursor-pointer`}
                       >
                         <IconFilePlus size={16} className="mr-2" />
                         Tạo file mới
@@ -279,7 +278,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
                         }}
                         className={`${
                           active ? "bg-gray-100 dark:bg-gray-700" : ""
-                        } flex w-full items-center px-4 py-2 text-sm`}
+                        } flex w-full items-center px-4 py-2 text-sm cursor-pointer`}
                       >
                         <IconDownload size={16} className="mr-2" />
                         Tải xuống
@@ -292,7 +291,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
                         onClick={handleStartEditFolder}
                         className={`${
                           active ? "bg-gray-100 dark:bg-gray-700" : ""
-                        } flex w-full items-center px-4 py-2 text-sm`}
+                        } flex w-full items-center px-4 py-2 text-sm cursor-pointer`}
                       >
                         <IconEdit size={16} className="mr-2" />
                         Đổi tên
@@ -308,7 +307,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
                         }}
                         className={`${
                           active ? "bg-gray-100 dark:bg-gray-700" : ""
-                        } flex w-full items-center px-4 py-2 text-sm text-red-500`}
+                        } flex w-full items-center px-4 py-2 text-sm text-red-500 cursor-pointer`}
                       >
                         <IconTrash size={16} className="mr-2" />
                         Xóa
@@ -378,33 +377,65 @@ const FolderNode: React.FC<FolderNodeProps> = ({
         </div>
       )}
 
-      {showDeleteModal &&
-        ReactDOM.createPortal(
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full">
-              <h3 className="text-xl font-bold mb-4">Xác nhận xóa</h3>
-              <p className="mb-6">
-                Bạn có chắc muốn xóa thư mục &quot;{folder.name}&quot; và tất cả
-                nội dung bên trong không?
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded"
+      {showDeleteModal && (
+        <Transition appear show={showDeleteModal} as={Fragment}>
+          <Dialog
+            as="div"
+            className="relative z-[9999]"
+            onClose={() => setShowDeleteModal(false)}
+          >
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0 bg-black/50" />
+            </Transition.Child>
+
+            <div className="fixed inset-0 overflow-y-auto">
+              <div className="flex min-h-full items-center justify-center p-4 text-center">
+                <Transition.Child
+                  as={Fragment}
+                  enter="ease-out duration-300"
+                  enterFrom="opacity-0 scale-95"
+                  enterTo="opacity-100 scale-100"
+                  leave="ease-in duration-200"
+                  leaveFrom="opacity-100 scale-100"
+                  leaveTo="opacity-0 scale-95"
                 >
-                  Hủy
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  className="px-4 py-2 bg-red-500 text-white rounded"
-                >
-                  Xóa
-                </button>
+                  <Dialog.Panel className="w-full max-w-md transform bg-white dark:bg-gray-800 rounded-lg p-6 text-left align-middle shadow-xl transition-all">
+                    <Dialog.Title as="h3" className="text-xl font-bold mb-4">
+                      Xác nhận xóa
+                    </Dialog.Title>
+                    <p className="mb-6">
+                      Bạn có chắc muốn xóa thư mục &quot;{folder.name}&quot; và
+                      tất cả nội dung bên trong không?
+                    </p>
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={() => setShowDeleteModal(false)}
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        onClick={handleConfirmDelete}
+                        className="px-4 py-2 bg-red-500 text-white rounded"
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </Dialog.Panel>
+                </Transition.Child>
               </div>
             </div>
-          </div>,
-          document.body
-        )}
+          </Dialog>
+        </Transition>
+      )}
     </div>
   );
 };

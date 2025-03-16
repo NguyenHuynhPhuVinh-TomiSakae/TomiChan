@@ -13,7 +13,7 @@ import ChatHistoryList from "./ChatHistoryList";
 import { useMediaQuery } from "react-responsive";
 import { getLocalStorage, setLocalStorage } from "../../../utils/localStorage";
 import Image from "next/image";
-import MagicRoom from "./MagicRoom";
+import MagicRoom from "./MagicRoom/MagicRoom";
 
 interface SidebarProps {
   onNewChat: () => void;
@@ -158,6 +158,12 @@ export default function Sidebar({
   }) => {
     setSearchConfig(config);
     setLocalStorage("search_config", JSON.stringify(config));
+  };
+
+  const handleClearAllData = async () => {
+    await chatDB.clearAllData();
+    // Có thể thêm thông báo hoặc làm mới UI ở đây
+    window.location.reload();
   };
 
   return (
@@ -369,6 +375,7 @@ export default function Sidebar({
           onSearchEnabledChange={handleSearchEnabledChange}
           searchConfig={searchConfig}
           onSearchConfigChange={handleSearchConfigChange}
+          onClearAllData={handleClearAllData}
         />
       </div>
     </>

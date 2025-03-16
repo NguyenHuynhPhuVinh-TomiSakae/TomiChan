@@ -38,7 +38,7 @@ export interface CodeFile {
   createdAt: Date;
   updatedAt: Date;
   language: string;
-  folderId?: string; // thêm trường này
+  folderId?: string | null | undefined; // thêm trường này
 }
 
 export interface CodeFolder {
@@ -46,5 +46,5 @@ export interface CodeFolder {
   name: string;
   createdAt: Date;
   updatedAt: Date;
-  parentId?: string; // thêm trường này
+  parentId?: string | null | undefined; // thêm trường này
 }

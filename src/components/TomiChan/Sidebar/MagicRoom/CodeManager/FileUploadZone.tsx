@@ -272,9 +272,12 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({
   if (!children) {
     return (
       <div className="flex gap-2">
-        <label className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer">
-          <IconUpload className="inline-block mr-2" />
-          Tải file lên
+        <label
+          className="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
+          title="Tải file lên"
+        >
+          <IconUpload size={20} className="mr-1" />
+          <span className="hidden sm:inline">Tải file</span>
           <input
             type="file"
             className="hidden"
@@ -282,9 +285,12 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({
             accept=".txt,.js,.jsx,.ts,.tsx,.html,.css,.json,.md,.py,.java,.cpp,.c,.cs,.php,.rb,.rs,.sql,.swift,.go,.yml,.yaml,.jpg,.jpeg,.png,.gif,.webp,.svg,.mp3,.wav,.ogg,.aac,.mp4,.webm,.ogv,.mov,.pdf"
           />
         </label>
-        <label className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors cursor-pointer">
-          <IconFolderUp className="inline-block mr-2" />
-          Tải thư mục lên
+        <label
+          className="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
+          title="Tải thư mục lên"
+        >
+          <IconFolderUp size={20} className="mr-1" />
+          <span className="hidden sm:inline">Tải thư mục</span>
           <input
             type="file"
             className="hidden"

@@ -39,7 +39,7 @@ const NewItemInput: React.FC<NewItemInputProps> = ({
         const newFolder: CodeFolder = {
           id: nanoid(),
           name: name.trim(),
-          parentId,
+          parentId: parentId === "" ? null : parentId,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -49,7 +49,7 @@ const NewItemInput: React.FC<NewItemInputProps> = ({
           id: nanoid(),
           name: name.trim(),
           content: "",
-          folderId: parentId,
+          folderId: parentId === "" ? null : parentId,
           language: name.trim().split(".").pop() || "javascript",
           createdAt: new Date(),
           updatedAt: new Date(),

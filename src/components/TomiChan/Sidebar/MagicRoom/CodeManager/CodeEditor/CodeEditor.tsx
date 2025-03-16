@@ -61,6 +61,8 @@ export default function CodeEditor({
     activeFileId,
     closeFile,
     setActiveFileId,
+    updateOpenedFile,
+    removeOpenedFile,
   } = useEditorContent(file);
 
   const {
@@ -229,6 +231,20 @@ export default function CodeEditor({
   const language = getLanguageFromFile(file.name);
   const canRun = !!language;
 
+  // Thêm hàm xử lý cập nhật file
+  const handleFileUpdate = (updatedFile: CodeFile) => {
+    updateOpenedFile(updatedFile);
+  };
+
+  // Thêm hàm xử lý xóa file
+  const handleFileDelete = (fileId: string) => {
+    removeOpenedFile(fileId);
+    // Nếu không còn file nào mở, quay lại màn hình trước
+    if (openedFiles.length <= 1 && onBack) {
+      onBack();
+    }
+  };
+
   // Hiển thị media viewer nếu đang xem file media
   if (showMediaViewer && mediaFile) {
     return (
@@ -282,6 +298,8 @@ export default function CodeEditor({
               <FileExplorer
                 onFileSelect={handleFileSelect}
                 activeFileId={activeFileId || undefined}
+                onFileUpdate={handleFileUpdate}
+                onFileDelete={handleFileDelete}
               />
             </div>
           )}
@@ -379,6 +397,8 @@ export default function CodeEditor({
             <FileExplorer
               onFileSelect={handleFileSelect}
               activeFileId={activeFileId || undefined}
+              onFileUpdate={handleFileUpdate}
+              onFileDelete={handleFileDelete}
             />
           </div>
         )}

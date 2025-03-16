@@ -12,12 +12,16 @@ import { toast } from "sonner";
 interface FileExplorerProps {
   onFileSelect: (file: CodeFile) => void;
   activeFileId?: string;
+  onFileUpdate: (file: CodeFile) => void;
+  onFileDelete: (fileId: string) => void;
   className?: string;
 }
 
 export default function FileExplorer({
   onFileSelect,
   activeFileId,
+  onFileUpdate,
+  onFileDelete,
   className = "",
 }: FileExplorerProps) {
   const [folders, setFolders] = useState<CodeFolder[]>([]);
@@ -168,7 +172,6 @@ export default function FileExplorer({
   };
 
   const handleEditFile = (file: CodeFile) => {
-    // Sử dụng trực tiếp file được truyền vào thay vì tham chiếu đến biến bên ngoài
     const updatedFile = {
       ...file,
       language: file.name.split(".").pop() || "javascript",
@@ -179,6 +182,7 @@ export default function FileExplorer({
       .saveCodeFile(updatedFile)
       .then(() => {
         loadData();
+        onFileUpdate(updatedFile);
         toast.success("Đã đổi tên file thành công!");
       })
       .catch((error) => {
@@ -308,8 +312,8 @@ export default function FileExplorer({
                   onClick={() => onFileSelect(file)}
                   isActive={activeFileId === file.id}
                   paddingLeft={0}
-                  onEdit={(updatedFile) => handleEditFile(updatedFile)}
-                  onDelete={() => handleDeleteFile(file)}
+                  onEdit={(editedFile) => handleEditFile(editedFile)}
+                  onDelete={() => onFileDelete(file.id)}
                 />
               ))}
 

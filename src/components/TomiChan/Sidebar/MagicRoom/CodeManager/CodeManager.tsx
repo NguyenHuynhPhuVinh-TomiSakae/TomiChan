@@ -13,6 +13,7 @@ import {
   IconLayoutList,
   IconDownload,
   IconDotsVertical,
+  IconFileOff,
 } from "@tabler/icons-react";
 import { FileModal } from "./Modals/FileModal";
 import CodeEditor from "./CodeEditor";
@@ -127,6 +128,21 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
       }
       return file.folderId === folderId;
     });
+
+    // Kiểm tra nếu không có thư mục và file nào
+    if (foldersInCurrent.length === 0 && filesInCurrent.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-gray-500 dark:text-gray-400">
+          <IconFileOff size={48} className="mb-4 opacity-50" />
+          <p className="text-lg font-medium mb-2">
+            Không có tệp hoặc thư mục nào
+          </p>
+          <p className="text-sm text-center max-w-md">
+            Tạo tệp mới, tạo thư mục hoặc kéo thả tệp vào đây để bắt đầu.
+          </p>
+        </div>
+      );
+    }
 
     return (
       <>
@@ -380,14 +396,17 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
             <div className="flex justify-between items-center">
               <button
                 onClick={() => setIsGridView(!isGridView)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded transition-colors"
+                className="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded transition-colors cursor-pointer"
                 title={isGridView ? "Chế độ danh sách" : "Chế độ lưới"}
               >
                 {isGridView ? (
-                  <IconLayoutList size={20} />
+                  <IconLayoutList size={20} className="mr-2" />
                 ) : (
-                  <IconLayoutGrid size={20} />
+                  <IconLayoutGrid size={20} className="mr-2" />
                 )}
+                <span className="hidden sm:inline">
+                  {isGridView ? "Danh sách" : "Lưới"}
+                </span>
               </button>
               <div className="flex gap-2">
                 <button
@@ -395,26 +414,30 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
                     setSelectedParentFolder(currentFolder);
                     setIsNewFolderModalOpen(true);
                   }}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
+                  className="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
+                  title="Tạo thư mục mới"
                 >
-                  <IconFolderPlus className="inline-block mr-2" />
-                  Tạo thư mục
+                  <IconFolderPlus size={20} className="mr-1" />
+                  <span className="hidden sm:inline">Thư mục</span>
                 </button>
-                <FileUploadZone
-                  currentFolder={currentFolder}
-                  createNewFile={createNewFile}
-                  createNewFolder={createNewFolder}
-                  isMediaFile={isMediaFile}
-                />
+                <div className="flex items-center">
+                  <FileUploadZone
+                    currentFolder={currentFolder}
+                    createNewFile={createNewFile}
+                    createNewFolder={createNewFolder}
+                    isMediaFile={isMediaFile}
+                  />
+                </div>
                 <button
                   onClick={() => {
                     setSelectedParentFolder(currentFolder);
                     setIsNewFileModalOpen(true);
                   }}
-                  className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors cursor-pointer"
+                  className="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
+                  title="Tạo tệp mới"
                 >
-                  <IconFilePlus className="inline-block mr-2" />
-                  Tạo tệp mới
+                  <IconFilePlus size={20} className="mr-1" />
+                  <span className="hidden sm:inline">Tệp mới</span>
                 </button>
               </div>
             </div>

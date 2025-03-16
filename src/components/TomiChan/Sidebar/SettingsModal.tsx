@@ -1,5 +1,11 @@
 import React from "react";
-import { IconX, IconSun, IconMoon, IconWorld } from "@tabler/icons-react";
+import {
+  IconX,
+  IconSun,
+  IconMoon,
+  IconWorld,
+  IconAlertTriangle,
+} from "@tabler/icons-react";
 import Portal from "../../Portal";
 
 interface SettingsModalProps {
@@ -35,6 +41,7 @@ interface SettingsModalProps {
     numResults?: number;
     deepSearch?: boolean;
   }) => void;
+  onClearAllData?: () => void;
 }
 
 export default function SettingsModal({
@@ -50,7 +57,10 @@ export default function SettingsModal({
   onSearchEnabledChange,
   searchConfig,
   onSearchConfigChange,
+  onClearAllData,
 }: SettingsModalProps) {
+  const [showClearDataConfirm, setShowClearDataConfirm] = React.useState(false);
+
   if (!isOpen) return null;
 
   const handleResetImageConfig = () => {
@@ -77,6 +87,13 @@ export default function SettingsModal({
       googleCseId: currentCseId,
       numResults: 3, // Giá trị mặc định
     });
+  };
+
+  const handleClearAllData = () => {
+    if (onClearAllData) {
+      onClearAllData();
+      setShowClearDataConfirm(false);
+    }
   };
 
   return (
@@ -416,6 +433,19 @@ export default function SettingsModal({
                 </div>
               )}
             </div>
+
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Dữ liệu ứng dụng
+              </h3>
+
+              <button
+                onClick={() => setShowClearDataConfirm(true)}
+                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+              >
+                Xóa toàn bộ dữ liệu
+              </button>
+            </div>
           </div>
 
           <div className="p-6 border-t border-gray-200 dark:border-gray-800">
@@ -430,6 +460,38 @@ export default function SettingsModal({
           </div>
         </div>
       </div>
+
+      {/* Modal xác nhận xóa dữ liệu */}
+      {showClearDataConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[10000]">
+          <div className="bg-white dark:bg-black sm:rounded-lg w-full max-w-sm relative text-black dark:text-white dark:border dark:border-white p-6">
+            <div className="flex items-center mb-4">
+              <IconAlertTriangle size={24} className="text-red-600 mr-2" />
+              <h3 className="text-lg font-semibold">Xác nhận xóa dữ liệu</h3>
+            </div>
+
+            <p className="mb-6 text-gray-700 dark:text-gray-300">
+              Bạn có chắc chắn muốn xóa toàn bộ dữ liệu? Hành động này không thể
+              hoàn tác và sẽ xóa tất cả cuộc trò chuyện, tệp và thư mục.
+            </p>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowClearDataConfirm(false)}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleClearAllData}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+              >
+                Xác nhận xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Portal>
   );
 }

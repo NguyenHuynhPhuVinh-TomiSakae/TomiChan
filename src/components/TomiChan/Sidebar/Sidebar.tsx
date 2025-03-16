@@ -160,6 +160,12 @@ export default function Sidebar({
     setLocalStorage("search_config", JSON.stringify(config));
   };
 
+  const handleClearAllData = async () => {
+    await chatDB.clearAllData();
+    // Có thể thêm thông báo hoặc làm mới UI ở đây
+    window.location.reload();
+  };
+
   return (
     <>
       {/* Overlay cho mobile khi sidebar mở */}
@@ -369,6 +375,7 @@ export default function Sidebar({
           onSearchEnabledChange={handleSearchEnabledChange}
           searchConfig={searchConfig}
           onSearchConfigChange={handleSearchConfigChange}
+          onClearAllData={handleClearAllData}
         />
       </div>
     </>

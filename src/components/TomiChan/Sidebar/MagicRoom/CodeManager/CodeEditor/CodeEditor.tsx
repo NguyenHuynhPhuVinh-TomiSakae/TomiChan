@@ -302,14 +302,7 @@ export default function CodeEditor({
               }
             />
           </button>
-          <button
-            ref={settingButtonRef}
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
-            title="Cài đặt"
-          >
-            <IconSettings size={20} />
-          </button>
+          <EditorSettings settings={settings} updateSettings={updateSettings} />
         </div>
       </div>
 
@@ -357,15 +350,6 @@ export default function CodeEditor({
           </div>
         </div>
       </div>
-
-      {/* Settings Panel */}
-      {showSettings && (
-        <EditorSettings
-          settings={settings}
-          updateSettings={updateSettings}
-          settingsRef={settingsRef as React.RefObject<HTMLDivElement>}
-        />
-      )}
 
       {/* Unsaved Changes Modal */}
       {showUnsavedModal && (

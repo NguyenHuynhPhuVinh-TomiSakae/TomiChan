@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { nanoid } from "nanoid";
-import { chatDB } from "../utils/db";
-import type { CodeFile, CodeFolder } from "../types";
+import { chatDB } from "../../../../../../utils/db";
+import type { CodeFile, CodeFolder } from "../../../../../../types";
 
 export function useCodeAssistant() {
   const [files, setFiles] = useState<CodeFile[]>([]);

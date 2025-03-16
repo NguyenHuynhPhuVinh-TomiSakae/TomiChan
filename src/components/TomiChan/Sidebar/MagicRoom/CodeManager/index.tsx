@@ -14,7 +14,7 @@ import {
 } from "@tabler/icons-react";
 import { FileModal } from "./Modals/FileModal";
 import CodeEditor from "./CodeEditor";
-import { useCodeAssistant } from "../../../../../hooks/useCodeAssistant";
+import { useCodeAssistant } from "./hooks/useCodeAssistant";
 import MediaViewer from "./MediaViewer";
 import FileUploadZone from "./FileUploadZone";
 import FileIcon from "./FileIcon";

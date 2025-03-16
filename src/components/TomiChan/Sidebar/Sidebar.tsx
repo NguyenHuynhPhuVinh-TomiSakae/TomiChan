@@ -13,7 +13,7 @@ import ChatHistoryList from "./ChatHistoryList";
 import { useMediaQuery } from "react-responsive";
 import { getLocalStorage, setLocalStorage } from "../../../utils/localStorage";
 import Image from "next/image";
-import MagicRoom from "./MagicRoom";
+import MagicRoom from "./MagicRoom/MagicRoom";
 
 interface SidebarProps {
   onNewChat: () => void;

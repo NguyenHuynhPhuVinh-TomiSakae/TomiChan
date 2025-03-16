@@ -20,7 +20,7 @@ import EditorTabs from "./EditorTabs";
 import EditorSettings from "./EditorSettings";
 import MediaViewer from "./MediaViewer";
 import UnsavedChangesModal from "./UnsavedChangesModal";
-import FileExplorer from "../FileExplorer";
+import FileExplorer from "../FileExplorer/FileExplorer";
 
 interface CodeEditorProps {
   file: CodeFile;

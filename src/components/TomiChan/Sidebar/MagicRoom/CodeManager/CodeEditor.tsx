@@ -102,33 +102,31 @@ export default function CodeEditor({
   const { loadFiles } = useCodeAssistant();
 
   // Sử dụng hook useOpenedFiles để quản lý các file đã mở
-  const { openedFiles, activeFileId, openFile, closeFile, setActiveFileId } =
-    useOpenedFiles();
+  const {
+    openedFiles,
+    activeFileId,
+    openFile,
+    closeFile,
+    setActiveFileId,
+    updateFileContent,
+  } = useOpenedFiles();
 
-  // Lấy file hiện tại từ activeFileId
-  const currentFile = openedFiles.find((f) => f.id === activeFileId) || file;
-  const language = getLanguageFromFileName(currentFile.name);
-
+  // Chỉ mở file ban đầu và file mới một lần
+  const initializedRef = useRef(false);
   useEffect(() => {
-    // Khởi tạo state ban đầu với một file duy nhất
-    if (openedFiles.length === 0) {
+    // Kiểm tra xem component mới mount hay file mới được truyền vào
+    if (!initializedRef.current) {
+      // Lần đầu mount, chỉ mở file ban đầu
       openFile(file);
-    } else if (file.id !== activeFileId) {
-      // Nếu nhận được một file mới khác với file hiện tại
-      if (!openedFiles.some((f) => f.id === file.id)) {
-        openFile(file);
-      } else {
-        // Nếu file đã có trong danh sách, chỉ cần active nó
-        setActiveFileId(file.id);
-
-        // Cập nhật content ngay lập tức cho file này
-        setContent(file.content);
-        setOriginalContent(file.content);
-        contentRef.current = file.content;
-        originalContentRef.current = file.content;
-      }
+      initializedRef.current = true;
+    } else if (file && file.id && !openedFiles.some((f) => f.id === file.id)) {
+      // Nếu nhận file mới và chưa có trong danh sách, mở file đó
+      openFile(file);
+    } else if (file && file.id) {
+      // Nếu file đã có trong danh sách, chỉ active nó
+      setActiveFileId(file.id);
     }
-  }, [file.id]); // Chỉ chạy khi file.id thay đổi
+  }, [file.id]);
 
   useEffect(() => {
     if (activeFileId) {
@@ -241,23 +239,27 @@ export default function CodeEditor({
   };
 
   const handleEditorChange = (value: string | undefined) => {
-    if (value !== undefined) {
-      setContent(value);
-      contentRef.current = value;
+    const newContent = value || "";
+    setContent(newContent);
+    contentRef.current = newContent;
 
-      // Xử lý tự động lưu
-      if (settings.autoSave) {
-        if (autoSaveTimeoutRef.current) {
-          clearTimeout(autoSaveTimeoutRef.current);
-        }
+    // Cập nhật nội dung trong danh sách file đã mở
+    if (activeFileId) {
+      updateFileContent(activeFileId, newContent);
+    }
 
-        autoSaveTimeoutRef.current = setTimeout(() => {
-          // Sử dụng ref để có giá trị mới nhất
-          if (contentRef.current !== originalContentRef.current) {
-            handleSave(true);
-          }
-        }, 2000);
+    // Xử lý tự động lưu
+    if (settings.autoSave) {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
       }
+
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        // Sử dụng ref để có giá trị mới nhất
+        if (contentRef.current !== originalContentRef.current) {
+          handleSave(true);
+        }
+      }, 2000);
     }
   };
 
@@ -443,8 +445,8 @@ export default function CodeEditor({
         <div className="flex-1 min-w-0">
           <Editor
             height="100%"
-            defaultLanguage={language}
-            language={language}
+            defaultLanguage={getLanguageFromFileName(file.name)}
+            language={getLanguageFromFileName(file.name)}
             value={content}
             onChange={handleEditorChange}
             theme={settings.theme}

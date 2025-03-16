@@ -2,13 +2,19 @@ import { useState } from "react";
 import type { CodeFile } from "../types";
 
 export function useOpenedFiles() {
+  // Không khởi tạo với file ban đầu
   const [openedFiles, setOpenedFiles] = useState<CodeFile[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
 
   const openFile = (file: CodeFile) => {
-    if (!openedFiles.find((f) => f.id === file.id)) {
-      setOpenedFiles((prev) => [...prev, file]);
-    }
+    setOpenedFiles((prev) => {
+      // Nếu file đã tồn tại, không thêm vào lại
+      if (prev.some((f) => f.id === file.id)) {
+        return prev;
+      }
+      // Thêm file mới vào danh sách
+      return [...prev, file];
+    });
     setActiveFileId(file.id);
   };
 
@@ -20,11 +26,19 @@ export function useOpenedFiles() {
     }
   };
 
+  // Cập nhật nội dung của file
+  const updateFileContent = (fileId: string, content: string) => {
+    setOpenedFiles((prev) =>
+      prev.map((f) => (f.id === fileId ? { ...f, content } : f))
+    );
+  };
+
   return {
     openedFiles,
     activeFileId,
     openFile,
     closeFile,
     setActiveFileId,
+    updateFileContent,
   };
 }

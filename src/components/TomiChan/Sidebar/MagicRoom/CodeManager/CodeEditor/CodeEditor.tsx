@@ -5,11 +5,12 @@ import React, { useEffect, useRef, useState } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
 import {
   IconArrowLeft,
-  IconSettings,
   IconDeviceFloppy,
   IconFolders,
   IconDownload,
   IconX,
+  IconPlayerPlay,
+  IconTerminal2,
 } from "@tabler/icons-react";
 import type { CodeFile } from "../../../../../../types";
 import { isMediaFile, getLanguageFromFileName } from "./utils";
@@ -21,6 +22,7 @@ import EditorSettings from "./EditorSettings";
 import MediaViewer from "./MediaViewer";
 import UnsavedChangesModal from "./UnsavedChangesModal";
 import FileExplorer from "../FileExplorer/FileExplorer";
+import { useE2B } from "./hooks/useE2B";
 
 interface CodeEditorProps {
   file: CodeFile;
@@ -74,6 +76,28 @@ export default function CodeEditor({
 
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<Monaco | null>(null);
+
+  // Sử dụng hook E2B
+  const {
+    runCode,
+    isRunning,
+    output,
+    error,
+    clearOutput,
+    showOutput,
+    setShowOutput,
+    isTerminalMode,
+    runCommand,
+    setIsTerminalMode,
+  } = useE2B();
+
+  // Thêm hàm để chạy mã
+  const handleRunCode = async (language: string) => {
+    clearOutput();
+    setShowOutput(true);
+
+    await runCode(content, language);
+  };
 
   // Xử lý khi component unmount
   useEffect(() => {
@@ -186,6 +210,25 @@ export default function CodeEditor({
     }
   };
 
+  // Thêm hàm kiểm tra ngôn ngữ được hỗ trợ
+  const SUPPORTED_EXTENSIONS: Record<string, string> = {
+    html: "html",
+    py: "python",
+    js: "js",
+    r: "r",
+    java: "java",
+    sh: "bash",
+  };
+
+  const getLanguageFromFile = (filename: string) => {
+    const ext = filename.split(".").pop()?.toLowerCase();
+    return ext ? SUPPORTED_EXTENSIONS[ext] : null;
+  };
+
+  // Trong component
+  const language = getLanguageFromFile(file.name);
+  const canRun = !!language;
+
   // Hiển thị media viewer nếu đang xem file media
   if (showMediaViewer && mediaFile) {
     return (
@@ -285,6 +328,28 @@ export default function CodeEditor({
           <h2 className="text-lg font-semibold">Code Editor</h2>
         </div>
         <div className="flex items-center gap-2">
+          {/* Nút Run Code */}
+          {canRun && (
+            <button
+              onClick={() => handleRunCode(language)}
+              className={`p-2 rounded transition-colors cursor-pointer ${
+                isRunning
+                  ? "bg-gray-200 dark:bg-gray-700"
+                  : "bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800"
+              }`}
+              disabled={isRunning}
+              title={`Chạy mã ${language.toUpperCase()}`}
+            >
+              <IconPlayerPlay
+                size={20}
+                className={
+                  isRunning
+                    ? "animate-pulse"
+                    : "text-green-600 dark:text-green-400"
+                }
+              />
+            </button>
+          )}
           <button
             onClick={() => handleSave()}
             className={`p-2 rounded transition-colors cursor-pointer ${
@@ -328,25 +393,100 @@ export default function CodeEditor({
             onTabClose={handleTabClose}
           />
 
-          {/* Editor */}
-          <div className="flex-1 overflow-hidden">
-            <Editor
-              height="100%"
-              language={getLanguageFromFileName(file.name)}
-              value={content}
-              theme={settings.theme}
-              onChange={(value) => handleEditorChange(value, settings)}
-              onMount={handleEditorDidMount}
-              options={{
-                fontSize: settings.fontSize,
-                minimap: {
-                  enabled: settings.minimap,
-                },
-                wordWrap: settings.wordWrap,
-                tabSize: settings.tabSize,
-                automaticLayout: true,
-              }}
-            />
+          {/* Editor và Output */}
+          <div className="relative flex-1 overflow-hidden">
+            <div
+              className={`absolute inset-0 ${showOutput ? "h-2/3" : "h-full"}`}
+            >
+              <Editor
+                height="100%"
+                language={getLanguageFromFileName(file.name)}
+                value={content}
+                theme={settings.theme}
+                onChange={(value) => handleEditorChange(value, settings)}
+                onMount={handleEditorDidMount}
+                options={{
+                  fontSize: settings.fontSize,
+                  minimap: {
+                    enabled: settings.minimap,
+                  },
+                  wordWrap: settings.wordWrap,
+                  tabSize: settings.tabSize,
+                  automaticLayout: true,
+                }}
+              />
+            </div>
+
+            {/* Output Panel - Terminal Style */}
+            {showOutput && (
+              <div className="absolute bottom-0 left-0 right-0 h-1/3 border-t border-gray-700 flex flex-col bg-black z-10 font-mono">
+                <div className="flex justify-between items-center p-2 bg-gray-900 border-b border-gray-700 cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    <IconTerminal2 size={16} className="text-gray-400" />
+                    <h3 className="text-sm text-gray-300">Terminal</h3>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setIsTerminalMode(!isTerminalMode)}
+                      className="text-xs px-2 py-1 rounded text-gray-300 hover:bg-gray-800 transition-colors cursor-pointer"
+                    >
+                      {isTerminalMode ? "Code Mode" : "Terminal Mode"}
+                    </button>
+                    <button
+                      onClick={clearOutput}
+                      className="text-xs px-2 py-1 rounded text-gray-300 hover:bg-gray-800 transition-colors cursor-pointer"
+                    >
+                      Xóa
+                    </button>
+                    <button
+                      onClick={() => setShowOutput(false)}
+                      className="text-xs px-2 py-1 rounded text-gray-300 hover:bg-gray-800 transition-colors cursor-pointer"
+                    >
+                      Ẩn
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-auto p-3 text-sm bg-black text-gray-100">
+                  {isRunning ? (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <div className="animate-spin h-4 w-4 border-2 border-gray-500 border-t-gray-300 rounded-full"></div>
+                      Đang thực thi...
+                    </div>
+                  ) : error ? (
+                    <div className="text-red-400">
+                      <span className="text-red-500">Lỗi: </span>
+                      <span className="whitespace-pre-wrap">{error}</span>
+                    </div>
+                  ) : output ? (
+                    <div className="whitespace-pre-wrap font-mono">
+                      <span className="text-green-400">$ </span>
+                      <span className="text-gray-300">{output}</span>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500">Sẵn sàng</div>
+                  )}
+                  {isTerminalMode && (
+                    <div className="mt-2 flex items-center">
+                      <span className="text-green-400">$ </span>
+                      <input
+                        type="text"
+                        className="flex-1 ml-2 bg-transparent border-none outline-none text-gray-300"
+                        placeholder="Nhập lệnh..."
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const command = e.currentTarget.value;
+                            if (command) {
+                              runCommand(command);
+                              e.currentTarget.value = "";
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

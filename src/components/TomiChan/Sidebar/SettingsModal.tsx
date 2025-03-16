@@ -41,6 +41,10 @@ interface SettingsModalProps {
     deepSearch?: boolean;
   }) => void;
   onClearAllData?: () => void;
+  e2bConfig: {
+    apiKey?: string;
+  };
+  onE2bConfigChange: (config: { apiKey?: string }) => void;
 }
 
 export default function SettingsModal({
@@ -57,6 +61,8 @@ export default function SettingsModal({
   searchConfig,
   onSearchConfigChange,
   onClearAllData,
+  e2bConfig,
+  onE2bConfigChange,
 }: SettingsModalProps) {
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
 
@@ -102,7 +108,6 @@ export default function SettingsModal({
         onClose={onClose}
         title="Cài đặt"
         maxWidth="md"
-        showFooter={false}
       >
         <div className="flex-1 overflow-y-auto scrollbar-hide">
           <div>
@@ -426,6 +431,40 @@ export default function SettingsModal({
             )}
           </div>
 
+          <div className="mt-6">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Thực thi mã (E2B)
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm mb-1 block">E2B API Key</label>
+                <input
+                  type="password"
+                  value={e2bConfig.apiKey || ""}
+                  onChange={(e) =>
+                    onE2bConfigChange({
+                      ...e2bConfig,
+                      apiKey: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                  placeholder="Nhập E2B API Key của bạn..."
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Lấy API key tại{" "}
+                  <a
+                    href="https://e2b.dev/dashboard"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                  >
+                    E2B Dashboard
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Dữ liệu ứng dụng
@@ -438,15 +477,6 @@ export default function SettingsModal({
               Xóa toàn bộ dữ liệu
             </button>
           </div>
-        </div>
-
-        <div className="flex justify-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors cursor-pointer"
-          >
-            Xong
-          </button>
         </div>
       </ModalWrapper>
 

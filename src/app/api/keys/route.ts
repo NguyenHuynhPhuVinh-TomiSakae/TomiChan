@@ -10,6 +10,9 @@ export async function GET() {
       apiKey: process.env.CUSTOM_SEARCH_API_KEY || "",
       cseId: process.env.CUSTOM_SEARCH_CSE_ID || "",
     },
+    e2b: {
+      apiKey: process.env.E2B_API_KEY || "",
+    },
   };
 
   return NextResponse.json(keys);

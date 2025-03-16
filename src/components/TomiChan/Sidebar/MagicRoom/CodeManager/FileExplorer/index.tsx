@@ -33,11 +33,17 @@ export default function FileExplorer({
     const allFolders = await chatDB.getAllFolders();
     const allFiles = await chatDB.getAllCodeFiles();
 
-    setFolders(allFolders);
-    setFiles(allFiles);
+    // Sắp xếp thư mục và file theo bảng chữ cái
+    const sortedFolders = allFolders.sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+    const sortedFiles = allFiles.sort((a, b) => a.name.localeCompare(b.name));
+
+    setFolders(sortedFolders);
+    setFiles(sortedFiles);
 
     // Mặc định mở thư mục gốc
-    const rootFolders = allFolders.filter((f) => !f.parentId);
+    const rootFolders = sortedFolders.filter((f) => !f.parentId);
     setExpandedFolders(new Set(rootFolders.map((f) => f.id)));
   };
 
@@ -138,60 +144,53 @@ export default function FileExplorer({
   };
 
   const handleEditFolder = (folder: CodeFolder) => {
-    // Hiển thị modal đổi tên thư mục
-    const newName = prompt("Nhập tên mới cho thư mục:", folder.name);
-    if (newName && newName.trim() !== "" && newName !== folder.name) {
-      const updatedFolder = {
+    chatDB
+      .saveFolder({
         ...folder,
-        name: newName.trim(),
         updatedAt: new Date(),
-      };
-      chatDB.saveFolder(updatedFolder).then(() => {
+      })
+      .then(() => {
         loadData();
         toast.success("Đã đổi tên thư mục thành công!");
+      })
+      .catch((error) => {
+        console.error("Lỗi khi lưu thư mục:", error);
+        toast.error("Có lỗi khi đổi tên thư mục!");
       });
-    }
   };
 
   const handleDeleteFolder = (folder: CodeFolder) => {
-    // Xác nhận xóa thư mục
-    if (
-      confirm(
-        `Bạn có chắc muốn xóa thư mục "${folder.name}" và tất cả nội dung bên trong không?`
-      )
-    ) {
-      chatDB.deleteFolder(folder.id).then(() => {
-        loadData();
-        toast.success("Đã xóa thư mục thành công!");
-      });
-    }
+    chatDB.deleteFolder(folder.id).then(() => {
+      loadData();
+      toast.success("Đã xóa thư mục thành công!");
+    });
   };
 
   const handleEditFile = (file: CodeFile) => {
-    // Hiển thị modal đổi tên file
-    const newName = prompt("Nhập tên mới cho file:", file.name);
-    if (newName && newName.trim() !== "" && newName !== file.name) {
-      const updatedFile = {
-        ...file,
-        name: newName.trim(),
-        language: newName.trim().split(".").pop() || "javascript",
-        updatedAt: new Date(),
-      };
-      chatDB.saveCodeFile(updatedFile).then(() => {
+    // Sử dụng trực tiếp file được truyền vào thay vì tham chiếu đến biến bên ngoài
+    const updatedFile = {
+      ...file,
+      language: file.name.split(".").pop() || "javascript",
+      updatedAt: new Date(),
+    };
+
+    chatDB
+      .saveCodeFile(updatedFile)
+      .then(() => {
         loadData();
         toast.success("Đã đổi tên file thành công!");
+      })
+      .catch((error) => {
+        console.error("Lỗi khi lưu file:", error);
+        toast.error("Có lỗi khi đổi tên file!");
       });
-    }
   };
 
   const handleDeleteFile = (file: CodeFile) => {
-    // Xác nhận xóa file
-    if (confirm(`Bạn có chắc muốn xóa file "${file.name}" không?`)) {
-      chatDB.deleteCodeFile(file.id).then(() => {
-        loadData();
-        toast.success("Đã xóa file thành công!");
-      });
-    }
+    chatDB.deleteCodeFile(file.id).then(() => {
+      loadData();
+      toast.success("Đã xóa file thành công!");
+    });
   };
 
   // Lấy thư mục gốc (không có parentId)
@@ -278,7 +277,7 @@ export default function FileExplorer({
               onClick={() => onFileSelect(file)}
               isActive={activeFileId === file.id}
               paddingLeft={0}
-              onEdit={() => handleEditFile(file)}
+              onEdit={(updatedFile) => handleEditFile(updatedFile)}
               onDelete={() => handleDeleteFile(file)}
             />
           ))}

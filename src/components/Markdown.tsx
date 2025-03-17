@@ -59,6 +59,7 @@ const customSchema = {
     "media-view",
     "open-code",
     "code-editor",
+    "file-path",
   ],
 };
 
@@ -166,6 +167,13 @@ interface CustomComponents extends Components {
     node: any;
     children: React.ReactNode;
   }) => JSX.Element;
+  "file-path": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
 }
 
 export default function Markdown({ content, className = "" }: MarkdownProps) {
@@ -237,6 +245,10 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     .replace(
       /\[CodeEditor\]([\s\S]*?)\[\/CodeEditor\]/g,
       (_, p1) => `<code-editor>${p1}</code-editor>`
+    )
+    .replace(
+      /\[PATH\]([\s\S]*?)\[\/PATH\]/g,
+      (_, p1) => `<file-path>${p1}</file-path>`
     );
 
   const components: CustomComponents = {
@@ -483,6 +495,11 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
       );
     },
 
+    "file-path": ({ children }) => {
+      // Component này chỉ để xử lý thẻ, không hiển thị gì cả
+      return <></>;
+    },
+
     think: ({ children }) => {
       return <ThinkBlock>{children}</ThinkBlock>;
     },
@@ -536,12 +553,47 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
         }
       };
 
+      const handleAcceptCode = () => {
+        if (filePath && codeContent) {
+          // Tạo và gửi custom event với thông tin file và code mới
+          const acceptCodeEvent = new CustomEvent("acceptCode", {
+            detail: {
+              filePath: filePath,
+              newContent: codeContent,
+            },
+          });
+          window.dispatchEvent(acceptCodeEvent);
+        }
+      };
+
+      // Tìm file path từ nội dung gốc trước code block
+      let filePath = "";
+      if (node?.position?.start?.offset) {
+        // Lấy nội dung từ đầu đến vị trí bắt đầu của code block
+        const previousText = content.substring(0, node.position.start.offset);
+
+        // Tìm thẻ PATH cuối cùng trước code block
+        const pathMatches = [
+          ...previousText.matchAll(/\[PATH\](.*?)\[\/PATH\]/g),
+        ];
+        if (pathMatches.length > 0) {
+          // Lấy thẻ PATH cuối cùng
+          const lastPathMatch = pathMatches[pathMatches.length - 1];
+          filePath = lastPathMatch[1].trim();
+        }
+      }
+
       if (!inline && match) {
         const language = match[1];
 
         return (
-          <div className="max-w-full border rounded-lg overflow-hidden">
-            {/* Header: Hiển thị tên ngôn ngữ */}
+          <div className="max-w-full border rounded-lg my-4 overflow-hidden">
+            {filePath && (
+              <div className="px-4 py-2 border-b border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-mono text-sm flex items-center">
+                <IconFilePlus className="mr-2" size={16} />
+                {filePath}
+              </div>
+            )}
             <div
               className={`px-4 py-2 text-sm font-medium ${
                 isDarkMode
@@ -569,56 +621,76 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
                 {codeContent.replace(/\n$/, "")}
               </SyntaxHighlighter>
             </div>
-            {/* Footer: Nút sao chép và chạy code */}
+            {/* Footer: Nút chấp nhận, sao chép và chạy code */}
             <div
-              className="flex justify-end items-center gap-2 px-4 py-2 border-t"
+              className="flex justify-between items-center gap-2 px-4 py-2 border-t"
               style={{ background: isDarkMode ? "#282c34" : "#f8f9fa" }}
             >
-              {language.toLowerCase() === "html" && (
+              <div className="flex items-center gap-2">
+                {filePath && (
+                  <button
+                    onClick={handleAcceptCode}
+                    className={`p-2 rounded-md transition-colors cursor-pointer flex items-center ${
+                      isDarkMode
+                        ? "bg-green-700 hover:bg-green-600 text-white"
+                        : "bg-green-100 hover:bg-green-200 text-green-700"
+                    }`}
+                    aria-label="Chấp nhận"
+                  >
+                    <IconArrowLeft size={18} className="mr-1" />
+                    <span className="text-sm">Chấp nhận</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {language.toLowerCase() === "html" && (
+                  <button
+                    onClick={handleRunCode}
+                    className={`p-2 rounded-md transition-colors cursor-pointer ${
+                      isDarkMode
+                        ? "bg-gray-700 hover:bg-gray-600"
+                        : "bg-gray-200 hover:bg-gray-300"
+                    }`}
+                    aria-label="Run code"
+                  >
+                    <div className="flex items-center">
+                      <IconPlayerPlay
+                        size={18}
+                        className={
+                          isDarkMode ? "text-gray-300" : "text-gray-700"
+                        }
+                      />
+                      <span className="ml-1 text-sm">Chạy</span>
+                    </div>
+                  </button>
+                )}
                 <button
-                  onClick={handleRunCode}
+                  onClick={handleCopy}
                   className={`p-2 rounded-md transition-colors cursor-pointer ${
                     isDarkMode
                       ? "bg-gray-700 hover:bg-gray-600"
                       : "bg-gray-200 hover:bg-gray-300"
                   }`}
-                  aria-label="Run code"
+                  aria-label="Copy code"
                 >
-                  <div className="flex items-center">
-                    <IconPlayerPlay
+                  {copied ? (
+                    <div className="flex items-center">
+                      <IconCheck
+                        size={18}
+                        className={
+                          isDarkMode ? "text-green-400" : "text-green-600"
+                        }
+                      />
+                      <span className="ml-1 text-sm">Đã sao chép!</span>
+                    </div>
+                  ) : (
+                    <IconCopy
                       size={18}
                       className={isDarkMode ? "text-gray-300" : "text-gray-700"}
                     />
-                    <span className="ml-1 text-sm">Chạy</span>
-                  </div>
+                  )}
                 </button>
-              )}
-              <button
-                onClick={handleCopy}
-                className={`p-2 rounded-md transition-colors cursor-pointer ${
-                  isDarkMode
-                    ? "bg-gray-700 hover:bg-gray-600"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
-                aria-label="Copy code"
-              >
-                {copied ? (
-                  <div className="flex items-center">
-                    <IconCheck
-                      size={18}
-                      className={
-                        isDarkMode ? "text-green-400" : "text-green-600"
-                      }
-                    />
-                    <span className="ml-1 text-sm">Đã sao chép!</span>
-                  </div>
-                ) : (
-                  <IconCopy
-                    size={18}
-                    className={isDarkMode ? "text-gray-300" : "text-gray-700"}
-                  />
-                )}
-              </button>
+              </div>
             </div>
           </div>
         );

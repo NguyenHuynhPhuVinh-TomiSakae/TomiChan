@@ -382,6 +382,27 @@ ${currentFileContent}
 \`\`\``
     : ""
 }
+
+Khi bạn sửa code của một hoặc nhiều file, hãy luôn đặt đường dẫn đầy đủ của từng file trong thẻ [PATH][/PATH] trước khi đưa ra code đã sửa. Mỗi file cần sửa phải có một thẻ PATH riêng. Ví dụ:
+
+Sửa 1 file:
+[PATH]src/components/Button.tsx[/PATH]
+\`\`\`tsx
+// Code đã sửa cho Button.tsx
+\`\`\`
+
+Sửa nhiều file:
+[PATH]src/components/Button.tsx[/PATH]
+\`\`\`tsx
+// Code đã sửa cho Button.tsx
+\`\`\`
+
+[PATH]src/hooks/useButton.ts[/PATH]
+\`\`\`ts
+// Code đã sửa cho useButton.ts
+\`\`\`
+
+LUÔN LUÔN SỬ DỤNG PATH RIÊNG CHO TỪNG FILE ĐANG SỬA!
 `;
       enhancedPrompt = codeViewPrompt + enhancedPrompt;
     }

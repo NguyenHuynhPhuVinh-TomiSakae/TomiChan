@@ -6,6 +6,7 @@ import { chatDB } from "../../../../../../../utils/db";
 import type { CodeFile } from "../../../../../../../types";
 import { useCodeAssistant } from "../../hooks/useCodeAssistant";
 import { useOpenedFiles } from "../../hooks/useOpenedFiles";
+import { emitter, MAGIC_EVENTS } from "../../../../../../../lib/events";
 
 export function useEditorContent(file: CodeFile) {
   const [content, setContent] = useState(file.content);
@@ -151,30 +152,22 @@ export function useEditorContent(file: CodeFile) {
 
   const handleEditorChange = (value: string | undefined, settings: any) => {
     const newContent = value || "";
-
-    // Đánh dấu đang cập nhật từ editor để tránh tải lại nội dung
     isUpdatingFromEditorRef.current = true;
 
-    // Cập nhật nội dung và kiểm tra thay đổi
     setContent(newContent);
     contentRef.current = newContent;
 
-    // Cập nhật trạng thái hasUnsavedChanges trực tiếp
     const hasChanges = newContent !== originalContentRef.current;
     setHasUnsavedChanges(hasChanges);
 
-    // Cập nhật nội dung trong danh sách file đã mở
     if (activeFileId) {
       updateFileContent(activeFileId, newContent);
 
-      // Phát event để thông báo nội dung file đã thay đổi
-      const event = new CustomEvent("file_content_changed", {
-        detail: {
-          fileId: activeFileId,
-          content: newContent,
-        },
+      // Thay thế CustomEvent bằng emitter
+      emitter.emit(MAGIC_EVENTS.FILE_CONTENT_CHANGED, {
+        fileId: activeFileId,
+        content: newContent,
       });
-      window.dispatchEvent(event);
     }
 
     // Xử lý tự động lưu
@@ -197,40 +190,35 @@ export function useEditorContent(file: CodeFile) {
     }, 100);
   };
 
-  // Thêm useEffect để lắng nghe sự kiện file_content_updated
+  // Cập nhật useEffect để sử dụng emitter
   useEffect(() => {
-    const handleFileContentUpdated = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { fileId, fileName, content: updatedContent } = customEvent.detail;
-
-      // Nếu file đang mở là file được cập nhật
+    const handleFileContentUpdated = ({
+      fileId,
+      fileName,
+      content: updatedContent,
+    }: {
+      fileId: string;
+      fileName: string;
+      content: string;
+    }) => {
       if (activeFileId === fileId) {
-        // Đánh dấu đang cập nhật từ editor để tránh tải lại nội dung
         isUpdatingFromEditorRef.current = true;
 
-        // Cập nhật nội dung
         setContent(updatedContent);
         setOriginalContent(updatedContent);
         contentRef.current = updatedContent;
         originalContentRef.current = updatedContent;
-
-        // Đặt trạng thái không có thay đổi chưa lưu
         setHasUnsavedChanges(false);
-
-        // Cập nhật nội dung trong danh sách file đã mở
         updateFileContent(fileId, updatedContent);
 
         toast.success(`Đã cập nhật nội dung file: ${fileName || fileId}`);
 
-        // Đặt lại cờ sau một khoảng thời gian ngắn
         setTimeout(() => {
           isUpdatingFromEditorRef.current = false;
         }, 100);
       } else {
-        // Hiển thị thông báo ngay cả khi file không được mở
         toast.success(`Đã cập nhật nội dung file: ${fileName || fileId}`);
 
-        // Cập nhật nội dung trong danh sách file đã mở nếu file đó đã được mở trước đó
         const openedFileIndex = openedFiles.findIndex((f) => f.id === fileId);
         if (openedFileIndex !== -1) {
           updateFileContent(fileId, updatedContent);
@@ -238,18 +226,12 @@ export function useEditorContent(file: CodeFile) {
       }
     };
 
-    // Đăng ký lắng nghe sự kiện
-    window.addEventListener(
-      "file_content_updated",
-      handleFileContentUpdated as EventListener
-    );
+    // Đăng ký lắng nghe sự kiện qua emitter
+    emitter.on(MAGIC_EVENTS.FILE_CONTENT_UPDATED, handleFileContentUpdated);
 
     // Cleanup
     return () => {
-      window.removeEventListener(
-        "file_content_updated",
-        handleFileContentUpdated as EventListener
-      );
+      emitter.off(MAGIC_EVENTS.FILE_CONTENT_UPDATED, handleFileContentUpdated);
     };
   }, [activeFileId, updateFileContent, openedFiles]);
 

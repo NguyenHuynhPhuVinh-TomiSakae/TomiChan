@@ -8,6 +8,8 @@ import FolderNode from "./FolderNode";
 import FileItem from "./FileItem";
 import NewItemInput from "./NewItemInput";
 import { toast } from "sonner";
+import { FILE_EXPLORER_EVENTS } from "@/lib/events";
+import { emitter } from "@/lib/events";
 
 interface FileExplorerProps {
   onFileSelect: (file: CodeFile) => void;
@@ -59,10 +61,10 @@ export default function FileExplorer({
     const handleReload = () => {
       loadData();
     };
-    window.addEventListener("fileExplorer:reload", handleReload);
+    emitter.on(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
 
     return () => {
-      window.removeEventListener("fileExplorer:reload", handleReload);
+      emitter.off(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
     };
   }, []);
 
@@ -156,6 +158,7 @@ export default function FileExplorer({
       })
       .then(() => {
         loadData();
+        emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
         toast.success("Đã đổi tên thư mục thành công!");
       })
       .catch((error) => {
@@ -167,6 +170,7 @@ export default function FileExplorer({
   const handleDeleteFolder = (folder: CodeFolder) => {
     chatDB.deleteFolder(folder.id).then(() => {
       loadData();
+      emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
       toast.success("Đã xóa thư mục thành công!");
     });
   };
@@ -183,6 +187,7 @@ export default function FileExplorer({
       .then(() => {
         loadData();
         onFileUpdate(updatedFile);
+        emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
         toast.success("Đã đổi tên file thành công!");
       })
       .catch((error) => {
@@ -194,6 +199,7 @@ export default function FileExplorer({
   const handleDeleteFile = (file: CodeFile) => {
     chatDB.deleteCodeFile(file.id).then(() => {
       loadData();
+      emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
       toast.success("Đã xóa file thành công!");
     });
   };

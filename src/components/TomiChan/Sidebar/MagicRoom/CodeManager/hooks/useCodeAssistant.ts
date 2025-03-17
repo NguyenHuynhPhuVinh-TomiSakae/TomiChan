@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { nanoid } from "nanoid";
 import { chatDB } from "../../../../../../utils/db";
 import type { CodeFile, CodeFolder } from "../../../../../../types";
+import { FILE_EXPLORER_EVENTS } from "@/lib/events";
+import { emitter } from "@/lib/events";
 
 export function useCodeAssistant() {
   const [files, setFiles] = useState<CodeFile[]>([]);
@@ -28,10 +30,10 @@ export function useCodeAssistant() {
       loadFiles();
       loadFolders();
     };
-    window.addEventListener("fileExplorer:reload", handleReload);
+    emitter.on(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
 
     return () => {
-      window.removeEventListener("fileExplorer:reload", handleReload);
+      emitter.off(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
     };
   }, []);
 

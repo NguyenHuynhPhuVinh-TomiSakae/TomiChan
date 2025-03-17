@@ -3,10 +3,8 @@ import React from "react";
 import { IconArrowLeft, IconX, IconDownload } from "@tabler/icons-react";
 import { CodeFile } from "@/types";
 import Image from "next/image";
-import {
-  getLocalStorage,
-  setLocalStorage,
-} from "../../../../../utils/localStorage";
+import { setSessionStorage } from "../../../../../utils/sessionStorage";
+import { emitter, MAGIC_EVENTS } from "../../../../../lib/events";
 
 interface MediaViewerProps {
   file: CodeFile;
@@ -21,34 +19,24 @@ export default function MediaViewer({
 }: MediaViewerProps) {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = React.useState(false);
 
-  // Đợi sau khi component mount mới bắt đầu kiểm tra UI
-  React.useEffect(() => {
-    // Đánh dấu đã khởi tạo sau 1 giây
-    const initTimer = setTimeout(() => {
-      setIsInitialized(true);
-      // Đặt trạng thái UI thành media_view sau khi component mount
-      setLocalStorage("ui_state_magic", "media_view");
-    }, 1000);
-
-    return () => clearTimeout(initTimer);
-  }, []);
+  const handleCloseMedia = () => {
+    setSessionStorage("ui_state_magic", "code_manager");
+    onBack();
+  };
 
   React.useEffect(() => {
-    // Chỉ kiểm tra khi đã khởi tạo
-    if (!isInitialized) return;
+    // Đặt trạng thái UI thành media_view khi component mount
+    setSessionStorage("ui_state_magic", "media_view");
 
-    const checkUiState = () => {
-      const currentState = getLocalStorage("ui_state_magic", "none");
-      if (currentState === "code_manager") {
-        onBack();
-      }
+    // Lắng nghe sự kiện đóng media
+
+    emitter.on(MAGIC_EVENTS.CLOSE_MEDIA, handleCloseMedia);
+
+    return () => {
+      emitter.off(MAGIC_EVENTS.CLOSE_MEDIA, handleCloseMedia);
     };
-
-    const intervalId = setInterval(checkUiState, 1000);
-    return () => clearInterval(intervalId);
-  }, [onBack, isInitialized]);
+  }, [onBack]);
 
   const getFileType = () => {
     const extension = file.name.split(".").pop()?.toLowerCase();
@@ -255,7 +243,7 @@ export default function MediaViewer({
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <button
-              onClick={onBack}
+              onClick={handleCloseMedia}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
             >
               <IconArrowLeft size={20} />
@@ -271,7 +259,7 @@ export default function MediaViewer({
               <IconDownload size={20} />
             </button>
             <button
-              onClick={onClose}
+              onClick={handleCloseMedia}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
             >
               <IconX size={20} />

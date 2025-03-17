@@ -4,6 +4,8 @@ import { chatDB } from "../../../../../../utils/db";
 import type { CodeFile, CodeFolder } from "../../../../../../types";
 import { nanoid } from "nanoid";
 import FileIcon from "../FileIcon";
+import { FILE_EXPLORER_EVENTS } from "@/lib/events";
+import { emitter } from "@/lib/events";
 
 interface NewItemInputProps {
   type: "file" | "folder";
@@ -58,7 +60,7 @@ const NewItemInput: React.FC<NewItemInputProps> = ({
       }
       onCancel();
       // Reload data
-      window.dispatchEvent(new CustomEvent("fileExplorer:reload"));
+      emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
     } catch (error) {
       console.error(`Error creating ${type}:`, error);
     }

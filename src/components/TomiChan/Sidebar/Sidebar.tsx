@@ -79,14 +79,9 @@ export default function Sidebar({
         };
   });
 
-  // Thêm state cho E2B config
-  const [e2bConfig, setE2bConfig] = React.useState(() => {
-    const savedConfig = getLocalStorage("e2b_config", null);
-    return savedConfig
-      ? JSON.parse(savedConfig)
-      : {
-          apiKey: "",
-        };
+  // Thêm state cho e2bApiKey
+  const [e2bApiKey, setE2bApiKey] = React.useState(() => {
+    return getLocalStorage("e2b_api_key", "");
   });
 
   const isMobile = useMediaQuery({ maxWidth: 768 });
@@ -170,11 +165,10 @@ export default function Sidebar({
     setLocalStorage("search_config", JSON.stringify(config));
   };
 
-  // Thêm handler để cập nhật E2B config
-  const handleE2bConfigChange = (config: { apiKey?: string }) => {
-    setE2bConfig(config);
-    setLocalStorage("e2b_config", JSON.stringify(config));
-    setLocalStorage("e2b_api_key", config.apiKey);
+  // Thêm hàm xử lý thay đổi e2bApiKey
+  const handleE2bApiKeyChange = (apiKey: string) => {
+    setE2bApiKey(apiKey);
+    setLocalStorage("e2b_api_key", apiKey);
   };
 
   const handleClearAllData = async () => {
@@ -393,8 +387,8 @@ export default function Sidebar({
           searchConfig={searchConfig}
           onSearchConfigChange={handleSearchConfigChange}
           onClearAllData={handleClearAllData}
-          e2bConfig={e2bConfig}
-          onE2bConfigChange={handleE2bConfigChange}
+          e2bApiKey={e2bApiKey}
+          onE2bApiKeyChange={handleE2bApiKeyChange}
         />
       </div>
     </>

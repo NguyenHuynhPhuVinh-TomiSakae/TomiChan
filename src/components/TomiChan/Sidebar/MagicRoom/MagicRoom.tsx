@@ -8,48 +8,24 @@ import {
   IconListCheck,
 } from "@tabler/icons-react";
 import CodeAssistant from "./CodeManager/CodeManager";
-import {
-  setLocalStorage,
-  getLocalStorage,
-} from "../../../../utils/localStorage";
+import { setSessionStorage } from "../../../../utils/sessionStorage";
+import { emitter, MAGIC_EVENTS } from "../../../../lib/events";
 
 interface MagicRoomProps {
   onToggleMagicMode?: () => void;
 }
 
 export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
-  const [showCodeAssistant, setShowCodeAssistant] = useState(() => {
-    // Kiểm tra xem trạng thái UI có phải là code_manager không
-    return getLocalStorage("ui_state_magic", "none") === "code_manager";
-  });
+  const [showCodeAssistant, setShowCodeAssistant] = useState(false);
 
-  // Theo dõi thay đổi của ui_state_magic
   useEffect(() => {
-    const checkUIState = () => {
-      const currentState = getLocalStorage("ui_state_magic", "none");
-      if (currentState === "code_manager") {
-        setShowCodeAssistant(true);
-      }
-    };
+    setSessionStorage("ui_state_magic", "magic_room");
+    emitter.on(MAGIC_EVENTS.OPEN_CODE_ASSISTANT, () => {
+      setShowCodeAssistant(true);
+    });
 
-    // Kiểm tra ngay khi component mount
-    checkUIState();
-
-    // Thiết lập interval để kiểm tra định kỳ
-    const intervalId = setInterval(checkUIState, 1000);
-
-    // Chỉ set magic_room khi component được mount lần đầu
-    const initialMount = () => {
-      const currentState = getLocalStorage("ui_state_magic", "none");
-      if (currentState === "none") {
-        setLocalStorage("ui_state_magic", "magic_room");
-      }
-    };
-    initialMount();
-
-    // Khi component unmount, chỉ xóa interval
     return () => {
-      clearInterval(intervalId);
+      emitter.off(MAGIC_EVENTS.OPEN_CODE_ASSISTANT);
     };
   }, []);
 
@@ -58,7 +34,7 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
       <CodeAssistant
         onClose={() => {
           setShowCodeAssistant(false);
-          setLocalStorage("ui_state_magic", "magic_room");
+          setSessionStorage("ui_state_magic", "magic_room");
         }}
       />
     );
@@ -74,7 +50,7 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
           </h2>
           <button
             onClick={() => {
-              setLocalStorage("ui_state_magic", "none");
+              setSessionStorage("ui_state_magic", "none");
               if (onToggleMagicMode) onToggleMagicMode();
             }}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
@@ -111,8 +87,8 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             onClick={() => {
+              setSessionStorage("ui_state_magic", "code_manager");
               setShowCodeAssistant(true);
-              setLocalStorage("ui_state_magic", "code_manager");
             }}
             className="w-full p-6 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/20 flex items-center gap-4 transition-all cursor-pointer"
           >

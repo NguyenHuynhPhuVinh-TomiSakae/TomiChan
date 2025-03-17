@@ -2,16 +2,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { getLocalStorage } from "../utils/localStorage";
+import { getSessionStorage, setSessionStorage } from "../utils/sessionStorage";
 import { chatDB } from "../utils/db";
+import { FILE_EXPLORER_EVENTS, MAGIC_EVENTS } from "@/lib/events";
+import { emitter } from "@/lib/events";
 
 export function useSystemPrompt() {
   const [uiState, setUiState] = useState(
-    getLocalStorage("ui_state_magic", "none")
+    getSessionStorage("ui_state_magic", "none")
   );
   const [files, setFiles] = useState<any[]>([]);
   const [folders, setFolders] = useState<any[]>([]);
   const [currentFile, setCurrentFile] = useState(
-    getLocalStorage("current_open_file", "")
+    getSessionStorage("current_open_file", "")
   );
   const [currentFileContent, setCurrentFileContent] = useState("");
   const [sentFiles, setSentFiles] = useState<
@@ -27,40 +30,29 @@ export function useSystemPrompt() {
 
   // Tải danh sách file đã gửi cho AI và nội dung của chúng
   const loadSentFiles = async () => {
-    const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
+    const sentFilesStr = getSessionStorage("files_sent_to_ai", "[]");
     try {
       const fileNames = JSON.parse(sentFilesStr);
-
-      // Tải nội dung của các file từ CSDL
       const filesWithContent = await Promise.all(
         fileNames.map(async (fileName: string) => {
-          // Kiểm tra xem file có phải là file đang mở không
           const isCurrentlyOpenFile = fileName === currentFile;
-
-          // Nếu là file đang mở, không gửi nội dung
           if (isCurrentlyOpenFile) {
             return {
               name: fileName,
-              content: "", // Không gửi nội dung cho file đang mở
+              content: "",
             };
           }
-
-          // Tìm file trong danh sách files đã tải
           let fileObj = files.find((f) => f.name === fileName);
-
           if (!fileObj) {
-            // Nếu không tìm thấy trong danh sách đã tải, tìm trong database
             const allFiles = await chatDB.getAllCodeFiles();
             fileObj = allFiles.find((f) => f.name === fileName);
           }
-
           return {
             name: fileName,
             content: fileObj ? fileObj.content || "" : "",
           };
         })
       );
-
       setSentFiles(filesWithContent);
     } catch (error) {
       console.error("Lỗi khi tải danh sách file đã gửi cho AI:", error);
@@ -70,7 +62,7 @@ export function useSystemPrompt() {
 
   useEffect(() => {
     const checkUiState = async () => {
-      const currentState = getLocalStorage("ui_state_magic", "none");
+      const currentState = getSessionStorage("ui_state_magic", "none");
       if (currentState !== uiState) {
         setUiState(currentState);
         if (currentState === "code_manager") {
@@ -79,18 +71,22 @@ export function useSystemPrompt() {
       }
     };
 
-    // Thêm event listener cho fileExplorer:reload
+    if (!getSessionStorage("ui_state_magic")) {
+      setSessionStorage("ui_state_magic", "none");
+    }
+
+    // Lắng nghe sự kiện reload
     const handleReload = () => {
       loadFilesAndFolders();
     };
 
     // Lắng nghe sự kiện khi file được gửi cho AI
-    const handleFileSentToAI = (event: CustomEvent) => {
+    const handleFileSentToAI = () => {
       loadSentFiles();
     };
 
     // Lắng nghe sự kiện khi file bị xóa khỏi danh sách
-    const handleFileRemovedFromAI = (event: CustomEvent) => {
+    const handleFileRemovedFromAI = () => {
       loadSentFiles();
     };
 
@@ -99,39 +95,26 @@ export function useSystemPrompt() {
       setSentFiles([]);
     };
 
-    window.addEventListener("fileExplorer:reload", handleReload);
-    window.addEventListener(
-      "file_sent_to_ai",
-      handleFileSentToAI as EventListener
-    );
-    window.addEventListener(
-      "file_removed_from_ai",
-      handleFileRemovedFromAI as EventListener
-    );
-    window.addEventListener(
-      "all_files_removed_from_ai",
-      handleAllFilesRemovedFromAI as EventListener
+    emitter.on(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
+    emitter.on(MAGIC_EVENTS.FILE_SENT_TO_AI, handleFileSentToAI);
+    emitter.on(MAGIC_EVENTS.FILE_REMOVED_FROM_AI, handleFileRemovedFromAI);
+    emitter.on(
+      MAGIC_EVENTS.ALL_FILES_REMOVED_FROM_AI,
+      handleAllFilesRemovedFromAI
     );
 
     const intervalId = setInterval(checkUiState, 1000);
 
-    // Tải danh sách file đã gửi cho AI khi component mount
     loadSentFiles();
 
     return () => {
       clearInterval(intervalId);
-      window.removeEventListener("fileExplorer:reload", handleReload);
-      window.removeEventListener(
-        "file_sent_to_ai",
-        handleFileSentToAI as EventListener
-      );
-      window.removeEventListener(
-        "file_removed_from_ai",
-        handleFileRemovedFromAI as EventListener
-      );
-      window.removeEventListener(
-        "all_files_removed_from_ai",
-        handleAllFilesRemovedFromAI as EventListener
+      emitter.off(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
+      emitter.off(MAGIC_EVENTS.FILE_SENT_TO_AI, handleFileSentToAI);
+      emitter.off(MAGIC_EVENTS.FILE_REMOVED_FROM_AI, handleFileRemovedFromAI);
+      emitter.off(
+        MAGIC_EVENTS.ALL_FILES_REMOVED_FROM_AI,
+        handleAllFilesRemovedFromAI
       );
     };
   }, [uiState, files]);
@@ -164,21 +147,16 @@ export function useSystemPrompt() {
   };
 
   useEffect(() => {
-    const handleFileChanged = (event: CustomEvent) => {
-      if (event.detail && event.detail.fileName) {
-        setCurrentFile(event.detail.fileName);
+    const handleFileChanged = (event: { fileName: string }) => {
+      if (event.fileName) {
+        setCurrentFile(event.fileName);
       }
     };
 
-    // Đăng ký lắng nghe sự kiện
-    window.addEventListener("file_changed", handleFileChanged as EventListener);
+    emitter.on(MAGIC_EVENTS.FILE_CHANGED, handleFileChanged);
 
-    // Cleanup khi component unmount
     return () => {
-      window.removeEventListener(
-        "file_changed",
-        handleFileChanged as EventListener
-      );
+      emitter.off(MAGIC_EVENTS.FILE_CHANGED, handleFileChanged);
     };
   }, []);
 
@@ -193,11 +171,14 @@ export function useSystemPrompt() {
 
   // Lắng nghe sự kiện thay đổi nội dung file
   useEffect(() => {
-    const handleFileContentChanged = (event: CustomEvent) => {
-      if (event.detail && event.detail.content) {
+    const handleFileContentChanged = (event: {
+      fileId: string;
+      content: string;
+    }) => {
+      if (event.content) {
         // Cập nhật nội dung file nếu file đang mở là file được thay đổi
-        const fileId = event.detail.fileId;
-        const content = event.detail.content;
+        const fileId = event.fileId;
+        const content = event.content;
 
         // Tìm file trong danh sách files
         const file = files.find((f) => f.id === fileId);
@@ -211,17 +192,11 @@ export function useSystemPrompt() {
     };
 
     // Đăng ký lắng nghe sự kiện
-    window.addEventListener(
-      "file_content_changed",
-      handleFileContentChanged as EventListener
-    );
+    emitter.on(MAGIC_EVENTS.FILE_CONTENT_CHANGED, handleFileContentChanged);
 
     // Cleanup khi component unmount
     return () => {
-      window.removeEventListener(
-        "file_content_changed",
-        handleFileContentChanged as EventListener
-      );
+      emitter.off(MAGIC_EVENTS.FILE_CONTENT_CHANGED, handleFileContentChanged);
     };
   }, [currentFile, files]);
 
@@ -275,7 +250,7 @@ export function useSystemPrompt() {
 
     // Đọc trạng thái Magic Mode từ localStorage với tên biến mới
     const isMagicMode =
-      getLocalStorage("ui_state_magic", "none") === "magic_room";
+      getSessionStorage("ui_state_magic", "none") === "magic_room";
 
     const imageGeneration =
       getLocalStorage("image_generation", "false") === "true";
@@ -371,7 +346,7 @@ ${createFileTree()}
 
 File đang mở hiện tại: ${
         currentFile ||
-        getLocalStorage("current_open_file", "Không có file nào đang mở")
+        getSessionStorage("current_open_file", "Không có file nào đang mở")
       }
 
 ${

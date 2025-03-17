@@ -1,13 +1,16 @@
-import { setLocalStorage } from "../../utils/localStorage";
 import { useEffect } from "react";
 import { chatDB } from "../../utils/db";
+import { emitter, MAGIC_EVENTS, FILE_EXPLORER_EVENTS } from "../../lib/events";
 
 export function useCodeViewProcessor() {
   useEffect(() => {
-    const handleAcceptCode = async (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { filePath, newContent } = customEvent.detail;
-
+    const handleAcceptCode = async ({
+      filePath,
+      newContent,
+    }: {
+      filePath: string;
+      newContent: string;
+    }) => {
       try {
         // Tìm file trong CSDL
         const allFiles = await chatDB.getAllCodeFiles();
@@ -74,15 +77,14 @@ export function useCodeViewProcessor() {
           updatedAt: new Date(),
         });
 
-        // Phát sự kiện để thông báo cho CodeEditor
-        const fileUpdatedEvent = new CustomEvent("file_content_updated", {
-          detail: {
-            fileId: fileToUpdate.id,
-            fileName: fileToUpdate.name,
-            content: newContent,
-          },
+        // Phát event để thông báo cho CodeEditor
+        emitter.emit(MAGIC_EVENTS.FILE_CONTENT_UPDATED, {
+          fileId: fileToUpdate.id,
+          fileName: fileToUpdate.name,
+          content: newContent,
         });
-        window.dispatchEvent(fileUpdatedEvent);
+
+        emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
         console.log(`Đã cập nhật file: ${fileToUpdate.name}`);
       } catch (error) {
         console.error("Lỗi khi cập nhật file:", error);
@@ -90,11 +92,11 @@ export function useCodeViewProcessor() {
     };
 
     // Đăng ký lắng nghe sự kiện
-    window.addEventListener("acceptCode", handleAcceptCode);
+    emitter.on(MAGIC_EVENTS.ACCEPT_CODE, handleAcceptCode);
 
     // Cleanup
     return () => {
-      window.removeEventListener("acceptCode", handleAcceptCode);
+      emitter.off(MAGIC_EVENTS.ACCEPT_CODE, handleAcceptCode);
     };
   }, []);
 
@@ -108,23 +110,17 @@ export function useCodeViewProcessor() {
       const path = codeContent.match(/path:\s*(.*)/)?.[1]?.trim();
 
       if (path) {
-        // Chuyển trạng thái sang code_view và lưu đường dẫn file
-        setLocalStorage("ui_state_magic", "code_view");
-        setLocalStorage("code_file_path", path);
+        emitter.emit(MAGIC_EVENTS.OPEN_CODE_FILE, { filePath: path });
       }
     }
 
     // Xử lý CodeEditor tag để quay về
-    const codeEditorRegex = /\[CodeEditor\]([\s\S]*?)\[\/CodeEditor\]/g;
-    const editorMatches = content.matchAll(codeEditorRegex);
+    const codeEditorRegex = /\[CodeEditor\]0\[\/CodeEditor\]/g;
+    const editorMatches = content.match(codeEditorRegex);
 
-    for (const match of editorMatches) {
-      const value = match[1].trim();
-      if (value === "0") {
-        // Quay về code_manager
-        setLocalStorage("ui_state_magic", "code_manager");
-        setLocalStorage("code_file_path", "");
-      }
+    if (editorMatches) {
+      // Phát event để đóng code file và quay về code_manager
+      emitter.emit(MAGIC_EVENTS.CLOSE_CODE_FILE);
     }
   };
 

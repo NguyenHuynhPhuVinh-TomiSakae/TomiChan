@@ -1,4 +1,4 @@
-import { getLocalStorage, setLocalStorage } from "../../utils/localStorage";
+import { emitter, MAGIC_EVENTS } from "../../lib/events";
 
 export function useMediaViewProcessor() {
   const processMediaViewTag = async (content: string) => {
@@ -6,12 +6,8 @@ export function useMediaViewProcessor() {
     const matches = content.match(mediaViewRegex);
 
     if (matches) {
-      const currentState = getLocalStorage("ui_state_magic", "none");
-      // Chỉ chuyển về code_manager khi đang ở media_view
-      if (currentState === "media_view") {
-        setLocalStorage("ui_state_magic", "code_manager");
-        setLocalStorage("media_file_name", "");
-      }
+      // Phát event để đóng media view
+      emitter.emit(MAGIC_EVENTS.CLOSE_MEDIA);
     }
   };
 

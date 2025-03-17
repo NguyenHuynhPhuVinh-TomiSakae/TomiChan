@@ -1,10 +1,12 @@
 import { Message } from "../../types";
 import { useImageProcessor } from "./useImageProcessor";
 import { useSearchProcessor } from "./useSearchProcessor";
+import { useMagicModeProcessor } from "./useMagicModeProcessor";
 
 export function useTagProcessors() {
   const { processImageTag } = useImageProcessor();
   const { processSearchTag } = useSearchProcessor();
+  const { processMagicModeTag } = useMagicModeProcessor();
 
   const processMessageTags = (
     content: string,
@@ -18,6 +20,8 @@ export function useTagProcessors() {
     messageIndex?: number,
     sendFollowUpMessage?: (searchResults: string) => Promise<void>
   ) => {
+    processMagicModeTag(content);
+
     processImageTag(
       content,
       messageId,

@@ -22,6 +22,7 @@ import {
   IconCheck,
   IconPlayerPlay,
   IconExternalLink,
+  IconWand,
 } from "@tabler/icons-react";
 import "katex/dist/katex.min.css";
 import { MathJaxContext, MathJax } from "better-react-mathjax";
@@ -43,6 +44,7 @@ const customSchema = {
     "search-result",
     "search-link",
     "search-block",
+    "magic-mode",
   ],
 };
 
@@ -78,6 +80,13 @@ interface CustomComponents extends Components {
     node: any;
     children: React.ReactNode;
   }) => JSX.Element;
+  "magic-mode": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element | null;
 }
 
 export default function Markdown({ content, className = "" }: MarkdownProps) {
@@ -101,6 +110,10 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     .replace(
       /\[SEARCH_BLOCK\]([\s\S]*?)\[\/SEARCH_BLOCK\]/g,
       (_, p1) => `<search-block>${p1}</search-block>`
+    )
+    .replace(
+      /\[MagicMode\]([\s\S]*?)\[\/MagicMode\]/g,
+      (_, p1) => `<magic-mode>${p1}</magic-mode>`
     );
 
   const components: CustomComponents = {
@@ -114,6 +127,31 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
 
     "search-block": () => {
       return <SearchingBlock />;
+    },
+
+    "magic-mode": ({ children }) => {
+      // Xử lý thẻ MagicMode
+      const modeNumber = children?.toString() || "0";
+
+      // Kiểm tra xem có phải là mode quản lý code không (mode 1)
+      if (modeNumber === "1") {
+        return (
+          <div className="my-4 p-4 rounded-lg border-2 border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+            <div className="flex items-center gap-2 mb-2">
+              <IconWand className="text-purple-500" size={20} />
+              <span className="font-semibold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+                Quản Lý Mã Nguồn
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Đã kích hoạt tính năng Quản Lý Mã Nguồn. Bạn có thể yêu cầu AI hỗ
+              trợ viết code, debug và tối ưu hóa.
+            </p>
+          </div>
+        );
+      }
+
+      return null;
     },
 
     think: ({ children }) => {

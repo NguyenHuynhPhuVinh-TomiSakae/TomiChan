@@ -29,6 +29,20 @@ type Part =
   | { text: string }
   | { inlineData: { data: string; mimeType: string } };
 
+// Thêm hàm tiện ích để kiểm tra các tag
+const checkForSpecialTags = (content: string) => {
+  const tags = [
+    ["[IMAGE_PROMPT]", "[/IMAGE_PROMPT]"],
+    ["[SEARCH_QUERY]", "[/SEARCH_QUERY]"],
+    ["[MagicMode]", "[/MagicMode]"],
+  ];
+
+  return tags.some(
+    ([openTag, closeTag]) =>
+      content.includes(openTag) && content.includes(closeTag)
+  );
+};
+
 export function useChatCommon<T>({
   chatId,
   provider,
@@ -158,6 +172,52 @@ export function useChatCommon<T>({
     });
   };
 
+  const handleMessageChunk = (
+    chunk: string,
+    messageId: string,
+    messageIndex: number | undefined,
+    currentMessages: Message[],
+    originalMessage?: string
+  ) => {
+    return setMessages((prev) => {
+      const newMessages = [...prev];
+      const targetIndex =
+        messageIndex ?? newMessages.findIndex((msg) => msg.id === messageId);
+
+      if (targetIndex !== -1) {
+        const newContent = newMessages[targetIndex].content + chunk;
+        newMessages[targetIndex] = {
+          ...newMessages[targetIndex],
+          content: newContent,
+        };
+
+        if (checkForSpecialTags(newContent)) {
+          setTimeout(
+            () =>
+              processMessageTags(
+                newContent,
+                messageId,
+                setMessages,
+                saveChat,
+                chatId,
+                provider,
+                setIsGeneratingImage,
+                setIsSearching,
+                messageIndex,
+                (searchResults) =>
+                  sendFollowUpMessage(searchResults, originalMessage)
+              ),
+            0
+          );
+        }
+
+        saveChat(newMessages, chatId, provider);
+      }
+
+      return newMessages;
+    });
+  };
+
   const sendMessage = async (
     message: string,
     imageData?: { url: string; data: string }[],
@@ -257,50 +317,14 @@ export function useChatCommon<T>({
         let accumulatedMessages = updatedMessages;
 
         const handleChunk = (chunk: string) => {
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            const botMessageIndex = newMessages.findIndex(
-              (msg) => msg.id === botMessageId
-            );
-
-            if (botMessageIndex !== -1) {
-              const newContent = newMessages[botMessageIndex].content + chunk;
-              newMessages[botMessageIndex] = {
-                ...newMessages[botMessageIndex],
-                content: newContent,
-              };
-
-              if (
-                (newContent.includes("[IMAGE_PROMPT]") &&
-                  newContent.includes("[/IMAGE_PROMPT]")) ||
-                (newContent.includes("[SEARCH_QUERY]") &&
-                  newContent.includes("[/SEARCH_QUERY]"))
-              ) {
-                setTimeout(
-                  () =>
-                    processMessageTags(
-                      newContent,
-                      botMessageId,
-                      setMessages,
-                      saveChat,
-                      currentChatId,
-                      provider,
-                      setIsGeneratingImage,
-                      setIsSearching,
-                      undefined,
-                      (searchResults) =>
-                        sendFollowUpMessage(searchResults, message)
-                    ),
-                  0
-                );
-              }
-
-              accumulatedMessages = newMessages;
-              saveChat(accumulatedMessages, currentChatId, provider);
-            }
-
-            return newMessages;
-          });
+          handleMessageChunk(
+            chunk,
+            botMessageId,
+            undefined,
+            accumulatedMessages,
+            message
+          );
+          accumulatedMessages = messages;
         };
 
         const controller = new AbortController();
@@ -364,47 +388,20 @@ export function useChatCommon<T>({
       setMessages(updatedMessages);
       saveChat(updatedMessages, chatId, provider);
 
-      const handleChunk = (chunk: string) => {
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          const newContent = newMessages[messageIndex].content + chunk;
-          newMessages[messageIndex] = {
-            ...newMessages[messageIndex],
-            content: newContent,
-          };
-
-          // Xử lý các tag đặc biệt
-          if (
-            (newContent.includes("[IMAGE_PROMPT]") &&
-              newContent.includes("[/IMAGE_PROMPT]")) ||
-            (newContent.includes("[SEARCH_QUERY]") &&
-              newContent.includes("[/SEARCH_QUERY]"))
-          ) {
-            // Sử dụng hook mới để xử lý các tag
-            processMessageTags(
-              newContent,
-              messageId,
-              setMessages,
-              saveChat,
-              chatId,
-              provider,
-              setIsGeneratingImage,
-              setIsSearching,
-              messageIndex,
-              (searchResults) =>
-                sendFollowUpMessage(searchResults, previousUserMessage.content)
-            );
-          }
-
-          saveChat(newMessages, chatId, provider);
-          return newMessages;
-        });
+      const handleRegenerateChunk = (chunk: string) => {
+        handleMessageChunk(
+          chunk,
+          messageId,
+          messageIndex,
+          messages,
+          previousUserMessage?.content
+        );
       };
 
       await getResponse(
         previousUserMessage.content,
         chatHistory,
-        handleChunk,
+        handleRegenerateChunk,
         controller.signal,
         getEnhancedSystemPrompt(provider)
       );

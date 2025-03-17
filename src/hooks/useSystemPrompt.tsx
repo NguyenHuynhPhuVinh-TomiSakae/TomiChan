@@ -2,6 +2,10 @@ import { getLocalStorage } from "../utils/localStorage";
 
 export function useSystemPrompt() {
   const getEnhancedSystemPrompt = (provider: string) => {
+    // Đọc trạng thái Magic Mode từ localStorage với tên biến mới
+    const isMagicMode =
+      getLocalStorage("ui_state_magic", "none") === "magic_room";
+
     const imageGeneration =
       getLocalStorage("image_generation", "false") === "true";
     const searchEnabled = getLocalStorage("search_enabled", "false") === "true";
@@ -76,6 +80,16 @@ Assistant: [SEARCH_QUERY]weather in Hanoi today[/SEARCH_QUERY]
 
 `;
       enhancedPrompt = searchPrompt + enhancedPrompt;
+    }
+
+    // Thêm hướng dẫn cho Magic Mode nếu được bật
+    if (isMagicMode) {
+      const magicModePrompt = `
+Bạn đang ở trong chế độ Magic Room - Phòng Ma Thuật. Người dùng có thể sử dụng các công cụ đặc biệt trong chế độ này.
+
+Chỉ khi người dùng yêu cầu rõ ràng muốn sử dụng tính năng Quản Lý Mã Nguồn hoặc muốn vào phòng ma thuật, bạn mới trả về thẻ [MagicMode]1[/MagicMode]. Không tự động kích hoạt tính năng này nếu người dùng không yêu cầu.
+`;
+      enhancedPrompt = magicModePrompt + enhancedPrompt;
     }
 
     // Luôn luôn thêm systemTagInstruction vào cuối

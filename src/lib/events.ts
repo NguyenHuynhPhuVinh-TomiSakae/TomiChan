@@ -9,6 +9,31 @@ type Events = {
   "code:openFile": { filePath: string };
   "code:closeFile": void;
   "magic:backToRoom": void;
+  "code:accept": {
+    filePath: string;
+    newContent: string;
+  };
+  "file:contentUpdated": {
+    fileId: string;
+    fileName: string;
+    content: string;
+  };
+  "file:sentToAI": {
+    fileName: string;
+    fileContent: string;
+  };
+  "file:removedFromAI": {
+    fileName: string;
+  };
+  "file:allRemovedFromAI": void;
+  "file:changed": {
+    fileId: string;
+    fileName: string;
+  };
+  "file:contentChanged": {
+    fileId: string;
+    content: string;
+  };
 };
 
 // Tạo instance của emitter
@@ -22,6 +47,13 @@ export const MAGIC_EVENTS = {
   OPEN_CODE_FILE: "code:openFile",
   CLOSE_CODE_FILE: "code:closeFile",
   BACK_TO_MAGIC_ROOM: "magic:backToRoom",
+  ACCEPT_CODE: "code:accept",
+  FILE_CONTENT_UPDATED: "file:contentUpdated",
+  FILE_SENT_TO_AI: "file:sentToAI",
+  FILE_REMOVED_FROM_AI: "file:removedFromAI",
+  ALL_FILES_REMOVED_FROM_AI: "file:allRemovedFromAI",
+  FILE_CHANGED: "file:changed",
+  FILE_CONTENT_CHANGED: "file:contentChanged",
 } as const;
 
 export const FILE_EXPLORER_EVENTS = {

@@ -32,6 +32,8 @@ import { MathJaxContext, MathJax } from "better-react-mathjax";
 import { SearchResultBlock } from "./SearchResultBlock";
 import { SearchLinkBlock } from "./SearchResultBlock";
 import { SearchingBlock } from "./SearchResultBlock";
+import { emitter } from "../lib/events";
+import { MAGIC_EVENTS } from "../lib/events";
 
 interface MarkdownProps {
   content: string;
@@ -555,14 +557,11 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
 
       const handleAcceptCode = () => {
         if (filePath && codeContent) {
-          // Tạo và gửi custom event với thông tin file và code mới
-          const acceptCodeEvent = new CustomEvent("acceptCode", {
-            detail: {
-              filePath: filePath,
-              newContent: codeContent,
-            },
+          // Thay thế window.dispatchEvent bằng emitter
+          emitter.emit(MAGIC_EVENTS.ACCEPT_CODE, {
+            filePath: filePath,
+            newContent: codeContent,
           });
-          window.dispatchEvent(acceptCodeEvent);
         }
       };
 

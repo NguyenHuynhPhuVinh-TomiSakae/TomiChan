@@ -259,10 +259,10 @@ export default function CodeEditor({
       setLocalStorage("current_open_file", activeFile.name);
 
       // Phát event để thông báo file đã thay đổi
-      const event = new CustomEvent("file_changed", {
-        detail: { fileName: activeFile.name, fileId: activeFile.id },
+      emitter.emit(MAGIC_EVENTS.FILE_CHANGED, {
+        fileId: activeFile.id,
+        fileName: activeFile.name,
       });
-      window.dispatchEvent(event);
     }
 
     // Cleanup khi component unmount

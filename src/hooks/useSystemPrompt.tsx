@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { getLocalStorage } from "../utils/localStorage";
 import { getSessionStorage, setSessionStorage } from "../utils/sessionStorage";
 import { chatDB } from "../utils/db";
-import { FILE_EXPLORER_EVENTS } from "@/lib/events";
+import { FILE_EXPLORER_EVENTS, MAGIC_EVENTS } from "@/lib/events";
 import { emitter } from "@/lib/events";
 
 export function useSystemPrompt() {
@@ -172,21 +172,18 @@ export function useSystemPrompt() {
   };
 
   useEffect(() => {
-    const handleFileChanged = (event: CustomEvent) => {
-      if (event.detail && event.detail.fileName) {
-        setCurrentFile(event.detail.fileName);
+    const handleFileChanged = (event: { fileId: string; fileName: string }) => {
+      if (event.fileName) {
+        setCurrentFile(event.fileName);
       }
     };
 
     // Đăng ký lắng nghe sự kiện
-    window.addEventListener("file_changed", handleFileChanged as EventListener);
+    emitter.on(MAGIC_EVENTS.FILE_CHANGED, handleFileChanged);
 
     // Cleanup khi component unmount
     return () => {
-      window.removeEventListener(
-        "file_changed",
-        handleFileChanged as EventListener
-      );
+      emitter.off(MAGIC_EVENTS.FILE_CHANGED, handleFileChanged);
     };
   }, []);
 
@@ -201,11 +198,14 @@ export function useSystemPrompt() {
 
   // Lắng nghe sự kiện thay đổi nội dung file
   useEffect(() => {
-    const handleFileContentChanged = (event: CustomEvent) => {
-      if (event.detail && event.detail.content) {
+    const handleFileContentChanged = (event: {
+      fileId: string;
+      content: string;
+    }) => {
+      if (event.content) {
         // Cập nhật nội dung file nếu file đang mở là file được thay đổi
-        const fileId = event.detail.fileId;
-        const content = event.detail.content;
+        const fileId = event.fileId;
+        const content = event.content;
 
         // Tìm file trong danh sách files
         const file = files.find((f) => f.id === fileId);
@@ -219,17 +219,11 @@ export function useSystemPrompt() {
     };
 
     // Đăng ký lắng nghe sự kiện
-    window.addEventListener(
-      "file_content_changed",
-      handleFileContentChanged as EventListener
-    );
+    emitter.on(MAGIC_EVENTS.FILE_CONTENT_CHANGED, handleFileContentChanged);
 
     // Cleanup khi component unmount
     return () => {
-      window.removeEventListener(
-        "file_content_changed",
-        handleFileContentChanged as EventListener
-      );
+      emitter.off(MAGIC_EVENTS.FILE_CONTENT_CHANGED, handleFileContentChanged);
     };
   }, [currentFile, files]);
 

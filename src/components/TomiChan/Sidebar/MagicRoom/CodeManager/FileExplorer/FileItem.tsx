@@ -19,6 +19,7 @@ import {
   setLocalStorage,
 } from "../../../../../../utils/localStorage";
 import { toast } from "sonner";
+import { emitter, MAGIC_EVENTS } from "../../../../../../lib/events";
 
 interface FileItemProps {
   file: CodeFile;
@@ -102,10 +103,10 @@ const FileItem: React.FC<FileItemProps> = ({
       setLocalStorage("files_sent_to_ai", JSON.stringify(sentFiles));
 
       // Phát event để thông báo file đã được gửi cho AI
-      const event = new CustomEvent("file_sent_to_ai", {
-        detail: { fileName: file.name, fileContent: file.content },
+      emitter.emit(MAGIC_EVENTS.FILE_SENT_TO_AI, {
+        fileName: file.name,
+        fileContent: file.content,
       });
-      window.dispatchEvent(event);
 
       // Hiển thị thông báo
       toast.success(`Đã gửi file "${file.name}" cho AI!`);

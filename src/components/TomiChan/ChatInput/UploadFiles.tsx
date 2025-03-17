@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
@@ -16,6 +17,7 @@ import {
   IconBrain,
 } from "@tabler/icons-react";
 import { getLocalStorage, setLocalStorage } from "../../../utils/localStorage";
+import { emitter, MAGIC_EVENTS } from "../../../lib/events";
 
 interface UploadFilesProps {
   onImagesUpload?: (files: File[]) => void;
@@ -102,20 +104,16 @@ export default function UploadFiles({
 
   // Lắng nghe event khi file được gửi cho AI từ FileItem
   useEffect(() => {
-    const handleFileSentToAI = (event: CustomEvent) => {
-      if (event.detail && event.detail.fileName) {
-        // Cập nhật danh sách file đã gửi cho AI
-        const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
-        try {
-          const files = JSON.parse(sentFilesStr);
-          setSentFiles(files);
-        } catch (error) {
-          console.error("Lỗi khi parse danh sách file đã gửi cho AI:", error);
-        }
+    const handleFileSentToAI = ({ fileName }: { fileName: string }) => {
+      const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
+      try {
+        const files = JSON.parse(sentFilesStr);
+        setSentFiles(files);
+      } catch (error) {
+        console.error("Lỗi khi parse danh sách file đã gửi cho AI:", error);
       }
     };
 
-    // Lắng nghe event khi file bị xóa khỏi danh sách
     const handleFileRemovedFromAI = () => {
       const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
       try {
@@ -126,67 +124,44 @@ export default function UploadFiles({
       }
     };
 
-    // Lắng nghe event khi tất cả file bị xóa khỏi danh sách
     const handleAllFilesRemovedFromAI = () => {
       setSentFiles([]);
     };
 
-    // Đăng ký lắng nghe sự kiện
-    window.addEventListener(
-      "file_sent_to_ai",
-      handleFileSentToAI as EventListener
-    );
-    window.addEventListener(
-      "file_removed_from_ai",
-      handleFileRemovedFromAI as EventListener
-    );
-    window.addEventListener(
-      "all_files_removed_from_ai",
-      handleAllFilesRemovedFromAI as EventListener
+    emitter.on(MAGIC_EVENTS.FILE_SENT_TO_AI, handleFileSentToAI);
+    emitter.on(MAGIC_EVENTS.FILE_REMOVED_FROM_AI, handleFileRemovedFromAI);
+    emitter.on(
+      MAGIC_EVENTS.ALL_FILES_REMOVED_FROM_AI,
+      handleAllFilesRemovedFromAI
     );
 
-    // Cleanup khi component unmount
     return () => {
-      window.removeEventListener(
-        "file_sent_to_ai",
-        handleFileSentToAI as EventListener
-      );
-      window.removeEventListener(
-        "file_removed_from_ai",
-        handleFileRemovedFromAI as EventListener
-      );
-      window.removeEventListener(
-        "all_files_removed_from_ai",
-        handleAllFilesRemovedFromAI as EventListener
+      emitter.off(MAGIC_EVENTS.FILE_SENT_TO_AI, handleFileSentToAI);
+      emitter.off(MAGIC_EVENTS.FILE_REMOVED_FROM_AI, handleFileRemovedFromAI);
+      emitter.off(
+        MAGIC_EVENTS.ALL_FILES_REMOVED_FROM_AI,
+        handleAllFilesRemovedFromAI
       );
     };
   }, []);
 
-  // Xóa một file khỏi danh sách file đã gửi cho AI
   const handleRemoveSentFile = (index: number) => {
     const newSentFiles = [...sentFiles];
-    const removedFileName = newSentFiles[index]; // Lưu tên file bị xóa
+    const removedFileName = newSentFiles[index];
     newSentFiles.splice(index, 1);
     setSentFiles(newSentFiles);
     setLocalStorage("files_sent_to_ai", JSON.stringify(newSentFiles));
 
-    // Phát event để thông báo file đã bị xóa khỏi danh sách
-    const event = new CustomEvent("file_removed_from_ai", {
-      detail: { fileName: removedFileName },
+    emitter.emit(MAGIC_EVENTS.FILE_REMOVED_FROM_AI, {
+      fileName: removedFileName,
     });
-    window.dispatchEvent(event);
   };
 
-  // Xóa tất cả file đã gửi cho AI
   const handleClearAllSentFiles = () => {
     setSentFiles([]);
     setLocalStorage("files_sent_to_ai", "[]");
-
-    // Phát event để thông báo tất cả file đã bị xóa khỏi danh sách
-    const event = new CustomEvent("all_files_removed_from_ai");
-    window.dispatchEvent(event);
-
-    onClearSentFiles(); // Gọi callback để thông báo cho component cha
+    emitter.emit(MAGIC_EVENTS.ALL_FILES_REMOVED_FROM_AI);
+    onClearSentFiles();
   };
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

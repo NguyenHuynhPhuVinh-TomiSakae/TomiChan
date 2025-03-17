@@ -41,10 +41,8 @@ interface SettingsModalProps {
     deepSearch?: boolean;
   }) => void;
   onClearAllData?: () => void;
-  e2bConfig: {
-    apiKey?: string;
-  };
-  onE2bConfigChange: (config: { apiKey?: string }) => void;
+  e2bApiKey?: string;
+  onE2bApiKeyChange: (apiKey: string) => void;
 }
 
 export default function SettingsModal({
@@ -61,8 +59,8 @@ export default function SettingsModal({
   searchConfig,
   onSearchConfigChange,
   onClearAllData,
-  e2bConfig,
-  onE2bConfigChange,
+  e2bApiKey,
+  onE2bApiKeyChange,
 }: SettingsModalProps) {
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
 
@@ -440,13 +438,8 @@ export default function SettingsModal({
                 <label className="text-sm mb-1 block">E2B API Key</label>
                 <input
                   type="password"
-                  value={e2bConfig.apiKey || ""}
-                  onChange={(e) =>
-                    onE2bConfigChange({
-                      ...e2bConfig,
-                      apiKey: e.target.value,
-                    })
-                  }
+                  value={e2bApiKey || ""}
+                  onChange={(e) => onE2bApiKeyChange(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
                   placeholder="Nhập E2B API Key của bạn..."
                 />

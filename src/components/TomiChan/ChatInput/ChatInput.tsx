@@ -497,6 +497,8 @@ export default function ChatInput({
         <div className="w-full overflow-hidden bg-white dark:bg-black rounded-2xl border border-black dark:border-white">
           <div className="w-full h-full flex flex-col">
             <div className="max-h-[300px] overflow-y-auto">
+              <UploadFiles fileType="ai-files" />
+
               <UploadFiles
                 selectedImages={selectedImages}
                 selectedFiles={selectedFiles}

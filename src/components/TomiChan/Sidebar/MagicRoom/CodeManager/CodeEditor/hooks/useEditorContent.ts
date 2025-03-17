@@ -166,6 +166,15 @@ export function useEditorContent(file: CodeFile) {
     // Cập nhật nội dung trong danh sách file đã mở
     if (activeFileId) {
       updateFileContent(activeFileId, newContent);
+
+      // Phát event để thông báo nội dung file đã thay đổi
+      const event = new CustomEvent("file_content_changed", {
+        detail: {
+          fileId: activeFileId,
+          content: newContent,
+        },
+      });
+      window.dispatchEvent(event);
     }
 
     // Xử lý tự động lưu
@@ -187,6 +196,62 @@ export function useEditorContent(file: CodeFile) {
       isUpdatingFromEditorRef.current = false;
     }, 100);
   };
+
+  // Thêm useEffect để lắng nghe sự kiện file_content_updated
+  useEffect(() => {
+    const handleFileContentUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { fileId, fileName, content: updatedContent } = customEvent.detail;
+
+      // Nếu file đang mở là file được cập nhật
+      if (activeFileId === fileId) {
+        // Đánh dấu đang cập nhật từ editor để tránh tải lại nội dung
+        isUpdatingFromEditorRef.current = true;
+
+        // Cập nhật nội dung
+        setContent(updatedContent);
+        setOriginalContent(updatedContent);
+        contentRef.current = updatedContent;
+        originalContentRef.current = updatedContent;
+
+        // Đặt trạng thái không có thay đổi chưa lưu
+        setHasUnsavedChanges(false);
+
+        // Cập nhật nội dung trong danh sách file đã mở
+        updateFileContent(fileId, updatedContent);
+
+        toast.success(`Đã cập nhật nội dung file: ${fileName || fileId}`);
+
+        // Đặt lại cờ sau một khoảng thời gian ngắn
+        setTimeout(() => {
+          isUpdatingFromEditorRef.current = false;
+        }, 100);
+      } else {
+        // Hiển thị thông báo ngay cả khi file không được mở
+        toast.success(`Đã cập nhật nội dung file: ${fileName || fileId}`);
+
+        // Cập nhật nội dung trong danh sách file đã mở nếu file đó đã được mở trước đó
+        const openedFileIndex = openedFiles.findIndex((f) => f.id === fileId);
+        if (openedFileIndex !== -1) {
+          updateFileContent(fileId, updatedContent);
+        }
+      }
+    };
+
+    // Đăng ký lắng nghe sự kiện
+    window.addEventListener(
+      "file_content_updated",
+      handleFileContentUpdated as EventListener
+    );
+
+    // Cleanup
+    return () => {
+      window.removeEventListener(
+        "file_content_updated",
+        handleFileContentUpdated as EventListener
+      );
+    };
+  }, [activeFileId, updateFileContent, openedFiles]);
 
   return {
     content,

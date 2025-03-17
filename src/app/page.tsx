@@ -171,11 +171,7 @@ export default function Home() {
               selectedProvider={selectedProvider}
               isMagicMode={isMagicMode}
             />
-            <div
-              className={`w-full max-w-4xl mx-auto flex-1 pb-[22vh] pt-20
-              ${isMagicMode ? "sm:pb-[30vh]" : "sm:pb-[70vh]"}
-              `}
-            >
+            <div className="w-full max-w-4xl mx-auto flex-1 pb-[22vh] sm:pb-[70vh] pt-20">
               <ChatMessages
                 messages={messages}
                 isLoading={isLoading}

@@ -15,6 +15,11 @@ import {
   IconCheck,
   IconRefresh,
   IconDownload,
+  IconBrain,
+  IconBrandHtml5,
+  IconBrandCss3,
+  IconMarkdown,
+  IconTable,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import Markdown from "../../Markdown";
@@ -24,6 +29,7 @@ import { useMessageActions } from "../../../hooks/useMessageActions";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import { extractImagePrompt } from "../../../lib/together";
 import MediaViewer from "./MediaViewer";
+import { getLocalStorage } from "../../../utils/localStorage";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -152,17 +158,24 @@ export default function ChatMessages({
     onScrollButtonStateChange?.(false);
   }, [chatId, onScrollButtonStateChange]);
 
-  // Hàm để xác định biểu tượng theo loại file
-  const getFileIcon = (type: string) => {
-    if (type.includes("pdf")) return <IconPdf size={20} />;
-    if (
-      type.includes("javascript") ||
-      type.includes("python") ||
-      type.includes("xml")
-    )
+  // Lấy icon dựa trên phần mở rộng của tên file
+  const getFileIconByName = (fileName: string) => {
+    const extension = fileName.split(".").pop()?.toLowerCase() || "";
+
+    if (extension === "pdf") return <IconFile size={20} />;
+    if (["js", "jsx", "ts", "tsx"].includes(extension))
       return <IconCode size={20} />;
-    if (type.includes("text/plain") || type.includes("rtf"))
-      return <IconFileText size={20} />;
+    if (["py", "ipynb"].includes(extension)) return <IconCode size={20} />;
+    if (extension === "txt") return <IconFileText size={20} />;
+    if (["html", "htm"].includes(extension))
+      return <IconBrandHtml5 size={20} />;
+    if (extension === "css") return <IconBrandCss3 size={20} />;
+    if (["md", "markdown"].includes(extension))
+      return <IconMarkdown size={20} />;
+    if (extension === "csv") return <IconTable size={20} />;
+    if (extension === "xml") return <IconCode size={20} />;
+    if (extension === "rtf") return <IconFileText size={20} />;
+
     return <IconFile size={20} />;
   };
 
@@ -259,6 +272,37 @@ export default function ChatMessages({
               message.sender === "user" ? "items-end" : "items-start"
             }`}
           >
+            {/* Hiển thị danh sách file đã gửi cho AI nếu là tin nhắn từ user và có sentFiles */}
+            {message.sender === "user" &&
+              message.sentFiles &&
+              message.sentFiles.length > 0 && (
+                <div className="w-full flex mx-4 sm:mx-8 justify-end mb-2">
+                  <div className="w-fit border border-purple-400 dark:border-purple-600 rounded-lg overflow-hidden">
+                    <div className="font-medium text-sm py-1 px-2 bg-purple-100 dark:bg-purple-900 border-b border-purple-400 dark:border-purple-600 flex items-center">
+                      <IconBrain
+                        size={16}
+                        className="mr-2 text-purple-600 dark:text-purple-400"
+                      />
+                      File đã gửi cho AI
+                    </div>
+                    <div className="p-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {message.sentFiles.map((fileName, index) => (
+                        <div
+                          key={index}
+                          className="p-2 bg-purple-50 dark:bg-purple-950 rounded flex items-center gap-2 max-w-[200px] border border-purple-200 dark:border-purple-800"
+                        >
+                          <div className="text-purple-600 dark:text-purple-400">
+                            {getFileIconByName(fileName)}
+                          </div>
+                          <div className="flex-1 truncate text-xs">
+                            {fileName}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             {message.images &&
               message.images.length > 0 &&
               message.sender === "user" && (
@@ -321,7 +365,7 @@ export default function ChatMessages({
                         className="flex items-center gap-2 bg-gray-100 dark:bg-gray-900 rounded p-2"
                       >
                         <span className="text-gray-700 dark:text-gray-300">
-                          {getFileIcon(file.type)}
+                          {getFileIconByName(file.name)}
                         </span>
                         <span className="text-xs sm:text-sm truncate max-w-[200px]">
                           {file.name}

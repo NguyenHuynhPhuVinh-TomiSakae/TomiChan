@@ -22,6 +22,10 @@ import {
   IconCheck,
   IconPlayerPlay,
   IconExternalLink,
+  IconWand,
+  IconFilePlus,
+  IconFolderPlus,
+  IconArrowLeft,
 } from "@tabler/icons-react";
 import "katex/dist/katex.min.css";
 import { MathJaxContext, MathJax } from "better-react-mathjax";
@@ -43,6 +47,19 @@ const customSchema = {
     "search-result",
     "search-link",
     "search-block",
+    "magic-mode",
+    "code-manager",
+    "create-file",
+    "create-folder",
+    "rename-file",
+    "rename-folder",
+    "delete-file",
+    "delete-folder",
+    "open-media",
+    "media-view",
+    "open-code",
+    "code-editor",
+    "file-path",
   ],
 };
 
@@ -78,6 +95,85 @@ interface CustomComponents extends Components {
     node: any;
     children: React.ReactNode;
   }) => JSX.Element;
+  "magic-mode": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element | null;
+  "code-manager": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element | null;
+  "create-file": ({ children }: { children: React.ReactNode }) => JSX.Element;
+  "create-folder": ({ children }: { children: React.ReactNode }) => JSX.Element;
+  "rename-file": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "rename-folder": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "delete-file": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "delete-folder": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "open-media": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "media-view": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "open-code": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "code-editor": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "file-path": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
 }
 
 export default function Markdown({ content, className = "" }: MarkdownProps) {
@@ -101,6 +197,58 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     .replace(
       /\[SEARCH_BLOCK\]([\s\S]*?)\[\/SEARCH_BLOCK\]/g,
       (_, p1) => `<search-block>${p1}</search-block>`
+    )
+    .replace(
+      /\[MagicMode\]([\s\S]*?)\[\/MagicMode\]/g,
+      (_, p1) => `<magic-mode>${p1}</magic-mode>`
+    )
+    .replace(
+      /\[CodeManager\]([\s\S]*?)\[\/CodeManager\]/g,
+      (_, p1) => `<code-manager>${p1}</code-manager>`
+    )
+    .replace(
+      /\[CreateFile\]([\s\S]*?)\[\/CreateFile\]/g,
+      (_, p1) => `<create-file>${p1}</create-file>`
+    )
+    .replace(
+      /\[CreateFolder\]([\s\S]*?)\[\/CreateFolder\]/g,
+      (_, p1) => `<create-folder>${p1}</create-folder>`
+    )
+    .replace(
+      /\[RenameFile\]([\s\S]*?)\[\/RenameFile\]/g,
+      (_, p1) => `<rename-file>${p1}</rename-file>`
+    )
+    .replace(
+      /\[RenameFolder\]([\s\S]*?)\[\/RenameFolder\]/g,
+      (_, p1) => `<rename-folder>${p1}</rename-folder>`
+    )
+    .replace(
+      /\[DeleteFile\]([\s\S]*?)\[\/DeleteFile\]/g,
+      (_, p1) => `<delete-file>${p1}</delete-file>`
+    )
+    .replace(
+      /\[DeleteFolder\]([\s\S]*?)\[\/DeleteFolder\]/g,
+      (_, p1) => `<delete-folder>${p1}</delete-folder>`
+    )
+    .replace(
+      /\[OpenMedia\]([\s\S]*?)\[\/OpenMedia\]/g,
+      (_, p1) => `<open-media>${p1}</open-media>`
+    )
+    .replace(
+      /\[MediaView\]([\s\S]*?)\[\/MediaView\]/g,
+      (_, p1) => `<media-view>${p1}</media-view>`
+    )
+    .replace(
+      /\[OpenCode\]([\s\S]*?)\[\/OpenCode\]/g,
+      (_, p1) => `<open-code>${p1}</open-code>`
+    )
+    .replace(
+      /\[CodeEditor\]([\s\S]*?)\[\/CodeEditor\]/g,
+      (_, p1) => `<code-editor>${p1}</code-editor>`
+    )
+    .replace(
+      /\[PATH\]([\s\S]*?)\[\/PATH\]/g,
+      (_, p1) => `<file-path>${p1}</file-path>`
     );
 
   const components: CustomComponents = {
@@ -114,6 +262,242 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
 
     "search-block": () => {
       return <SearchingBlock />;
+    },
+
+    "magic-mode": ({ children }) => {
+      // Xử lý thẻ MagicMode
+      const modeNumber = children?.toString() || "0";
+
+      // Kiểm tra xem có phải là mode quản lý code không (mode 1)
+      if (modeNumber === "1") {
+        return (
+          <div className="my-4 p-4 rounded-lg border-2 border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+            <div className="flex items-center gap-2 mb-2">
+              <IconWand className="text-purple-500" size={20} />
+              <span className="font-semibold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+                Quản Lý Mã Nguồn
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Đã kích hoạt tính năng Quản Lý Mã Nguồn. Bạn có thể yêu cầu AI hỗ
+              trợ viết code, debug và tối ưu hóa.
+            </p>
+          </div>
+        );
+      }
+
+      return null;
+    },
+
+    "code-manager": ({ children }) => {
+      // Xử lý thẻ MagicMode
+      const modeNumber = children?.toString() || "0";
+
+      // Kiểm tra xem có phải là mode quay về magic room không (mode 0)
+      if (modeNumber === "0") {
+        return (
+          <div className="my-4 p-4 rounded-lg border-2 border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+            <div className="flex items-center gap-2 mb-2">
+              <IconWand className="text-purple-500" size={20} />
+              <span className="font-semibold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+                Quay về Phòng Ma Thuật
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Đã kích hoạt tính năng Quay về Phòng Ma Thuật.
+            </p>
+          </div>
+        );
+      }
+
+      return null;
+    },
+
+    "create-file": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFilePlus className="text-blue-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 text-transparent bg-clip-text">
+              Tạo File Mới
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
+    },
+
+    "create-folder": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-green-500/30 bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFolderPlus className="text-green-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-green-400 via-emerald-500 to-green-500 text-transparent bg-clip-text">
+              Tạo Thư Mục Mới
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
+    },
+
+    "rename-file": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-yellow-500/30 bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFilePlus className="text-yellow-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 text-transparent bg-clip-text">
+              Đổi Tên File
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
+    },
+
+    "rename-folder": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-red-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFolderPlus className="text-orange-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-orange-400 via-red-500 to-orange-500 text-transparent bg-clip-text">
+              Đổi Tên Thư Mục
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
+    },
+
+    "delete-file": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-red-500/30 bg-gradient-to-r from-red-500/10 to-pink-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFilePlus className="text-red-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-red-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+              Xóa File
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
+    },
+
+    "delete-folder": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-pink-500/30 bg-gradient-to-r from-pink-500/10 to-purple-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFolderPlus className="text-pink-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-pink-400 via-purple-500 to-pink-500 text-transparent bg-clip-text">
+              Xóa Thư Mục
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
+    },
+
+    "open-media": ({ children }) => {
+      const content = children?.toString() || "";
+      const path = content.match(/path:\s*(.*)/)?.[1]?.trim();
+
+      if (!path) return <></>;
+
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconPlayerPlay className="text-blue-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 text-transparent bg-clip-text">
+              Mở File Media
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {path}
+          </pre>
+        </div>
+      );
+    },
+
+    "open-code": ({ children }) => {
+      const content = children?.toString() || "";
+      const path = content.match(/path:\s*(.*)/)?.[1]?.trim();
+
+      if (!path) return <></>;
+
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-purple-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFilePlus className="text-indigo-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-indigo-400 via-purple-500 to-indigo-500 text-transparent bg-clip-text">
+              Mở File Code
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {path}
+          </pre>
+        </div>
+      );
+    },
+
+    "media-view": ({ children }) => {
+      const content = children?.toString() || "";
+      if (content !== "0") return <></>;
+
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconArrowLeft className="text-purple-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+              Quay về Code Manager
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Đã kích hoạt tính năng quay về Code Manager.
+          </p>
+        </div>
+      );
+    },
+
+    "code-editor": ({ children }) => {
+      const content = children?.toString() || "";
+      if (content !== "0") return <></>;
+
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-purple-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconArrowLeft className="text-indigo-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-indigo-400 via-purple-500 to-indigo-500 text-transparent bg-clip-text">
+              Quay về Code Manager
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Đã kích hoạt tính năng quay về Code Manager.
+          </p>
+        </div>
+      );
+    },
+
+    "file-path": ({ children }) => {
+      // Component này chỉ để xử lý thẻ, không hiển thị gì cả
+      return <></>;
     },
 
     think: ({ children }) => {
@@ -169,12 +553,47 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
         }
       };
 
+      const handleAcceptCode = () => {
+        if (filePath && codeContent) {
+          // Tạo và gửi custom event với thông tin file và code mới
+          const acceptCodeEvent = new CustomEvent("acceptCode", {
+            detail: {
+              filePath: filePath,
+              newContent: codeContent,
+            },
+          });
+          window.dispatchEvent(acceptCodeEvent);
+        }
+      };
+
+      // Tìm file path từ nội dung gốc trước code block
+      let filePath = "";
+      if (node?.position?.start?.offset) {
+        // Lấy nội dung từ đầu đến vị trí bắt đầu của code block
+        const previousText = content.substring(0, node.position.start.offset);
+
+        // Tìm thẻ PATH cuối cùng trước code block
+        const pathMatches = [
+          ...previousText.matchAll(/\[PATH\](.*?)\[\/PATH\]/g),
+        ];
+        if (pathMatches.length > 0) {
+          // Lấy thẻ PATH cuối cùng
+          const lastPathMatch = pathMatches[pathMatches.length - 1];
+          filePath = lastPathMatch[1].trim();
+        }
+      }
+
       if (!inline && match) {
         const language = match[1];
 
         return (
-          <div className="max-w-full border rounded-lg overflow-hidden">
-            {/* Header: Hiển thị tên ngôn ngữ */}
+          <div className="max-w-full border rounded-lg my-4 overflow-hidden">
+            {filePath && (
+              <div className="px-4 py-2 border-b border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-mono text-sm flex items-center">
+                <IconFilePlus className="mr-2" size={16} />
+                {filePath}
+              </div>
+            )}
             <div
               className={`px-4 py-2 text-sm font-medium ${
                 isDarkMode
@@ -202,56 +621,76 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
                 {codeContent.replace(/\n$/, "")}
               </SyntaxHighlighter>
             </div>
-            {/* Footer: Nút sao chép và chạy code */}
+            {/* Footer: Nút chấp nhận, sao chép và chạy code */}
             <div
-              className="flex justify-end items-center gap-2 px-4 py-2 border-t"
+              className="flex justify-between items-center gap-2 px-4 py-2 border-t"
               style={{ background: isDarkMode ? "#282c34" : "#f8f9fa" }}
             >
-              {language.toLowerCase() === "html" && (
+              <div className="flex items-center gap-2">
+                {filePath && (
+                  <button
+                    onClick={handleAcceptCode}
+                    className={`p-2 rounded-md transition-colors cursor-pointer flex items-center ${
+                      isDarkMode
+                        ? "bg-green-700 hover:bg-green-600 text-white"
+                        : "bg-green-100 hover:bg-green-200 text-green-700"
+                    }`}
+                    aria-label="Chấp nhận"
+                  >
+                    <IconArrowLeft size={18} className="mr-1" />
+                    <span className="text-sm">Chấp nhận</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {language.toLowerCase() === "html" && (
+                  <button
+                    onClick={handleRunCode}
+                    className={`p-2 rounded-md transition-colors cursor-pointer ${
+                      isDarkMode
+                        ? "bg-gray-700 hover:bg-gray-600"
+                        : "bg-gray-200 hover:bg-gray-300"
+                    }`}
+                    aria-label="Run code"
+                  >
+                    <div className="flex items-center">
+                      <IconPlayerPlay
+                        size={18}
+                        className={
+                          isDarkMode ? "text-gray-300" : "text-gray-700"
+                        }
+                      />
+                      <span className="ml-1 text-sm">Chạy</span>
+                    </div>
+                  </button>
+                )}
                 <button
-                  onClick={handleRunCode}
+                  onClick={handleCopy}
                   className={`p-2 rounded-md transition-colors cursor-pointer ${
                     isDarkMode
                       ? "bg-gray-700 hover:bg-gray-600"
                       : "bg-gray-200 hover:bg-gray-300"
                   }`}
-                  aria-label="Run code"
+                  aria-label="Copy code"
                 >
-                  <div className="flex items-center">
-                    <IconPlayerPlay
+                  {copied ? (
+                    <div className="flex items-center">
+                      <IconCheck
+                        size={18}
+                        className={
+                          isDarkMode ? "text-green-400" : "text-green-600"
+                        }
+                      />
+                      <span className="ml-1 text-sm">Đã sao chép!</span>
+                    </div>
+                  ) : (
+                    <IconCopy
                       size={18}
                       className={isDarkMode ? "text-gray-300" : "text-gray-700"}
                     />
-                    <span className="ml-1 text-sm">Chạy</span>
-                  </div>
+                  )}
                 </button>
-              )}
-              <button
-                onClick={handleCopy}
-                className={`p-2 rounded-md transition-colors cursor-pointer ${
-                  isDarkMode
-                    ? "bg-gray-700 hover:bg-gray-600"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
-                aria-label="Copy code"
-              >
-                {copied ? (
-                  <div className="flex items-center">
-                    <IconCheck
-                      size={18}
-                      className={
-                        isDarkMode ? "text-green-400" : "text-green-600"
-                      }
-                    />
-                    <span className="ml-1 text-sm">Đã sao chép!</span>
-                  </div>
-                ) : (
-                  <IconCopy
-                    size={18}
-                    className={isDarkMode ? "text-gray-300" : "text-gray-700"}
-                  />
-                )}
-              </button>
+              </div>
             </div>
           </div>
         );

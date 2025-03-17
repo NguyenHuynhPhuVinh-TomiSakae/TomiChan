@@ -25,6 +25,10 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import {
+  getLocalStorage,
+  setLocalStorage,
+} from "../../../../../utils/localStorage";
 
 declare module "react" {
   interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
@@ -74,7 +78,98 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
     openEditFolderModal,
     openDeleteFolderModal,
     getCurrentPath,
+    loadFiles,
+    loadFolders,
   } = useCodeAssistant();
+
+  // Thêm useEffect để theo dõi thay đổi của ui_state_magic
+  React.useEffect(() => {
+    const checkUIState = () => {
+      const currentState = getLocalStorage("ui_state_magic", "none");
+      if (currentState === "magic_room" || currentState === "none") {
+        onClose();
+      }
+    };
+
+    const intervalId = setInterval(checkUIState, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [onClose]);
+
+  // Thêm useEffect để lắng nghe sự kiện reload
+  React.useEffect(() => {
+    const handleReload = async () => {
+      await loadFiles();
+      await loadFolders();
+    };
+
+    window.addEventListener("fileExplorer:reload", handleReload);
+
+    return () => {
+      window.removeEventListener("fileExplorer:reload", handleReload);
+    };
+  }, [loadFiles, loadFolders]);
+
+  // Thêm useEffect để theo dõi thay đổi của media_file_name
+  React.useEffect(() => {
+    const checkMediaFile = () => {
+      const currentState = getLocalStorage("ui_state_magic", "none");
+      const mediaFileName = getLocalStorage("media_file_name", "");
+
+      if (currentState === "media_view" && mediaFileName) {
+        // Tìm file cần mở
+        const targetFile = files.find((f) => f.name === mediaFileName);
+        if (targetFile) {
+          handleFileOpen(targetFile);
+          // Xóa tên file sau khi đã xử lý
+          setLocalStorage("media_file_name", "");
+        }
+      }
+    };
+
+    const intervalId = setInterval(checkMediaFile, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [files, handleFileOpen]);
+
+  // Thêm useEffect để theo dõi thay đổi của code_file_path
+  React.useEffect(() => {
+    const checkCodeFile = () => {
+      const currentState = getLocalStorage("ui_state_magic", "none");
+      const codeFilePath = getLocalStorage("code_file_path", "");
+
+      if (currentState === "code_view" && codeFilePath) {
+        // Phân tích đường dẫn để lấy tên file và tên thư mục
+        const pathParts = codeFilePath.split("/");
+        const fileName = pathParts.pop() || "";
+        const folderPath = pathParts.join("/");
+
+        // Tìm thư mục
+        const folder = folders.find((f) => f.name === folderPath);
+
+        // Tìm file cần mở
+        const targetFile = files.find(
+          (f) => f.name === fileName && f.folderId === folder?.id
+        );
+
+        if (targetFile) {
+          handleFileOpen(targetFile);
+          // Xóa đường dẫn file sau khi đã xử lý
+          setLocalStorage("code_file_path", "");
+        }
+      }
+    };
+
+    const intervalId = setInterval(checkCodeFile, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [files, folders, handleFileOpen]);
 
   const downloadFile = (file: any) => {
     const blob = new Blob([file.content], { type: "text/plain;charset=utf-8" });

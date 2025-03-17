@@ -81,7 +81,11 @@ const NewItemInput: React.FC<NewItemInputProps> = ({
         {type === "folder" ? (
           <IconFolder size={18} className="mr-2 text-yellow-500" />
         ) : (
-          <FileIcon fileName={name || "new.txt"} size={18} className="mr-2" />
+          <FileIcon
+            fileName={name || "new.txt"}
+            size={18}
+            className="mr-2 flex-shrink-0"
+          />
         )}
         <input
           ref={inputRef}

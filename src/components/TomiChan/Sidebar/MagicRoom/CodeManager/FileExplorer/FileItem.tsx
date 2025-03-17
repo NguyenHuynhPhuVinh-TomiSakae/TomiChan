@@ -7,11 +7,18 @@ import {
   IconCheck,
   IconX,
   IconDownload,
+  IconArrowRight,
+  IconBrain,
 } from "@tabler/icons-react";
 import { Menu, Transition, Dialog } from "@headlessui/react";
 import { saveAs } from "file-saver";
 import type { CodeFile } from "../../../../../../types";
 import FileIcon from "../FileIcon";
+import {
+  getLocalStorage,
+  setLocalStorage,
+} from "../../../../../../utils/localStorage";
+import { toast } from "sonner";
 
 interface FileItemProps {
   file: CodeFile;
@@ -71,6 +78,41 @@ const FileItem: React.FC<FileItemProps> = ({
   const downloadFile = () => {
     const blob = new Blob([file.content], { type: "text/plain;charset=utf-8" });
     saveAs(blob, file.name);
+  };
+
+  const sendToAI = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Lấy danh sách file đã gửi cho AI từ localStorage
+    const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
+    let sentFiles: string[] = [];
+
+    try {
+      sentFiles = JSON.parse(sentFilesStr);
+    } catch (error) {
+      console.error("Lỗi khi parse danh sách file đã gửi cho AI:", error);
+      sentFiles = [];
+    }
+
+    // Kiểm tra xem file đã có trong danh sách chưa
+    if (!sentFiles.includes(file.name)) {
+      // Thêm file vào danh sách
+      sentFiles.push(file.name);
+      // Lưu lại danh sách vào localStorage
+      setLocalStorage("files_sent_to_ai", JSON.stringify(sentFiles));
+
+      // Phát event để thông báo file đã được gửi cho AI
+      const event = new CustomEvent("file_sent_to_ai", {
+        detail: { fileName: file.name, fileContent: file.content },
+      });
+      window.dispatchEvent(event);
+
+      // Hiển thị thông báo
+      toast.success(`Đã gửi file "${file.name}" cho AI!`);
+    } else {
+      // Hiển thị thông báo
+      toast.info(`File "${file.name}" đã được gửi cho AI trước đó!`);
+    }
   };
 
   return (
@@ -173,6 +215,32 @@ const FileItem: React.FC<FileItemProps> = ({
                       </button>
                     )}
                   </Menu.Item>
+                  {!isActive && (
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          onClick={sendToAI}
+                          className={`${
+                            active ? "bg-purple-100 dark:bg-purple-800" : ""
+                          } flex w-full items-center px-4 py-2 text-sm cursor-pointer group/ai-button`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center">
+                              <IconBrain
+                                size={16}
+                                className="mr-2 text-purple-600 dark:text-purple-400"
+                              />
+                              <span>Gửi cho AI</span>
+                            </div>
+                            <IconArrowRight
+                              size={14}
+                              className="text-purple-500 dark:text-purple-400 transition-transform group-hover/ai-button:translate-x-1"
+                            />
+                          </div>
+                        </button>
+                      )}
+                    </Menu.Item>
+                  )}
                   <Menu.Item>
                     {({ active }) => (
                       <button

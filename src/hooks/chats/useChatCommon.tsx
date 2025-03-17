@@ -42,6 +42,8 @@ const checkForSpecialTags = (content: string) => {
     ["[RenameFolder]", "[/RenameFolder]"],
     ["[DeleteFile]", "[/DeleteFile]"],
     ["[DeleteFolder]", "[/DeleteFolder]"],
+    ["[OpenMedia]", "[/OpenMedia]"],
+    ["[MediaView]", "[/MediaView]"],
   ];
 
   return tags.some(

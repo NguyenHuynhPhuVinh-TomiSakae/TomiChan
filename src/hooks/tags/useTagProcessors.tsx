@@ -3,12 +3,14 @@ import { useImageProcessor } from "./useImageProcessor";
 import { useSearchProcessor } from "./useSearchProcessor";
 import { useMagicModeProcessor } from "./useMagicModeProcessor";
 import { useCodeManagerProcessor } from "./useCodeManagerProcessor";
+import { useMediaViewProcessor } from "./useMediaViewProcessor";
 
 export function useTagProcessors() {
   const { processImageTag } = useImageProcessor();
   const { processSearchTag } = useSearchProcessor();
   const { processMagicModeTag } = useMagicModeProcessor();
   const { processCodeManagerTag } = useCodeManagerProcessor();
+  const { processMediaViewTag } = useMediaViewProcessor();
 
   const processMessageTags = async (
     content: string,
@@ -25,6 +27,7 @@ export function useTagProcessors() {
     // Xử lý các tag theo thứ tự
     await Promise.all([
       processMagicModeTag(content),
+      processMediaViewTag(content),
       processImageTag(
         content,
         messageId,

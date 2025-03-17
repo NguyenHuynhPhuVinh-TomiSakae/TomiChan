@@ -1,7 +1,46 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from "react";
 import { getLocalStorage } from "../utils/localStorage";
 import { chatDB } from "../utils/db";
 
 export function useSystemPrompt() {
+  const [uiState, setUiState] = useState(
+    getLocalStorage("ui_state_magic", "none")
+  );
+  const [files, setFiles] = useState<any[]>([]);
+  const [folders, setFolders] = useState<any[]>([]);
+
+  const loadFilesAndFolders = async () => {
+    const newFiles = await chatDB.getAllCodeFiles();
+    const newFolders = await chatDB.getAllFolders();
+    setFiles(newFiles);
+    setFolders(newFolders);
+  };
+
+  useEffect(() => {
+    const checkUiState = async () => {
+      const currentState = getLocalStorage("ui_state_magic", "none");
+      if (currentState !== uiState) {
+        setUiState(currentState);
+        if (currentState === "code_manager") {
+          await loadFilesAndFolders();
+        }
+      }
+    };
+
+    // Thêm event listener cho fileExplorer:reload
+    const handleReload = () => {
+      loadFilesAndFolders();
+    };
+    window.addEventListener("fileExplorer:reload", handleReload);
+
+    const intervalId = setInterval(checkUiState, 1000);
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("fileExplorer:reload", handleReload);
+    };
+  }, [uiState]);
+
   const getEnhancedSystemPrompt = async (provider: string) => {
     // Đọc trạng thái Magic Mode từ localStorage với tên biến mới
     const isMagicMode =
@@ -84,14 +123,11 @@ Assistant: [SEARCH_QUERY]weather in Hanoi today[/SEARCH_QUERY]
     }
 
     // Kiểm tra xem có đang ở chế độ code_manager không
-    const isCodeManager =
-      getLocalStorage("ui_state_magic", "none") === "code_manager";
+    const isCodeManager = uiState === "code_manager";
+    // Kiểm tra xem có đang ở chế độ media_view không
+    const isMediaView = uiState === "media_view";
 
-    if (isCodeManager) {
-      // Lấy danh sách files và folders từ DB
-      const files = await chatDB.getAllCodeFiles();
-      const folders = await chatDB.getAllFolders();
-
+    if (isCodeManager || isMediaView) {
       // Tạo cấu trúc thư mục dạng cây
       const createFileTree = () => {
         const buildTree = (parentId?: string, indent: string = "") => {
@@ -132,7 +168,10 @@ Assistant: [SEARCH_QUERY]weather in Hanoi today[/SEARCH_QUERY]
       };
 
       const codeManagerPrompt = `
-Bạn đang ở trong chế độ Quản Lý Mã Nguồn. Dưới đây là cấu trúc thư mục và file hiện tại:
+Bạn đang ở trong chế độ ${isMediaView ? "Xem Media" : "Quản Lý Mã Nguồn"}. ${
+        isMediaView
+          ? "Khi người dùng muốn quay lại thư mục trước đó hoặc quay lại Code Manager từ chế độ xem Media, hãy sử dụng:\n[MediaView]0[/MediaView]"
+          : `Dưới đây là cấu trúc thư mục và file hiện tại:
 
 ${createFileTree()}
 
@@ -172,6 +211,11 @@ path: đường_dẫn_file_cần_xóa
 [DeleteFolder]
 path: đường_dẫn_thư_mục_cần_xóa
 [/DeleteFolder]
+
+7. Mở file media:
+[OpenMedia]
+path: đường_dẫn_file_cần_mở
+[/OpenMedia]
 
 Ví dụ:
 - Tạo file trong thư mục gốc:
@@ -215,10 +259,16 @@ path: src/utils/old-file.js
 path: src/deprecated
 [/DeleteFolder]
 
+- Mở file media:
+[OpenMedia]
+path: images/photo.jpg
+[/OpenMedia]
+
 Bạn có thể tham khảo cấu trúc này để hỗ trợ người dùng tốt hơn trong việc quản lý code.
 
-Khi người dùng muốn quay lại Phòng Ma Thuật, hãy trả về [CodeManager]0[/CodeManager].
-`;
+Khi người dùng muốn quay lại Phòng Ma Thuật, hãy trả về [CodeManager]0[/CodeManager].`
+      }`;
+
       enhancedPrompt = codeManagerPrompt + enhancedPrompt;
     }
 

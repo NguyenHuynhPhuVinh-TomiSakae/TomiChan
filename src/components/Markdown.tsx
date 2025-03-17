@@ -25,6 +25,7 @@ import {
   IconWand,
   IconFilePlus,
   IconFolderPlus,
+  IconArrowLeft,
 } from "@tabler/icons-react";
 import "katex/dist/katex.min.css";
 import { MathJaxContext, MathJax } from "better-react-mathjax";
@@ -54,6 +55,8 @@ const customSchema = {
     "rename-folder",
     "delete-file",
     "delete-folder",
+    "open-media",
+    "media-view",
   ],
 };
 
@@ -133,6 +136,20 @@ interface CustomComponents extends Components {
     node: any;
     children: React.ReactNode;
   }) => JSX.Element;
+  "open-media": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "media-view": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
 }
 
 export default function Markdown({ content, className = "" }: MarkdownProps) {
@@ -188,6 +205,14 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     .replace(
       /\[DeleteFolder\]([\s\S]*?)\[\/DeleteFolder\]/g,
       (_, p1) => `<delete-folder>${p1}</delete-folder>`
+    )
+    .replace(
+      /\[OpenMedia\]([\s\S]*?)\[\/OpenMedia\]/g,
+      (_, p1) => `<open-media>${p1}</open-media>`
+    )
+    .replace(
+      /\[MediaView\]([\s\S]*?)\[\/MediaView\]/g,
+      (_, p1) => `<media-view>${p1}</media-view>`
     );
 
   const components: CustomComponents = {
@@ -350,6 +375,46 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
           <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
             {content}
           </pre>
+        </div>
+      );
+    },
+
+    "open-media": ({ children }) => {
+      const content = children?.toString() || "";
+      const path = content.match(/path:\s*(.*)/)?.[1]?.trim();
+
+      if (!path) return <></>;
+
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconPlayerPlay className="text-blue-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 text-transparent bg-clip-text">
+              Mở File Media
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {path}
+          </pre>
+        </div>
+      );
+    },
+
+    "media-view": ({ children }) => {
+      const content = children?.toString() || "";
+      if (content !== "0") return <></>;
+
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconArrowLeft className="text-purple-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+              Quay về Code Manager
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Đã kích hoạt tính năng quay về Code Manager.
+          </p>
         </div>
       );
     },

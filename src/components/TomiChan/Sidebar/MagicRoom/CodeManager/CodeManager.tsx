@@ -25,7 +25,10 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
-import { getLocalStorage } from "../../../../../utils/localStorage";
+import {
+  getLocalStorage,
+  setLocalStorage,
+} from "../../../../../utils/localStorage";
 
 declare module "react" {
   interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
@@ -108,6 +111,30 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
       window.removeEventListener("fileExplorer:reload", handleReload);
     };
   }, [loadFiles, loadFolders]);
+
+  // Thêm useEffect để theo dõi thay đổi của media_file_name
+  React.useEffect(() => {
+    const checkMediaFile = () => {
+      const currentState = getLocalStorage("ui_state_magic", "none");
+      const mediaFileName = getLocalStorage("media_file_name", "");
+
+      if (currentState === "media_view" && mediaFileName) {
+        // Tìm file cần mở
+        const targetFile = files.find((f) => f.name === mediaFileName);
+        if (targetFile) {
+          handleFileOpen(targetFile);
+          // Xóa tên file sau khi đã xử lý
+          setLocalStorage("media_file_name", "");
+        }
+      }
+    };
+
+    const intervalId = setInterval(checkMediaFile, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [files, handleFileOpen]);
 
   const downloadFile = (file: any) => {
     const blob = new Blob([file.content], { type: "text/plain;charset=utf-8" });

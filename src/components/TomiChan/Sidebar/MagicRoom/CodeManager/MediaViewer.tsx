@@ -3,6 +3,10 @@ import React from "react";
 import { IconArrowLeft, IconX, IconDownload } from "@tabler/icons-react";
 import { CodeFile } from "@/types";
 import Image from "next/image";
+import {
+  getLocalStorage,
+  setLocalStorage,
+} from "../../../../../utils/localStorage";
 
 interface MediaViewerProps {
   file: CodeFile;
@@ -17,6 +21,34 @@ export default function MediaViewer({
 }: MediaViewerProps) {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = React.useState(false);
+
+  // Đợi sau khi component mount mới bắt đầu kiểm tra UI
+  React.useEffect(() => {
+    // Đánh dấu đã khởi tạo sau 1 giây
+    const initTimer = setTimeout(() => {
+      setIsInitialized(true);
+      // Đặt trạng thái UI thành media_view sau khi component mount
+      setLocalStorage("ui_state_magic", "media_view");
+    }, 1000);
+
+    return () => clearTimeout(initTimer);
+  }, []);
+
+  React.useEffect(() => {
+    // Chỉ kiểm tra khi đã khởi tạo
+    if (!isInitialized) return;
+
+    const checkUiState = () => {
+      const currentState = getLocalStorage("ui_state_magic", "none");
+      if (currentState === "code_manager") {
+        onBack();
+      }
+    };
+
+    const intervalId = setInterval(checkUiState, 1000);
+    return () => clearInterval(intervalId);
+  }, [onBack, isInitialized]);
 
   const getFileType = () => {
     const extension = file.name.split(".").pop()?.toLowerCase();

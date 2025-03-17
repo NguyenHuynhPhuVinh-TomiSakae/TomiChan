@@ -193,6 +193,37 @@ export function useCodeManagerProcessor() {
       }
     }
 
+    // Xử lý OpenMedia tag
+    const openMediaRegex = /\[OpenMedia\]([\s\S]*?)\[\/OpenMedia\]/g;
+    const mediaMatches = content.matchAll(openMediaRegex);
+
+    for (const match of mediaMatches) {
+      const tagContent = match[0];
+      if (processedTags.current.has(tagContent)) continue;
+      processedTags.current.add(tagContent);
+
+      const mediaContent = match[1];
+      const path = mediaContent.match(/path:\s*(.*)/)?.[1]?.trim();
+
+      if (path) {
+        // Tìm file từ đường dẫn
+        const pathParts = path.split("/");
+        const fileName = pathParts.pop() || "";
+        const folderPath = pathParts.join("/");
+        const folder = folders.find((f) => f.name === folderPath);
+
+        const targetFile = files.find(
+          (f) => f.name === fileName && f.folderId === folder?.id
+        );
+
+        if (targetFile) {
+          // Chuyển trạng thái sang media_view và lưu tên file
+          setLocalStorage("ui_state_magic", "media_view");
+          setLocalStorage("media_file_name", targetFile.name);
+        }
+      }
+    }
+
     // Nếu có thay đổi, phát event để reload
     if (hasChanges) {
       window.dispatchEvent(new Event("fileExplorer:reload"));

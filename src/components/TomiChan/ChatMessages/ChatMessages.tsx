@@ -22,7 +22,7 @@ import {
   IconTable,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
-import Markdown from "../../Markdown";
+import { Markdown } from "../../Markdown";
 import { useMediaQuery } from "react-responsive";
 import Image from "next/image";
 import { useMessageActions } from "../../../hooks/useMessageActions";

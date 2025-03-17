@@ -1,0 +1,259 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import {
+  IconFilePlus,
+  IconFolderPlus,
+  IconPlayerPlay,
+  IconWand,
+  IconArrowLeft,
+} from "@tabler/icons-react";
+import React from "react";
+import { SearchResultBlock } from "../SearchResultBlock";
+import { SearchLinkBlock } from "../SearchResultBlock";
+import { SearchingBlock } from "../SearchResultBlock";
+import { ThinkBlock } from "../ThinkBlock";
+import { FileCreationPreview } from "./FileCreationPreview";
+
+interface CustomUIComponentsProps {
+  children: React.ReactNode;
+}
+
+export const CustomUIComponents = {
+  "search-result": ({ children }: CustomUIComponentsProps) => {
+    return <SearchResultBlock>{children}</SearchResultBlock>;
+  },
+  "search-link": ({ children }: CustomUIComponentsProps) => {
+    return <SearchLinkBlock content={children?.toString() || ""} />;
+  },
+
+  "search-block": () => {
+    return <SearchingBlock />;
+  },
+
+  "magic-mode": ({ children }: CustomUIComponentsProps) => {
+    // Xử lý thẻ MagicMode
+    const modeNumber = children?.toString() || "0";
+
+    // Kiểm tra xem có phải là mode quản lý code không (mode 1)
+    if (modeNumber === "1") {
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconWand className="text-purple-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+              Quản Lý Mã Nguồn
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Đã kích hoạt tính năng Quản Lý Mã Nguồn. Bạn có thể yêu cầu AI hỗ
+            trợ viết code, debug và tối ưu hóa.
+          </p>
+        </div>
+      );
+    }
+
+    return null;
+  },
+
+  "code-manager": ({ children }: CustomUIComponentsProps) => {
+    // Xử lý thẻ MagicMode
+    const modeNumber = children?.toString() || "0";
+
+    // Kiểm tra xem có phải là mode quay về magic room không (mode 0)
+    if (modeNumber === "0") {
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconWand className="text-purple-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+              Quay về Phòng Ma Thuật
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Đã kích hoạt tính năng Quay về Phòng Ma Thuật.
+          </p>
+        </div>
+      );
+    }
+
+    return null;
+  },
+
+  "create-file": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    return <FileCreationPreview content={content} />;
+  },
+
+  "create-folder": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-green-500/30 bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconFolderPlus className="text-green-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-green-400 via-emerald-500 to-green-500 text-transparent bg-clip-text">
+            Tạo Thư Mục Mới
+          </span>
+        </div>
+        <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+          {content}
+        </pre>
+      </div>
+    );
+  },
+
+  "rename-file": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-yellow-500/30 bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconFilePlus className="text-yellow-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 text-transparent bg-clip-text">
+            Đổi Tên File
+          </span>
+        </div>
+        <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+          {content}
+        </pre>
+      </div>
+    );
+  },
+
+  "rename-folder": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-red-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconFolderPlus className="text-orange-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-orange-400 via-red-500 to-orange-500 text-transparent bg-clip-text">
+            Đổi Tên Thư Mục
+          </span>
+        </div>
+        <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+          {content}
+        </pre>
+      </div>
+    );
+  },
+
+  "delete-file": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-red-500/30 bg-gradient-to-r from-red-500/10 to-pink-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconFilePlus className="text-red-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-red-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+            Xóa File
+          </span>
+        </div>
+        <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+          {content}
+        </pre>
+      </div>
+    );
+  },
+
+  "delete-folder": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-pink-500/30 bg-gradient-to-r from-pink-500/10 to-purple-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconFolderPlus className="text-pink-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-pink-400 via-purple-500 to-pink-500 text-transparent bg-clip-text">
+            Xóa Thư Mục
+          </span>
+        </div>
+        <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+          {content}
+        </pre>
+      </div>
+    );
+  },
+
+  "open-media": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    const path = content.match(/path:\s*(.*)/)?.[1]?.trim();
+
+    if (!path) return <></>;
+
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconPlayerPlay className="text-blue-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 text-transparent bg-clip-text">
+            Mở File Media
+          </span>
+        </div>
+        <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+          {path}
+        </pre>
+      </div>
+    );
+  },
+
+  "open-code": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    const path = content.match(/path:\s*(.*)/)?.[1]?.trim();
+
+    if (!path) return <></>;
+
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-purple-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconFilePlus className="text-indigo-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-indigo-400 via-purple-500 to-indigo-500 text-transparent bg-clip-text">
+            Mở File Code
+          </span>
+        </div>
+        <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+          {path}
+        </pre>
+      </div>
+    );
+  },
+
+  "media-view": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    if (content !== "0") return <></>;
+
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconArrowLeft className="text-purple-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+            Quay về Code Manager
+          </span>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Đã kích hoạt tính năng quay về Code Manager.
+        </p>
+      </div>
+    );
+  },
+
+  "code-editor": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    if (content !== "0") return <></>;
+
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-purple-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconArrowLeft className="text-indigo-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-indigo-400 via-purple-500 to-indigo-500 text-transparent bg-clip-text">
+            Quay về Code Manager
+          </span>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Đã kích hoạt tính năng quay về Code Manager.
+        </p>
+      </div>
+    );
+  },
+
+  "file-path": ({ children }: CustomUIComponentsProps) => {
+    // Component này chỉ để xử lý thẻ, không hiển thị gì cả
+    return <></>;
+  },
+
+  think: ({ children }: CustomUIComponentsProps) => {
+    return <ThinkBlock>{children}</ThinkBlock>;
+  },
+};

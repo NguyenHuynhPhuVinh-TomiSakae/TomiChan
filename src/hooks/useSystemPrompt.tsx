@@ -9,6 +9,10 @@ export function useSystemPrompt() {
   );
   const [files, setFiles] = useState<any[]>([]);
   const [folders, setFolders] = useState<any[]>([]);
+  const [currentFile, setCurrentFile] = useState(
+    getLocalStorage("current_open_file", "")
+  );
+  const [currentFileContent, setCurrentFileContent] = useState("");
 
   const loadFilesAndFolders = async () => {
     const newFiles = await chatDB.getAllCodeFiles();
@@ -40,6 +44,130 @@ export function useSystemPrompt() {
       window.removeEventListener("fileExplorer:reload", handleReload);
     };
   }, [uiState]);
+
+  // Thêm hàm để lấy nội dung file đang mở
+  const loadCurrentFileContent = async () => {
+    if (!currentFile) return;
+
+    try {
+      // Tìm file trong danh sách files đã tải
+      const fileObj = files.find((f) => f.name === currentFile);
+
+      if (fileObj) {
+        setCurrentFileContent(fileObj.content || "");
+      } else {
+        // Nếu không tìm thấy trong danh sách đã tải, tìm trong database
+        const allFiles = await chatDB.getAllCodeFiles();
+        const fileFromDB = allFiles.find((f) => f.name === currentFile);
+
+        if (fileFromDB) {
+          setCurrentFileContent(fileFromDB.content || "");
+        } else {
+          setCurrentFileContent("");
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải nội dung file:", error);
+      setCurrentFileContent("");
+    }
+  };
+
+  useEffect(() => {
+    const handleFileChanged = (event: CustomEvent) => {
+      if (event.detail && event.detail.fileName) {
+        setCurrentFile(event.detail.fileName);
+      }
+    };
+
+    // Đăng ký lắng nghe sự kiện
+    window.addEventListener("file_changed", handleFileChanged as EventListener);
+
+    // Cleanup khi component unmount
+    return () => {
+      window.removeEventListener(
+        "file_changed",
+        handleFileChanged as EventListener
+      );
+    };
+  }, []);
+
+  // Thêm useEffect để tải nội dung file khi currentFile thay đổi
+  useEffect(() => {
+    if (currentFile) {
+      loadCurrentFileContent();
+    } else {
+      setCurrentFileContent("");
+    }
+  }, [currentFile]);
+
+  // Lắng nghe sự kiện thay đổi nội dung file
+  useEffect(() => {
+    const handleFileContentChanged = (event: CustomEvent) => {
+      if (event.detail && event.detail.content) {
+        // Cập nhật nội dung file nếu file đang mở là file được thay đổi
+        const fileId = event.detail.fileId;
+        const content = event.detail.content;
+
+        // Tìm file trong danh sách files
+        const file = files.find((f) => f.id === fileId);
+        if (file && file.name === currentFile) {
+          setCurrentFileContent(content);
+        }
+      }
+    };
+
+    // Đăng ký lắng nghe sự kiện
+    window.addEventListener(
+      "file_content_changed",
+      handleFileContentChanged as EventListener
+    );
+
+    // Cleanup khi component unmount
+    return () => {
+      window.removeEventListener(
+        "file_content_changed",
+        handleFileContentChanged as EventListener
+      );
+    };
+  }, [currentFile, files]);
+
+  const createFileTree = () => {
+    const buildTree = (parentId?: string, indent: string = "") => {
+      let tree = "";
+
+      // Lấy folders con của parentId hiện tại
+      const subFolders = folders.filter((f) => f.parentId === parentId);
+
+      // Thêm folders
+      for (const folder of subFolders) {
+        tree += `${indent}📁 ${folder.name}\n`;
+
+        // Thêm files trong folder
+        const filesInFolder = files.filter((f) => f.folderId === folder.id);
+        for (const file of filesInFolder) {
+          tree += `${indent}  📄 ${file.name}\n`;
+        }
+
+        // Đệ quy cho subfolders
+        tree += buildTree(folder.id, indent + "  ");
+      }
+
+      return tree;
+    };
+
+    let tree = "Cấu trúc thư mục hiện tại:\n";
+
+    // Thêm folders gốc
+    tree += buildTree();
+
+    // Thêm files không thuộc folder nào
+    const rootFiles = files.filter((f) => !f.folderId);
+    for (const file of rootFiles) {
+      tree += `📄 ${file.name}\n`;
+    }
+
+    return tree;
+  };
 
   const getEnhancedSystemPrompt = async (provider: string) => {
     // Tải lại files và folders nếu đang ở chế độ code_manager
@@ -132,9 +260,31 @@ Assistant: [SEARCH_QUERY]weather in Hanoi today[/SEARCH_QUERY]
     const isCodeView = uiState === "code_view";
 
     if (isCodeView) {
+      // Tải nội dung file hiện tại nếu cần
+      if (currentFile && !currentFileContent) {
+        await loadCurrentFileContent();
+      }
+
       const codeViewPrompt = `
 Bạn đang ở trong chế độ Xem/Chỉnh sửa Code. Khi người dùng muốn quay lại Code Manager, hãy sử dụng:
 [CodeEditor]0[/CodeEditor]
+
+Dưới đây là cấu trúc thư mục và file hiện tại:
+${createFileTree()}
+
+File đang mở hiện tại: ${
+        currentFile ||
+        getLocalStorage("current_open_file", "Không có file nào đang mở")
+      }
+
+${
+  currentFileContent
+    ? `Nội dung file hiện tại:
+\`\`\`
+${currentFileContent}
+\`\`\``
+    : ""
+}
 `;
       enhancedPrompt = codeViewPrompt + enhancedPrompt;
     }
@@ -144,43 +294,6 @@ Bạn đang ở trong chế độ Xem/Chỉnh sửa Code. Khi người dùng mu�
 
     if (isCodeManager || isMediaView) {
       // Tạo cấu trúc thư mục dạng cây
-      const createFileTree = () => {
-        const buildTree = (parentId?: string, indent: string = "") => {
-          let tree = "";
-
-          // Lấy folders con của parentId hiện tại
-          const subFolders = folders.filter((f) => f.parentId === parentId);
-
-          // Thêm folders
-          for (const folder of subFolders) {
-            tree += `${indent}📁 ${folder.name}\n`;
-
-            // Thêm files trong folder
-            const filesInFolder = files.filter((f) => f.folderId === folder.id);
-            for (const file of filesInFolder) {
-              tree += `${indent}  📄 ${file.name}\n`;
-            }
-
-            // Đệ quy cho subfolders
-            tree += buildTree(folder.id, indent + "  ");
-          }
-
-          return tree;
-        };
-
-        let tree = "Cấu trúc thư mục hiện tại:\n";
-
-        // Thêm folders gốc
-        tree += buildTree();
-
-        // Thêm files không thuộc folder nào
-        const rootFiles = files.filter((f) => !f.folderId);
-        for (const file of rootFiles) {
-          tree += `📄 ${file.name}\n`;
-        }
-
-        return tree;
-      };
 
       const codeManagerPrompt = `
 Bạn đang ở trong chế độ ${isMediaView ? "Xem Media" : "Quản Lý Mã Nguồn"}. ${

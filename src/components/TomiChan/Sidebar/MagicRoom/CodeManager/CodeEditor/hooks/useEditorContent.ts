@@ -166,6 +166,15 @@ export function useEditorContent(file: CodeFile) {
     // Cập nhật nội dung trong danh sách file đã mở
     if (activeFileId) {
       updateFileContent(activeFileId, newContent);
+
+      // Phát event để thông báo nội dung file đã thay đổi
+      const event = new CustomEvent("file_content_changed", {
+        detail: {
+          fileId: activeFileId,
+          content: newContent,
+        },
+      });
+      window.dispatchEvent(event);
     }
 
     // Xử lý tự động lưu

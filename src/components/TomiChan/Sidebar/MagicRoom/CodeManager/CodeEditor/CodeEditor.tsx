@@ -271,6 +271,25 @@ export default function CodeEditor({
   // Lấy file đang active
   const activeFile = getActiveFile();
 
+  // Thêm useEffect để lưu thông tin file đang mở vào localStorage
+  useEffect(() => {
+    if (activeFile) {
+      // Lưu thông tin file đang mở vào localStorage
+      setLocalStorage("current_open_file", activeFile.name);
+
+      // Phát event để thông báo file đã thay đổi
+      const event = new CustomEvent("file_changed", {
+        detail: { fileName: activeFile.name, fileId: activeFile.id },
+      });
+      window.dispatchEvent(event);
+    }
+
+    // Cleanup khi component unmount
+    return () => {
+      setLocalStorage("current_open_file", "");
+    };
+  }, [activeFile]);
+
   // Thay thế các tham chiếu đến file bằng activeFile
   const language = getLanguageFromFile(activeFile.name);
   const canRun = !!language;

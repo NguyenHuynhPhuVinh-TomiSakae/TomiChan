@@ -108,7 +108,7 @@ export function useE2B() {
       clearOutput();
 
       try {
-        const e2bApiKey = await getApiKey("E2B_API_KEY", "e2b_api_key");
+        const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
 
         const response = await fetch("/api/code", {
           method: "POST",

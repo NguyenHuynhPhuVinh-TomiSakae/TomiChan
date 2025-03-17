@@ -23,10 +23,6 @@ import MediaViewer from "./MediaViewer";
 import UnsavedChangesModal from "./UnsavedChangesModal";
 import FileExplorer from "../FileExplorer/FileExplorer";
 import { useE2B } from "./hooks/useE2B";
-import {
-  setLocalStorage,
-  getLocalStorage,
-} from "../../../../../../utils/localStorage";
 import { setSessionStorage } from "../../../../../../utils/sessionStorage";
 import { emitter, MAGIC_EVENTS } from "../../../../../../lib/events";
 
@@ -170,7 +166,7 @@ export default function CodeEditor({
     if (hasUnsavedChanges && activeFileId === fileId) {
       setShowUnsavedModal(true);
       // Lưu fileId để đóng sau khi xử lý
-      localStorage.setItem("pendingFileToClose", fileId);
+      setSessionStorage("pendingFileToClose", fileId);
       return;
     }
 
@@ -203,8 +199,28 @@ export default function CodeEditor({
   // Xử lý khi người dùng chọn bỏ thay đổi trong modal
   const handleDiscardInModal = () => {
     setShowUnsavedModal(false);
-    setSessionStorage("ui_state_magic", "code_manager");
-    onBack?.();
+
+    // Kiểm tra xem có file đang chờ mở không
+    const pendingFile = sessionStorage.getItem("pendingFileToOpen");
+    if (pendingFile && onFileOpen) {
+      try {
+        const fileToOpen = JSON.parse(pendingFile);
+        onFileOpen(fileToOpen);
+        sessionStorage.removeItem("pendingFileToOpen");
+      } catch (error) {
+        console.error("Lỗi khi mở file:", error);
+      }
+    } else {
+      // Nếu đang có file chờ đóng
+      const pendingFileId = sessionStorage.getItem("pendingFileToClose");
+      if (pendingFileId) {
+        closeFile(pendingFileId);
+        sessionStorage.removeItem("pendingFileToClose");
+        if (openedFiles.length <= 1 && onBack) {
+          onBack();
+        }
+      }
+    }
   };
 
   // Xử lý khi người dùng chọn hủy trong modal
@@ -216,8 +232,7 @@ export default function CodeEditor({
   const handleFileSelect = (selectedFile: CodeFile) => {
     if (hasUnsavedChanges) {
       setShowUnsavedModal(true);
-      // Lưu file được chọn vào localStorage để mở sau khi xử lý
-      localStorage.setItem("pendingFileToOpen", JSON.stringify(selectedFile));
+      setSessionStorage("pendingFileToOpen", JSON.stringify(selectedFile));
     } else if (onFileOpen) {
       if (isMediaFile(selectedFile.name)) {
         openMediaViewer(selectedFile);
@@ -256,7 +271,7 @@ export default function CodeEditor({
   useEffect(() => {
     if (activeFile) {
       // Lưu thông tin file đang mở vào localStorage
-      setLocalStorage("current_open_file", activeFile.name);
+      setSessionStorage("current_open_file", activeFile.name);
 
       // Phát event để thông báo file đã thay đổi
       emitter.emit(MAGIC_EVENTS.FILE_CHANGED, {
@@ -267,7 +282,7 @@ export default function CodeEditor({
 
     // Cleanup khi component unmount
     return () => {
-      setLocalStorage("current_open_file", "");
+      setSessionStorage("current_open_file", "");
     };
   }, [activeFile]);
 

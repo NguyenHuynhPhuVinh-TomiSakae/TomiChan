@@ -29,7 +29,6 @@ import { useMessageActions } from "../../../hooks/useMessageActions";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import { extractImagePrompt } from "../../../lib/together";
 import MediaViewer from "./MediaViewer";
-import { getLocalStorage } from "../../../utils/localStorage";
 
 interface ChatMessagesProps {
   messages: Message[];

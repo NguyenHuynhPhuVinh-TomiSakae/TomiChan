@@ -14,7 +14,7 @@ export function useSystemPrompt() {
   const [files, setFiles] = useState<any[]>([]);
   const [folders, setFolders] = useState<any[]>([]);
   const [currentFile, setCurrentFile] = useState(
-    getLocalStorage("current_open_file", "")
+    getSessionStorage("current_open_file", "")
   );
   const [currentFileContent, setCurrentFileContent] = useState("");
   const [sentFiles, setSentFiles] = useState<
@@ -346,7 +346,7 @@ ${createFileTree()}
 
 File đang mở hiện tại: ${
         currentFile ||
-        getLocalStorage("current_open_file", "Không có file nào đang mở")
+        getSessionStorage("current_open_file", "Không có file nào đang mở")
       }
 
 ${

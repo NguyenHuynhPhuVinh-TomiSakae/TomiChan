@@ -16,7 +16,6 @@ import {
   IconMusic,
   IconBrain,
 } from "@tabler/icons-react";
-import { getLocalStorage, setLocalStorage } from "../../../utils/localStorage";
 import { emitter, MAGIC_EVENTS } from "../../../lib/events";
 import { getSessionStorage, setSessionStorage } from "@/utils/sessionStorage";
 
@@ -73,7 +72,7 @@ export default function UploadFiles({
   // Kiểm tra xem có đang ở trong Code View không
   useEffect(() => {
     const checkIsCodeView = () => {
-      const uiState = getLocalStorage("ui_state_magic", "none");
+      const uiState = getSessionStorage("ui_state_magic", "none");
       // Chỉ hiển thị khi ở chế độ code_view, không hiển thị khi ở code_manager
       setIsCodeView(uiState === "code_view");
     };

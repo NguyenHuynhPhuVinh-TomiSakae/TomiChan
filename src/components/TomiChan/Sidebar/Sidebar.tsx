@@ -174,10 +174,7 @@ export default function Sidebar({
   const handleE2bConfigChange = (config: { apiKey?: string }) => {
     setE2bConfig(config);
     setLocalStorage("e2b_config", JSON.stringify(config));
-    // Lưu API key riêng để dễ truy cập
-    if (config.apiKey) {
-      setLocalStorage("e2b_api_key", config.apiKey);
-    }
+    setLocalStorage("e2b_api_key", config.apiKey);
   };
 
   const handleClearAllData = async () => {

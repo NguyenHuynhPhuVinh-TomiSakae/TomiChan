@@ -4,6 +4,7 @@ import { useSearchProcessor } from "./useSearchProcessor";
 import { useMagicModeProcessor } from "./useMagicModeProcessor";
 import { useCodeManagerProcessor } from "./useCodeManagerProcessor";
 import { useMediaViewProcessor } from "./useMediaViewProcessor";
+import { useCodeViewProcessor } from "./useCodeViewProcessor";
 
 export function useTagProcessors() {
   const { processImageTag } = useImageProcessor();
@@ -11,6 +12,7 @@ export function useTagProcessors() {
   const { processMagicModeTag } = useMagicModeProcessor();
   const { processCodeManagerTag } = useCodeManagerProcessor();
   const { processMediaViewTag } = useMediaViewProcessor();
+  const { processCodeViewTag } = useCodeViewProcessor();
 
   const processMessageTags = async (
     content: string,
@@ -28,6 +30,7 @@ export function useTagProcessors() {
     await Promise.all([
       processMagicModeTag(content),
       processMediaViewTag(content),
+      processCodeViewTag(content),
       processImageTag(
         content,
         messageId,

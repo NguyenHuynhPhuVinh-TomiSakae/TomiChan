@@ -136,6 +136,41 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
     };
   }, [files, handleFileOpen]);
 
+  // Thêm useEffect để theo dõi thay đổi của code_file_path
+  React.useEffect(() => {
+    const checkCodeFile = () => {
+      const currentState = getLocalStorage("ui_state_magic", "none");
+      const codeFilePath = getLocalStorage("code_file_path", "");
+
+      if (currentState === "code_view" && codeFilePath) {
+        // Phân tích đường dẫn để lấy tên file và tên thư mục
+        const pathParts = codeFilePath.split("/");
+        const fileName = pathParts.pop() || "";
+        const folderPath = pathParts.join("/");
+
+        // Tìm thư mục
+        const folder = folders.find((f) => f.name === folderPath);
+
+        // Tìm file cần mở
+        const targetFile = files.find(
+          (f) => f.name === fileName && f.folderId === folder?.id
+        );
+
+        if (targetFile) {
+          handleFileOpen(targetFile);
+          // Xóa đường dẫn file sau khi đã xử lý
+          setLocalStorage("code_file_path", "");
+        }
+      }
+    };
+
+    const intervalId = setInterval(checkCodeFile, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [files, folders, handleFileOpen]);
+
   const downloadFile = (file: any) => {
     const blob = new Blob([file.content], { type: "text/plain;charset=utf-8" });
     saveAs(blob, file.name);

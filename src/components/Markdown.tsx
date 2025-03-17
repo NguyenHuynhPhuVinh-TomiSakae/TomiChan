@@ -57,6 +57,7 @@ const customSchema = {
     "delete-folder",
     "open-media",
     "media-view",
+    "open-code",
   ],
 };
 
@@ -150,6 +151,13 @@ interface CustomComponents extends Components {
     node: any;
     children: React.ReactNode;
   }) => JSX.Element;
+  "open-code": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
 }
 
 export default function Markdown({ content, className = "" }: MarkdownProps) {
@@ -213,6 +221,10 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     .replace(
       /\[MediaView\]([\s\S]*?)\[\/MediaView\]/g,
       (_, p1) => `<media-view>${p1}</media-view>`
+    )
+    .replace(
+      /\[OpenCode\]([\s\S]*?)\[\/OpenCode\]/g,
+      (_, p1) => `<open-code>${p1}</open-code>`
     );
 
   const components: CustomComponents = {
@@ -391,6 +403,27 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
             <IconPlayerPlay className="text-blue-500" size={20} />
             <span className="font-semibold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 text-transparent bg-clip-text">
               Mở File Media
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {path}
+          </pre>
+        </div>
+      );
+    },
+
+    "open-code": ({ children }) => {
+      const content = children?.toString() || "";
+      const path = content.match(/path:\s*(.*)/)?.[1]?.trim();
+
+      if (!path) return <></>;
+
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-purple-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFilePlus className="text-indigo-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-indigo-400 via-purple-500 to-indigo-500 text-transparent bg-clip-text">
+              Mở File Code
             </span>
           </div>
           <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">

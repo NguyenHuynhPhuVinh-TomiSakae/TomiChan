@@ -42,6 +42,12 @@ export function useSystemPrompt() {
   }, [uiState]);
 
   const getEnhancedSystemPrompt = async (provider: string) => {
+    // Tải lại files và folders nếu đang ở chế độ code_manager
+    const isCodeManager = uiState === "code_manager";
+    if (isCodeManager) {
+      await loadFilesAndFolders();
+    }
+
     // Đọc trạng thái Magic Mode từ localStorage với tên biến mới
     const isMagicMode =
       getLocalStorage("ui_state_magic", "none") === "magic_room";
@@ -123,7 +129,8 @@ Assistant: [SEARCH_QUERY]weather in Hanoi today[/SEARCH_QUERY]
     }
 
     // Kiểm tra xem có đang ở chế độ code_manager không
-    const isCodeManager = uiState === "code_manager";
+    // Đã chuyển phần này lên trên
+    // const isCodeManager = uiState === "code_manager";
     // Kiểm tra xem có đang ở chế độ media_view không
     const isMediaView = uiState === "media_view";
 
@@ -217,6 +224,11 @@ path: đường_dẫn_thư_mục_cần_xóa
 path: đường_dẫn_file_cần_mở
 [/OpenMedia]
 
+8. Mở file code:
+[OpenCode]
+path: đường_dẫn_file_code_cần_mở
+[/OpenCode]
+
 Ví dụ:
 - Tạo file trong thư mục gốc:
 [CreateFile]
@@ -263,6 +275,11 @@ path: src/deprecated
 [OpenMedia]
 path: images/photo.jpg
 [/OpenMedia]
+
+- Mở file code:
+[OpenCode]
+path: src/components/App.js
+[/OpenCode]
 
 Bạn có thể tham khảo cấu trúc này để hỗ trợ người dùng tốt hơn trong việc quản lý code.
 

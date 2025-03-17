@@ -14,12 +14,11 @@ import { Menu, Transition, Dialog } from "@headlessui/react";
 import { saveAs } from "file-saver";
 import type { CodeFile } from "../../../../../../types";
 import FileIcon from "../FileIcon";
-import {
-  getLocalStorage,
-  setLocalStorage,
-} from "../../../../../../utils/localStorage";
+import { getSessionStorage, setSessionStorage } from "@/utils/sessionStorage";
 import { toast } from "sonner";
 import { emitter, MAGIC_EVENTS } from "../../../../../../lib/events";
+import { chatDB } from "../../../../../../utils/db";
+import { FILE_EXPLORER_EVENTS } from "../../../../../../lib/events";
 
 interface FileItemProps {
   file: CodeFile;
@@ -67,12 +66,14 @@ const FileItem: React.FC<FileItemProps> = ({
     if (editingFileName.trim()) {
       const editedFile = { ...file, name: editingFileName.trim() };
       onEdit(editedFile);
+      // Phát event để thông báo file đã được cập nhật
+      emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
     }
     setIsEditing(false);
   };
 
   const handleConfirmDelete = () => {
-    onDelete();
+    handleDeleteFile(file);
     setShowDeleteModal(false);
   };
 
@@ -85,7 +86,7 @@ const FileItem: React.FC<FileItemProps> = ({
     e.stopPropagation();
 
     // Lấy danh sách file đã gửi cho AI từ localStorage
-    const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
+    const sentFilesStr = getSessionStorage("files_sent_to_ai", "[]");
     let sentFiles: string[] = [];
 
     try {
@@ -100,7 +101,7 @@ const FileItem: React.FC<FileItemProps> = ({
       // Thêm file vào danh sách
       sentFiles.push(file.name);
       // Lưu lại danh sách vào localStorage
-      setLocalStorage("files_sent_to_ai", JSON.stringify(sentFiles));
+      setSessionStorage("files_sent_to_ai", JSON.stringify(sentFiles));
 
       // Phát event để thông báo file đã được gửi cho AI
       emitter.emit(MAGIC_EVENTS.FILE_SENT_TO_AI, {
@@ -114,6 +115,15 @@ const FileItem: React.FC<FileItemProps> = ({
       // Hiển thị thông báo
       toast.info(`File "${file.name}" đã được gửi cho AI trước đó!`);
     }
+  };
+
+  const handleDeleteFile = (file: CodeFile) => {
+    chatDB.deleteCodeFile(file.id).then(() => {
+      onDelete(); // Gọi callback để cập nhật UI
+      // Phát event để thông báo file đã bị xóa
+      emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
+      toast.success("Đã xóa file thành công!");
+    });
   };
 
   return (

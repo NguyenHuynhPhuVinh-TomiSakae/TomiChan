@@ -158,6 +158,7 @@ export default function FileExplorer({
       })
       .then(() => {
         loadData();
+        emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
         toast.success("Đã đổi tên thư mục thành công!");
       })
       .catch((error) => {
@@ -169,6 +170,7 @@ export default function FileExplorer({
   const handleDeleteFolder = (folder: CodeFolder) => {
     chatDB.deleteFolder(folder.id).then(() => {
       loadData();
+      emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
       toast.success("Đã xóa thư mục thành công!");
     });
   };
@@ -185,6 +187,7 @@ export default function FileExplorer({
       .then(() => {
         loadData();
         onFileUpdate(updatedFile);
+        emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
         toast.success("Đã đổi tên file thành công!");
       })
       .catch((error) => {
@@ -196,6 +199,7 @@ export default function FileExplorer({
   const handleDeleteFile = (file: CodeFile) => {
     chatDB.deleteCodeFile(file.id).then(() => {
       loadData();
+      emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
       toast.success("Đã xóa file thành công!");
     });
   };

@@ -18,6 +18,7 @@ import {
 } from "@tabler/icons-react";
 import { getLocalStorage, setLocalStorage } from "../../../utils/localStorage";
 import { emitter, MAGIC_EVENTS } from "../../../lib/events";
+import { getSessionStorage, setSessionStorage } from "@/utils/sessionStorage";
 
 interface UploadFilesProps {
   onImagesUpload?: (files: File[]) => void;
@@ -88,7 +89,7 @@ export default function UploadFiles({
   // Tải danh sách file đã gửi cho AI từ localStorage
   useEffect(() => {
     const loadSentFiles = () => {
-      const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
+      const sentFilesStr = getSessionStorage("files_sent_to_ai", "[]");
       try {
         const files = JSON.parse(sentFilesStr);
         setSentFiles(files);
@@ -105,7 +106,7 @@ export default function UploadFiles({
   // Lắng nghe event khi file được gửi cho AI từ FileItem
   useEffect(() => {
     const handleFileSentToAI = ({ fileName }: { fileName: string }) => {
-      const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
+      const sentFilesStr = getSessionStorage("files_sent_to_ai", "[]");
       try {
         const files = JSON.parse(sentFilesStr);
         setSentFiles(files);
@@ -115,7 +116,7 @@ export default function UploadFiles({
     };
 
     const handleFileRemovedFromAI = () => {
-      const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
+      const sentFilesStr = getSessionStorage("files_sent_to_ai", "[]");
       try {
         const files = JSON.parse(sentFilesStr);
         setSentFiles(files);
@@ -150,7 +151,7 @@ export default function UploadFiles({
     const removedFileName = newSentFiles[index];
     newSentFiles.splice(index, 1);
     setSentFiles(newSentFiles);
-    setLocalStorage("files_sent_to_ai", JSON.stringify(newSentFiles));
+    setSessionStorage("files_sent_to_ai", JSON.stringify(newSentFiles));
 
     emitter.emit(MAGIC_EVENTS.FILE_REMOVED_FROM_AI, {
       fileName: removedFileName,
@@ -159,7 +160,7 @@ export default function UploadFiles({
 
   const handleClearAllSentFiles = () => {
     setSentFiles([]);
-    setLocalStorage("files_sent_to_ai", "[]");
+    setSessionStorage("files_sent_to_ai", "[]");
     emitter.emit(MAGIC_EVENTS.ALL_FILES_REMOVED_FROM_AI);
     onClearSentFiles();
   };

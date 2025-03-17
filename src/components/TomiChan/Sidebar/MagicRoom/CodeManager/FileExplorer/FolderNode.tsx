@@ -21,6 +21,8 @@ import { saveAs } from "file-saver";
 import type { CodeFile, CodeFolder } from "../../../../../../types";
 import FileItem from "./FileItem";
 import NewItemInput from "./NewItemInput";
+import { emitter } from "../../../../../../lib/events";
+import { FILE_EXPLORER_EVENTS } from "../../../../../../lib/events";
 
 interface FolderNodeProps {
   folder: CodeFolder;
@@ -119,6 +121,8 @@ const FolderNode: React.FC<FolderNodeProps> = ({
     e.stopPropagation();
     if (editingFolderName.trim()) {
       onEditFolder({ ...folder, name: editingFolderName.trim() });
+      // Phát event để thông báo folder đã được cập nhật
+      emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
     }
     setIsEditingFolder(false);
   };
@@ -127,6 +131,8 @@ const FolderNode: React.FC<FolderNodeProps> = ({
   const handleConfirmDelete = () => {
     onDeleteFolder(folder);
     setShowDeleteModal(false);
+    // Phát event để thông báo folder đã bị xóa
+    emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
   };
 
   // Hàm tải xuống thư mục

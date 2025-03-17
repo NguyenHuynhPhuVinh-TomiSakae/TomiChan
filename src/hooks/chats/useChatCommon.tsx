@@ -8,6 +8,7 @@ import { useSearchProcessor } from "../tags/useSearchProcessor";
 import { useSystemPrompt } from "../useSystemPrompt";
 import { useChat } from "./useChat";
 import { getApiKey } from "../../utils/getApiKey";
+import { getSessionStorage } from "../../utils/sessionStorage";
 
 export interface ChatCommonProps<T = any> {
   chatId?: string;
@@ -231,7 +232,7 @@ export function useChatCommon<T>({
 
   // Hàm tiện ích để lấy danh sách file đã gửi cho AI
   const getSentFilesFromLocalStorage = (): string[] => {
-    const sentFilesStr = localStorage.getItem(`files_sent_to_ai`) || "[]";
+    const sentFilesStr = getSessionStorage("files_sent_to_ai", "[]");
     try {
       return JSON.parse(sentFilesStr);
     } catch (error) {

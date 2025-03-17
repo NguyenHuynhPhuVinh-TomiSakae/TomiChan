@@ -86,8 +86,6 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
 
   // Thêm useEffect để gán ui_state khi khởi tạo
   React.useEffect(() => {
-    setSessionStorage("ui_state_magic", "code_manager");
-
     // Lắng nghe event để quay về magic room
     const handleBackToMagicRoom = () => {
       setSessionStorage("ui_state_magic", "magic_room");

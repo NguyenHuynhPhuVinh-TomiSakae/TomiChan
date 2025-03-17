@@ -73,15 +73,27 @@ export default function UploadFiles({
   useEffect(() => {
     const checkIsCodeView = () => {
       const uiState = getSessionStorage("ui_state_magic", "none");
-      // Chỉ hiển thị khi ở chế độ code_view, không hiển thị khi ở code_manager
       setIsCodeView(uiState === "code_view");
     };
 
+    // Kiểm tra lần đầu
     checkIsCodeView();
-    const intervalId = setInterval(checkIsCodeView, 1000);
+
+    // Lắng nghe sự thay đổi trạng thái
+    const handleStateChange = () => {
+      checkIsCodeView();
+    };
+
+    // Đăng ký lắng nghe các events liên quan
+    emitter.on(MAGIC_EVENTS.OPEN_CODE_FILE, handleStateChange);
+    emitter.on(MAGIC_EVENTS.CLOSE_CODE_FILE, handleStateChange);
+    emitter.on(MAGIC_EVENTS.BACK_TO_MAGIC_ROOM, handleStateChange);
 
     return () => {
-      clearInterval(intervalId);
+      // Hủy đăng ký khi component unmount
+      emitter.off(MAGIC_EVENTS.OPEN_CODE_FILE, handleStateChange);
+      emitter.off(MAGIC_EVENTS.CLOSE_CODE_FILE, handleStateChange);
+      emitter.off(MAGIC_EVENTS.BACK_TO_MAGIC_ROOM, handleStateChange);
     };
   }, []);
 

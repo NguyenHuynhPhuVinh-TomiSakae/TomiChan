@@ -8,6 +8,7 @@ type Events = {
   "media:closeFile": void;
   "code:openFile": { filePath: string };
   "code:closeFile": void;
+  "magic:backToRoom": void;
 };
 
 // Tạo instance của emitter
@@ -20,6 +21,7 @@ export const MAGIC_EVENTS = {
   CLOSE_MEDIA: "media:closeFile",
   OPEN_CODE_FILE: "code:openFile",
   CLOSE_CODE_FILE: "code:closeFile",
+  BACK_TO_MAGIC_ROOM: "magic:backToRoom",
 } as const;
 
 export const FILE_EXPLORER_EVENTS = {

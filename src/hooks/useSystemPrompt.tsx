@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { getLocalStorage } from "../utils/localStorage";
 import { getSessionStorage, setSessionStorage } from "../utils/sessionStorage";
 import { chatDB } from "../utils/db";
+import { FILE_EXPLORER_EVENTS } from "@/lib/events";
+import { emitter } from "@/lib/events";
 
 export function useSystemPrompt() {
   const [uiState, setUiState] = useState(
@@ -105,7 +107,7 @@ export function useSystemPrompt() {
       setSentFiles([]);
     };
 
-    window.addEventListener("fileExplorer:reload", handleReload);
+    emitter.on(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
     window.addEventListener(
       "file_sent_to_ai",
       handleFileSentToAI as EventListener
@@ -126,7 +128,7 @@ export function useSystemPrompt() {
 
     return () => {
       clearInterval(intervalId);
-      window.removeEventListener("fileExplorer:reload", handleReload);
+      emitter.off(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
       window.removeEventListener(
         "file_sent_to_ai",
         handleFileSentToAI as EventListener

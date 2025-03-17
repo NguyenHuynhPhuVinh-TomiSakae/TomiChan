@@ -1,23 +1,23 @@
-import { setLocalStorage } from "../../utils/localStorage";
 import { useCodeAssistant } from "../../components/TomiChan/Sidebar/MagicRoom/CodeManager/hooks/useCodeAssistant";
 import { useRef } from "react";
 import { chatDB } from "../../utils/db";
 import type { CodeFile, CodeFolder } from "../../types";
-import { emitter, MAGIC_EVENTS } from "../../lib/events";
+import { emitter, FILE_EXPLORER_EVENTS, MAGIC_EVENTS } from "../../lib/events";
 
 export function useCodeManagerProcessor() {
   const { createNewFile, createNewFolder, folders, files } = useCodeAssistant();
   const processedTags = useRef(new Set<string>());
 
   const processCodeManagerTag = async (content: string) => {
-    // Xử lý CodeManager tag
+    // Xử lý CodeManager tag để quay về magic room
     const codeManagerRegex = /\[CodeManager\](.*?)\[\/CodeManager\]/;
     const match = content.match(codeManagerRegex);
 
     if (match) {
       const modeNumber = match[1];
       if (modeNumber === "0") {
-        setLocalStorage("ui_state_magic", "magic_room");
+        // Thay thế setLocalStorage bằng event
+        emitter.emit(MAGIC_EVENTS.BACK_TO_MAGIC_ROOM);
       }
     }
 
@@ -226,7 +226,7 @@ export function useCodeManagerProcessor() {
 
     // Nếu có thay đổi, phát event để reload
     if (hasChanges) {
-      window.dispatchEvent(new Event("fileExplorer:reload"));
+      emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
     }
   };
 

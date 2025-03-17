@@ -2,6 +2,8 @@
 import React, { ReactNode } from "react";
 import { IconUpload, IconFolderUp } from "@tabler/icons-react";
 import { CodeFile } from "@/types";
+import { FILE_EXPLORER_EVENTS } from "@/lib/events";
+import { emitter } from "@/lib/events";
 
 interface FileUploadZoneProps {
   currentFolder: string | null;
@@ -52,7 +54,7 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({
         };
         await createNewFile(newFile);
         // Trigger reload sau khi tạo file
-        window.dispatchEvent(new Event("fileExplorer:reload"));
+        emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
       }
     };
 
@@ -147,7 +149,7 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({
     }
 
     // Trigger reload sau khi hoàn thành tất cả các thao tác
-    window.dispatchEvent(new Event("fileExplorer:reload"));
+    emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
 
     event.target.value = "";
   };
@@ -271,7 +273,7 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({
     }
 
     // Trigger reload sau khi hoàn thành tất cả các thao tác
-    window.dispatchEvent(new Event("fileExplorer:reload"));
+    emitter.emit(FILE_EXPLORER_EVENTS.RELOAD);
   };
 
   // Nếu không có children, chỉ hiển thị các nút tải lên

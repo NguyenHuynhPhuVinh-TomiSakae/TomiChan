@@ -8,6 +8,8 @@ import FolderNode from "./FolderNode";
 import FileItem from "./FileItem";
 import NewItemInput from "./NewItemInput";
 import { toast } from "sonner";
+import { FILE_EXPLORER_EVENTS } from "@/lib/events";
+import { emitter } from "@/lib/events";
 
 interface FileExplorerProps {
   onFileSelect: (file: CodeFile) => void;
@@ -59,10 +61,10 @@ export default function FileExplorer({
     const handleReload = () => {
       loadData();
     };
-    window.addEventListener("fileExplorer:reload", handleReload);
+    emitter.on(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
 
     return () => {
-      window.removeEventListener("fileExplorer:reload", handleReload);
+      emitter.off(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
     };
   }, []);
 

@@ -1,6 +1,6 @@
-import { setLocalStorage } from "../../utils/localStorage";
 import { useEffect } from "react";
 import { chatDB } from "../../utils/db";
+import { emitter, MAGIC_EVENTS } from "../../lib/events";
 
 export function useCodeViewProcessor() {
   useEffect(() => {
@@ -108,23 +108,17 @@ export function useCodeViewProcessor() {
       const path = codeContent.match(/path:\s*(.*)/)?.[1]?.trim();
 
       if (path) {
-        // Chuyển trạng thái sang code_view và lưu đường dẫn file
-        setLocalStorage("ui_state_magic", "code_view");
-        setLocalStorage("code_file_path", path);
+        emitter.emit(MAGIC_EVENTS.OPEN_CODE_FILE, { filePath: path });
       }
     }
 
     // Xử lý CodeEditor tag để quay về
-    const codeEditorRegex = /\[CodeEditor\]([\s\S]*?)\[\/CodeEditor\]/g;
-    const editorMatches = content.matchAll(codeEditorRegex);
+    const codeEditorRegex = /\[CodeEditor\]0\[\/CodeEditor\]/g;
+    const editorMatches = content.match(codeEditorRegex);
 
-    for (const match of editorMatches) {
-      const value = match[1].trim();
-      if (value === "0") {
-        // Quay về code_manager
-        setLocalStorage("ui_state_magic", "code_manager");
-        setLocalStorage("code_file_path", "");
-      }
+    if (editorMatches) {
+      // Phát event để đóng code file và quay về code_manager
+      emitter.emit(MAGIC_EVENTS.CLOSE_CODE_FILE);
     }
   };
 

@@ -24,6 +24,7 @@
     "idb": "^8.0.2",
     "jszip": "^3.10.1",
     "katex": "^0.16.21",
+    "mitt": "^3.0.1",
     "next": "15.2.1",
     "prism-react-renderer": "^2.4.1",
     "prismjs": "^1.29.0",

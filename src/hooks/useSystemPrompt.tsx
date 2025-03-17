@@ -2,11 +2,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { getLocalStorage } from "../utils/localStorage";
+import { getSessionStorage, setSessionStorage } from "../utils/sessionStorage";
 import { chatDB } from "../utils/db";
 
 export function useSystemPrompt() {
   const [uiState, setUiState] = useState(
-    getLocalStorage("ui_state_magic", "none")
+    getSessionStorage("ui_state_magic", "none")
   );
   const [files, setFiles] = useState<any[]>([]);
   const [folders, setFolders] = useState<any[]>([]);
@@ -70,7 +71,7 @@ export function useSystemPrompt() {
 
   useEffect(() => {
     const checkUiState = async () => {
-      const currentState = getLocalStorage("ui_state_magic", "none");
+      const currentState = getSessionStorage("ui_state_magic", "none");
       if (currentState !== uiState) {
         setUiState(currentState);
         if (currentState === "code_manager") {
@@ -78,6 +79,11 @@ export function useSystemPrompt() {
         }
       }
     };
+
+    // Đảm bảo có giá trị ban đầu
+    if (!getSessionStorage("ui_state_magic")) {
+      setSessionStorage("ui_state_magic", "none");
+    }
 
     // Thêm event listener cho fileExplorer:reload
     const handleReload = () => {
@@ -275,7 +281,7 @@ export function useSystemPrompt() {
 
     // Đọc trạng thái Magic Mode từ localStorage với tên biến mới
     const isMagicMode =
-      getLocalStorage("ui_state_magic", "none") === "magic_room";
+      getSessionStorage("ui_state_magic", "none") === "magic_room";
 
     const imageGeneration =
       getLocalStorage("image_generation", "false") === "true";

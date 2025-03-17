@@ -3,6 +3,7 @@ import { useCodeAssistant } from "../../components/TomiChan/Sidebar/MagicRoom/Co
 import { useRef } from "react";
 import { chatDB } from "../../utils/db";
 import type { CodeFile, CodeFolder } from "../../types";
+import { emitter, MAGIC_EVENTS } from "../../lib/events";
 
 export function useCodeManagerProcessor() {
   const { createNewFile, createNewFolder, folders, files } = useCodeAssistant();
@@ -217,9 +218,8 @@ export function useCodeManagerProcessor() {
         );
 
         if (targetFile) {
-          // Chuyển trạng thái sang media_view và lưu tên file
-          setLocalStorage("ui_state_magic", "media_view");
-          setLocalStorage("media_file_name", targetFile.name);
+          // Thay thế localStorage bằng event
+          emitter.emit(MAGIC_EVENTS.OPEN_MEDIA, { fileName: targetFile.name });
         }
       }
     }

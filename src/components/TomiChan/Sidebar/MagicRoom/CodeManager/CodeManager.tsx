@@ -25,10 +25,12 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { setSessionStorage } from "../../../../../utils/sessionStorage";
 import {
-  getLocalStorage,
-  setLocalStorage,
-} from "../../../../../utils/localStorage";
+  emitter,
+  FILE_EXPLORER_EVENTS,
+  MAGIC_EVENTS,
+} from "../../../../../lib/events";
 
 declare module "react" {
   interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
@@ -82,92 +84,105 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
     loadFolders,
   } = useCodeAssistant();
 
-  // Thêm useEffect để theo dõi thay đổi của ui_state_magic
+  // Thêm useEffect để gán ui_state khi khởi tạo
   React.useEffect(() => {
-    const checkUIState = () => {
-      const currentState = getLocalStorage("ui_state_magic", "none");
-      if (currentState === "magic_room" || currentState === "none") {
-        onClose();
-      }
-    };
+    setSessionStorage("ui_state_magic", "code_manager");
+  }, []);
 
-    const intervalId = setInterval(checkUIState, 1000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [onClose]);
-
-  // Thêm useEffect để lắng nghe sự kiện reload
+  // Giữ nguyên useEffect cho việc reload files
   React.useEffect(() => {
     const handleReload = async () => {
       await loadFiles();
       await loadFolders();
     };
 
-    window.addEventListener("fileExplorer:reload", handleReload);
+    emitter.on(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
 
     return () => {
-      window.removeEventListener("fileExplorer:reload", handleReload);
+      emitter.off(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
     };
   }, [loadFiles, loadFolders]);
 
   // Thêm useEffect để theo dõi thay đổi của media_file_name
   React.useEffect(() => {
-    const checkMediaFile = () => {
-      const currentState = getLocalStorage("ui_state_magic", "none");
-      const mediaFileName = getLocalStorage("media_file_name", "");
-
-      if (currentState === "media_view" && mediaFileName) {
-        // Tìm file cần mở
-        const targetFile = files.find((f) => f.name === mediaFileName);
-        if (targetFile) {
-          handleFileOpen(targetFile);
-          // Xóa tên file sau khi đã xử lý
-          setLocalStorage("media_file_name", "");
-        }
+    const handleOpenMedia = ({ fileName }: { fileName: string }) => {
+      // Tìm file cần mở
+      const targetFile = files.find((f) => f.name === fileName);
+      if (targetFile) {
+        handleFileOpen(targetFile);
       }
     };
 
-    const intervalId = setInterval(checkMediaFile, 1000);
+    emitter.on(MAGIC_EVENTS.OPEN_MEDIA, handleOpenMedia);
 
     return () => {
-      clearInterval(intervalId);
+      emitter.off(MAGIC_EVENTS.OPEN_MEDIA, handleOpenMedia);
     };
   }, [files, handleFileOpen]);
 
-  // Thêm useEffect để theo dõi thay đổi của code_file_path
+  // Sửa lại useEffect để xử lý đường dẫn file chính xác hơn
   React.useEffect(() => {
-    const checkCodeFile = () => {
-      const currentState = getLocalStorage("ui_state_magic", "none");
-      const codeFilePath = getLocalStorage("code_file_path", "");
+    const handleOpenCodeFile = async ({ filePath }: { filePath: string }) => {
+      try {
+        // Tìm file theo đường dẫn đầy đủ
+        const pathParts = filePath.split("/");
+        const fileName = pathParts.pop() || filePath;
 
-      if (currentState === "code_view" && codeFilePath) {
-        // Phân tích đường dẫn để lấy tên file và tên thư mục
-        const pathParts = codeFilePath.split("/");
-        const fileName = pathParts.pop() || "";
-        const folderPath = pathParts.join("/");
+        // Tìm file và folder phù hợp
+        let currentFolderId: string | null = null;
+        let folderPath = "";
 
-        // Tìm thư mục
-        const folder = folders.find((f) => f.name === folderPath);
+        // Duyệt qua từng phần của đường dẫn để tìm folder
+        for (const folderName of pathParts) {
+          if (!folderName) continue;
+          folderPath += (folderPath ? "/" : "") + folderName;
 
-        // Tìm file cần mở
-        const targetFile = files.find(
-          (f) => f.name === fileName && f.folderId === folder?.id
-        );
+          // Tìm folder con trong folder hiện tại
+          const matchingFolders = folders.filter(
+            (f) =>
+              f.name === folderName &&
+              ((!currentFolderId && !f.parentId) ||
+                f.parentId === currentFolderId)
+          );
+
+          if (matchingFolders.length > 0) {
+            currentFolderId = matchingFolders[0].id;
+          } else {
+            console.warn(`Không tìm thấy thư mục: ${folderPath}`);
+            currentFolderId = null;
+            break;
+          }
+        }
+
+        // Tìm file trong folder đã xác định
+        let targetFile = null;
+        if (currentFolderId) {
+          targetFile = files.find(
+            (f) => f.name === fileName && f.folderId === currentFolderId
+          );
+        }
+
+        // Nếu không tìm thấy file trong folder, thử tìm theo tên
+        if (!targetFile) {
+          targetFile = files.find((f) => f.name === fileName);
+        }
 
         if (targetFile) {
           handleFileOpen(targetFile);
-          // Xóa đường dẫn file sau khi đã xử lý
-          setLocalStorage("code_file_path", "");
+        } else {
+          console.warn(
+            `Không tìm thấy file: ${fileName} (đường dẫn: ${filePath})`
+          );
         }
+      } catch (error) {
+        console.error("Lỗi khi mở file:", error);
       }
     };
 
-    const intervalId = setInterval(checkCodeFile, 1000);
+    emitter.on(MAGIC_EVENTS.OPEN_CODE_FILE, handleOpenCodeFile);
 
     return () => {
-      clearInterval(intervalId);
+      emitter.off(MAGIC_EVENTS.OPEN_CODE_FILE, handleOpenCodeFile);
     };
   }, [files, folders, handleFileOpen]);
 

@@ -27,6 +27,8 @@ import {
   setLocalStorage,
   getLocalStorage,
 } from "../../../../../../utils/localStorage";
+import { setSessionStorage } from "../../../../../../utils/sessionStorage";
+import { emitter, MAGIC_EVENTS } from "../../../../../../lib/events";
 
 interface CodeEditorProps {
   file: CodeFile;
@@ -97,35 +99,22 @@ export default function CodeEditor({
     setIsTerminalMode,
   } = useE2B();
 
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Đợi sau khi component mount mới bắt đầu kiểm tra UI
+  // Cập nhật useEffect để sử dụng sessionStorage và events
   useEffect(() => {
-    // Đánh dấu đã khởi tạo sau 1 giây
-    const initTimer = setTimeout(() => {
-      setIsInitialized(true);
-      // Đặt trạng thái UI thành code_view sau khi component mount
-      setLocalStorage("ui_state_magic", "code_view");
-    }, 1000);
+    // Đặt trạng thái UI thành code_view sau khi component mount
+    setSessionStorage("ui_state_magic", "code_view");
 
-    return () => clearTimeout(initTimer);
-  }, []);
-
-  // Kiểm tra trạng thái UI để quay về
-  useEffect(() => {
-    // Chỉ kiểm tra khi đã khởi tạo
-    if (!isInitialized) return;
-
-    const checkUiState = () => {
-      const currentState = getLocalStorage("ui_state_magic", "none");
-      if (currentState === "code_manager") {
-        onBack?.();
-      }
+    // Lắng nghe event để quay về code_manager
+    const handleBackToManager = () => {
+      onBack?.();
     };
 
-    const intervalId = setInterval(checkUiState, 1000);
-    return () => clearInterval(intervalId);
-  }, [onBack, isInitialized]);
+    emitter.on(MAGIC_EVENTS.CLOSE_CODE_FILE, handleBackToManager);
+
+    return () => {
+      emitter.off(MAGIC_EVENTS.CLOSE_CODE_FILE, handleBackToManager);
+    };
+  }, [onBack]);
 
   // Thêm hàm để chạy mã
   const handleRunCode = async (language: string) => {
@@ -193,37 +182,29 @@ export default function CodeEditor({
     }
   };
 
+  // Xử lý khi người dùng nhấn nút back
+  const handleBack = () => {
+    if (hasUnsavedChanges) {
+      setShowUnsavedModal(true);
+    } else {
+      setSessionStorage("ui_state_magic", "code_manager");
+      onBack?.();
+    }
+  };
+
   // Xử lý khi người dùng chọn lưu trong modal
   const handleSaveInModal = async () => {
     await handleSave();
     setShowUnsavedModal(false);
+    setSessionStorage("ui_state_magic", "code_manager");
+    onBack?.();
   };
 
   // Xử lý khi người dùng chọn bỏ thay đổi trong modal
   const handleDiscardInModal = () => {
     setShowUnsavedModal(false);
-
-    // Kiểm tra xem có file đang chờ mở không
-    const pendingFile = localStorage.getItem("pendingFileToOpen");
-    if (pendingFile && onFileOpen) {
-      try {
-        const fileToOpen = JSON.parse(pendingFile);
-        onFileOpen(fileToOpen);
-        localStorage.removeItem("pendingFileToOpen");
-      } catch (error) {
-        console.error("Lỗi khi mở file:", error);
-      }
-    } else {
-      // Nếu đang có file chờ đóng
-      const pendingFileId = localStorage.getItem("pendingFileToClose");
-      if (pendingFileId) {
-        closeFile(pendingFileId);
-        localStorage.removeItem("pendingFileToClose");
-        if (openedFiles.length <= 1 && onBack) {
-          onBack();
-        }
-      }
-    }
+    setSessionStorage("ui_state_magic", "code_manager");
+    onBack?.();
   };
 
   // Xử lý khi người dùng chọn hủy trong modal
@@ -316,7 +297,7 @@ export default function CodeEditor({
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <button
-              onClick={onBack}
+              onClick={handleBack}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
             >
               <IconArrowLeft size={20} />
@@ -389,7 +370,7 @@ export default function CodeEditor({
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-2">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer"
           >
             <IconArrowLeft size={20} />

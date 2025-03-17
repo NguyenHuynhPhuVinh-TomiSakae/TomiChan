@@ -1,4 +1,4 @@
-import { setLocalStorage } from "../../utils/localStorage";
+import { emitter, MAGIC_EVENTS } from "../../lib/events";
 
 export function useMagicModeProcessor() {
   const processMagicModeTag = (content: string) => {
@@ -7,13 +7,11 @@ export function useMagicModeProcessor() {
     const match = content.match(magicModeRegex);
 
     if (match) {
-      console.log("match", match);
       const modeNumber = match[1];
 
-      // Nếu là mode 1 (Quản lý mã nguồn), hiển thị UI quản lý code
+      // Nếu là mode 1 (Quản lý mã nguồn), phát sự kiện để mở CodeAssistant
       if (modeNumber === "1") {
-        // Lưu trạng thái vào localStorage
-        setLocalStorage("ui_state_magic", "code_manager");
+        emitter.emit(MAGIC_EVENTS.OPEN_CODE_ASSISTANT);
       }
     }
   };

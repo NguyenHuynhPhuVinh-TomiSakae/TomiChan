@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { getLocalStorage } from "../utils/localStorage";
@@ -13,12 +14,58 @@ export function useSystemPrompt() {
     getLocalStorage("current_open_file", "")
   );
   const [currentFileContent, setCurrentFileContent] = useState("");
+  const [sentFiles, setSentFiles] = useState<
+    { name: string; content: string }[]
+  >([]);
 
   const loadFilesAndFolders = async () => {
     const newFiles = await chatDB.getAllCodeFiles();
     const newFolders = await chatDB.getAllFolders();
     setFiles(newFiles);
     setFolders(newFolders);
+  };
+
+  // Tải danh sách file đã gửi cho AI và nội dung của chúng
+  const loadSentFiles = async () => {
+    const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
+    try {
+      const fileNames = JSON.parse(sentFilesStr);
+
+      // Tải nội dung của các file từ CSDL
+      const filesWithContent = await Promise.all(
+        fileNames.map(async (fileName: string) => {
+          // Kiểm tra xem file có phải là file đang mở không
+          const isCurrentlyOpenFile = fileName === currentFile;
+
+          // Nếu là file đang mở, không gửi nội dung
+          if (isCurrentlyOpenFile) {
+            return {
+              name: fileName,
+              content: "", // Không gửi nội dung cho file đang mở
+            };
+          }
+
+          // Tìm file trong danh sách files đã tải
+          let fileObj = files.find((f) => f.name === fileName);
+
+          if (!fileObj) {
+            // Nếu không tìm thấy trong danh sách đã tải, tìm trong database
+            const allFiles = await chatDB.getAllCodeFiles();
+            fileObj = allFiles.find((f) => f.name === fileName);
+          }
+
+          return {
+            name: fileName,
+            content: fileObj ? fileObj.content || "" : "",
+          };
+        })
+      );
+
+      setSentFiles(filesWithContent);
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách file đã gửi cho AI:", error);
+      setSentFiles([]);
+    }
   };
 
   useEffect(() => {
@@ -36,14 +83,58 @@ export function useSystemPrompt() {
     const handleReload = () => {
       loadFilesAndFolders();
     };
+
+    // Lắng nghe sự kiện khi file được gửi cho AI
+    const handleFileSentToAI = (event: CustomEvent) => {
+      loadSentFiles();
+    };
+
+    // Lắng nghe sự kiện khi file bị xóa khỏi danh sách
+    const handleFileRemovedFromAI = (event: CustomEvent) => {
+      loadSentFiles();
+    };
+
+    // Lắng nghe sự kiện khi tất cả file bị xóa khỏi danh sách
+    const handleAllFilesRemovedFromAI = () => {
+      setSentFiles([]);
+    };
+
     window.addEventListener("fileExplorer:reload", handleReload);
+    window.addEventListener(
+      "file_sent_to_ai",
+      handleFileSentToAI as EventListener
+    );
+    window.addEventListener(
+      "file_removed_from_ai",
+      handleFileRemovedFromAI as EventListener
+    );
+    window.addEventListener(
+      "all_files_removed_from_ai",
+      handleAllFilesRemovedFromAI as EventListener
+    );
 
     const intervalId = setInterval(checkUiState, 1000);
+
+    // Tải danh sách file đã gửi cho AI khi component mount
+    loadSentFiles();
+
     return () => {
       clearInterval(intervalId);
       window.removeEventListener("fileExplorer:reload", handleReload);
+      window.removeEventListener(
+        "file_sent_to_ai",
+        handleFileSentToAI as EventListener
+      );
+      window.removeEventListener(
+        "file_removed_from_ai",
+        handleFileRemovedFromAI as EventListener
+      );
+      window.removeEventListener(
+        "all_files_removed_from_ai",
+        handleAllFilesRemovedFromAI as EventListener
+      );
     };
-  }, [uiState]);
+  }, [uiState, files]);
 
   // Thêm hàm để lấy nội dung file đang mở
   const loadCurrentFileContent = async () => {
@@ -113,6 +204,9 @@ export function useSystemPrompt() {
         if (file && file.name === currentFile) {
           setCurrentFileContent(content);
         }
+
+        // Tải lại danh sách file đã gửi cho AI để cập nhật nội dung
+        loadSentFiles();
       }
     };
 
@@ -175,6 +269,9 @@ export function useSystemPrompt() {
     if (isCodeManager) {
       await loadFilesAndFolders();
     }
+
+    // Tải lại danh sách file đã gửi cho AI
+    await loadSentFiles();
 
     // Đọc trạng thái Magic Mode từ localStorage với tên biến mới
     const isMagicMode =
@@ -420,9 +517,34 @@ Chỉ khi người dùng yêu cầu rõ ràng muốn sử dụng tính năng Qu�
       enhancedPrompt = magicModePrompt + enhancedPrompt;
     }
 
+    // Thêm nội dung của các file đã gửi cho AI vào system prompt chỉ khi đang ở trong code view
+    if (isCodeView && sentFiles.length > 0) {
+      const sentFilesPrompt = `
+Dưới đây là nội dung của các file đã được gửi cho bạn:
+
+${sentFiles
+  .map(
+    (file) => `File: ${file.name}
+\`\`\`
+${file.content}
+\`\`\``
+  )
+  .join("\n\n")}
+`;
+      enhancedPrompt = sentFilesPrompt + enhancedPrompt;
+    }
+
     // Luôn luôn thêm systemTagInstruction vào cuối
     return enhancedPrompt + "\n\n" + systemTagInstruction;
   };
 
-  return { getEnhancedSystemPrompt };
+  return {
+    getEnhancedSystemPrompt,
+    loadFilesAndFolders,
+    files,
+    folders,
+    currentFile,
+    currentFileContent,
+    sentFiles,
+  };
 }

@@ -13,7 +13,9 @@ import {
   IconVideo,
   IconPlayerPlay,
   IconMusic,
+  IconBrain,
 } from "@tabler/icons-react";
+import { getLocalStorage, setLocalStorage } from "../../../utils/localStorage";
 
 interface UploadFilesProps {
   onImagesUpload?: (files: File[]) => void;
@@ -32,7 +34,8 @@ interface UploadFilesProps {
   onClearAllFiles?: () => void;
   onClearAllVideos?: () => void;
   onClearAllAudios?: () => void;
-  fileType?: "image" | "document" | "video" | "audio";
+  onClearSentFiles?: () => void;
+  fileType?: "image" | "document" | "video" | "audio" | "ai-files";
 }
 
 export default function UploadFiles({
@@ -52,11 +55,139 @@ export default function UploadFiles({
   onClearAllFiles = () => {},
   onClearAllVideos = () => {},
   onClearAllAudios = () => {},
+  onClearSentFiles = () => {},
   fileType = "image",
 }: UploadFilesProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [playingVideo, setPlayingVideo] = useState<number | null>(null);
   const audioRefs = useRef<(HTMLAudioElement | null)[]>([]);
+
+  // State cho danh sách file đã gửi cho AI
+  const [sentFiles, setSentFiles] = useState<string[]>([]);
+  // State để kiểm tra xem có đang ở trong Code View không
+  const [isCodeView, setIsCodeView] = useState(false);
+
+  // Kiểm tra xem có đang ở trong Code View không
+  useEffect(() => {
+    const checkIsCodeView = () => {
+      const uiState = getLocalStorage("ui_state_magic", "none");
+      // Chỉ hiển thị khi ở chế độ code_view, không hiển thị khi ở code_manager
+      setIsCodeView(uiState === "code_view");
+    };
+
+    checkIsCodeView();
+    const intervalId = setInterval(checkIsCodeView, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  // Tải danh sách file đã gửi cho AI từ localStorage
+  useEffect(() => {
+    const loadSentFiles = () => {
+      const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
+      try {
+        const files = JSON.parse(sentFilesStr);
+        setSentFiles(files);
+      } catch (error) {
+        console.error("Lỗi khi parse danh sách file đã gửi cho AI:", error);
+        setSentFiles([]);
+      }
+    };
+
+    // Tải danh sách file ban đầu
+    loadSentFiles();
+  }, []);
+
+  // Lắng nghe event khi file được gửi cho AI từ FileItem
+  useEffect(() => {
+    const handleFileSentToAI = (event: CustomEvent) => {
+      if (event.detail && event.detail.fileName) {
+        // Cập nhật danh sách file đã gửi cho AI
+        const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
+        try {
+          const files = JSON.parse(sentFilesStr);
+          setSentFiles(files);
+        } catch (error) {
+          console.error("Lỗi khi parse danh sách file đã gửi cho AI:", error);
+        }
+      }
+    };
+
+    // Lắng nghe event khi file bị xóa khỏi danh sách
+    const handleFileRemovedFromAI = () => {
+      const sentFilesStr = getLocalStorage("files_sent_to_ai", "[]");
+      try {
+        const files = JSON.parse(sentFilesStr);
+        setSentFiles(files);
+      } catch (error) {
+        console.error("Lỗi khi parse danh sách file đã gửi cho AI:", error);
+      }
+    };
+
+    // Lắng nghe event khi tất cả file bị xóa khỏi danh sách
+    const handleAllFilesRemovedFromAI = () => {
+      setSentFiles([]);
+    };
+
+    // Đăng ký lắng nghe sự kiện
+    window.addEventListener(
+      "file_sent_to_ai",
+      handleFileSentToAI as EventListener
+    );
+    window.addEventListener(
+      "file_removed_from_ai",
+      handleFileRemovedFromAI as EventListener
+    );
+    window.addEventListener(
+      "all_files_removed_from_ai",
+      handleAllFilesRemovedFromAI as EventListener
+    );
+
+    // Cleanup khi component unmount
+    return () => {
+      window.removeEventListener(
+        "file_sent_to_ai",
+        handleFileSentToAI as EventListener
+      );
+      window.removeEventListener(
+        "file_removed_from_ai",
+        handleFileRemovedFromAI as EventListener
+      );
+      window.removeEventListener(
+        "all_files_removed_from_ai",
+        handleAllFilesRemovedFromAI as EventListener
+      );
+    };
+  }, []);
+
+  // Xóa một file khỏi danh sách file đã gửi cho AI
+  const handleRemoveSentFile = (index: number) => {
+    const newSentFiles = [...sentFiles];
+    const removedFileName = newSentFiles[index]; // Lưu tên file bị xóa
+    newSentFiles.splice(index, 1);
+    setSentFiles(newSentFiles);
+    setLocalStorage("files_sent_to_ai", JSON.stringify(newSentFiles));
+
+    // Phát event để thông báo file đã bị xóa khỏi danh sách
+    const event = new CustomEvent("file_removed_from_ai", {
+      detail: { fileName: removedFileName },
+    });
+    window.dispatchEvent(event);
+  };
+
+  // Xóa tất cả file đã gửi cho AI
+  const handleClearAllSentFiles = () => {
+    setSentFiles([]);
+    setLocalStorage("files_sent_to_ai", "[]");
+
+    // Phát event để thông báo tất cả file đã bị xóa khỏi danh sách
+    const event = new CustomEvent("all_files_removed_from_ai");
+    window.dispatchEvent(event);
+
+    onClearSentFiles(); // Gọi callback để thông báo cho component cha
+  };
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -91,6 +222,27 @@ export default function UploadFiles({
     return <IconFile size={24} />;
   };
 
+  // Lấy icon dựa trên phần mở rộng của tên file
+  const getFileIconByName = (fileName: string) => {
+    const extension = fileName.split(".").pop()?.toLowerCase() || "";
+
+    if (extension === "pdf") return <IconFile size={20} />;
+    if (["js", "jsx", "ts", "tsx"].includes(extension))
+      return <IconCode size={20} />;
+    if (["py", "ipynb"].includes(extension)) return <IconCode size={20} />;
+    if (extension === "txt") return <IconFileText size={20} />;
+    if (["html", "htm"].includes(extension))
+      return <IconBrandHtml5 size={20} />;
+    if (extension === "css") return <IconBrandCss3 size={20} />;
+    if (["md", "markdown"].includes(extension))
+      return <IconMarkdown size={20} />;
+    if (extension === "csv") return <IconTable size={20} />;
+    if (extension === "xml") return <IconCode size={20} />;
+    if (extension === "rtf") return <IconFileText size={20} />;
+
+    return <IconFile size={20} />;
+  };
+
   useEffect(() => {
     return () => {
       selectedImages.forEach((image) => {
@@ -102,6 +254,48 @@ export default function UploadFiles({
       });
     };
   }, []);
+
+  // Hiển thị danh sách file đã gửi cho AI nếu fileType là "ai-files" và đang ở trong Code View
+  if (fileType === "ai-files" && isCodeView && sentFiles.length > 0) {
+    return (
+      <div className="relative border-b border-black dark:border-white">
+        <div className="font-medium text-sm py-1 px-2 bg-purple-100 dark:bg-purple-900 border-b border-black dark:border-white flex items-center">
+          <IconBrain
+            size={16}
+            className="mr-2 text-purple-600 dark:text-purple-400"
+          />
+          File đã gửi cho AI
+        </div>
+        <button
+          type="button"
+          onClick={handleClearAllSentFiles}
+          className="absolute top-1 right-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors z-10 cursor-pointer flex items-center gap-1"
+        >
+          <IconTrash size={14} stroke={1.5} />
+        </button>
+        <div className="flex flex-wrap gap-2 p-2 max-h-[200px] overflow-y-auto">
+          {sentFiles.map((fileName, index) => (
+            <div
+              key={index}
+              className="relative p-2 bg-purple-50 dark:bg-purple-950 rounded flex items-center gap-2 max-w-[200px] min-w-[150px] border border-purple-200 dark:border-purple-800"
+            >
+              <div className="text-purple-600 dark:text-purple-400">
+                {getFileIconByName(fileName)}
+              </div>
+              <div className="flex-1 truncate text-xs">{fileName}</div>
+              <button
+                type="button"
+                onClick={() => handleRemoveSentFile(index)}
+                className="bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <IconX size={12} stroke={2} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

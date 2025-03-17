@@ -20,6 +20,7 @@ export interface Message {
     data: string; // Base64 string của audio
   }[];
   isFollowUpSearch?: boolean;
+  sentFiles?: string[];
 }
 
 export interface ChatHistory {

@@ -229,6 +229,17 @@ export function useChatCommon<T>({
     });
   };
 
+  // Hàm tiện ích để lấy danh sách file đã gửi cho AI
+  const getSentFilesFromLocalStorage = (): string[] => {
+    const sentFilesStr = localStorage.getItem(`files_sent_to_ai`) || "[]";
+    try {
+      return JSON.parse(sentFilesStr);
+    } catch (error) {
+      console.error("Lỗi khi parse danh sách file đã gửi cho AI:", error);
+      return [];
+    }
+  };
+
   const sendMessage = async (
     message: string,
     imageData?: { url: string; data: string }[],
@@ -240,6 +251,10 @@ export function useChatCommon<T>({
     resetSearchCount();
 
     const currentChatId = chatId;
+
+    // Lấy danh sách file đã gửi cho AI
+    const sentFiles = getSentFilesFromLocalStorage();
+
     const newMessage: Message = {
       id: Date.now().toString(),
       content: message,
@@ -248,6 +263,7 @@ export function useChatCommon<T>({
       files: fileData,
       videos: videoData,
       audios: audioData,
+      sentFiles: sentFiles.length > 0 ? sentFiles : undefined,
     };
 
     const botMessageId = (Date.now() + 1).toString();
@@ -399,6 +415,21 @@ export function useChatCommon<T>({
       setMessages(updatedMessages);
       saveChat(updatedMessages, chatId, provider);
 
+      // Lấy danh sách file đã gửi cho AI
+      const sentFiles = getSentFilesFromLocalStorage();
+
+      // Cập nhật sentFiles cho tin nhắn người dùng nếu chưa có
+      if (!previousUserMessage.sentFiles && sentFiles.length > 0) {
+        setMessages((prev) => {
+          const updatedMessages = [...prev];
+          updatedMessages[messageIndex - 1] = {
+            ...updatedMessages[messageIndex - 1],
+            sentFiles: sentFiles,
+          };
+          return updatedMessages;
+        });
+      }
+
       const handleRegenerateChunk = (chunk: string) => {
         handleMessageChunk(
           chunk,
@@ -445,12 +476,16 @@ export function useChatCommon<T>({
       (await getApiKey(provider, `${provider}_api_key`));
     if (!apiKey) return;
 
+    // Lấy danh sách file đã gửi cho AI
+    const sentFiles = getSentFilesFromLocalStorage();
+
     const botMessageId = Date.now().toString();
     const newBotMessage: Message = {
       id: botMessageId,
       content: "",
       sender: "bot",
       isFollowUpSearch: true,
+      sentFiles: sentFiles.length > 0 ? sentFiles : undefined,
     };
 
     setMessages((prev) => [...prev, newBotMessage]);

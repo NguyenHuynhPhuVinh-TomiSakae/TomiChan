@@ -26,7 +26,9 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({
   const [isDragging, setIsDragging] = React.useState(false);
   const dropZoneRef = React.useRef<HTMLDivElement>(null);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
@@ -34,14 +36,12 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({
     const reader = new FileReader();
 
     if (isMediaFile(file.name)) {
-      // Đọc file dưới dạng base64 cho các file đa phương tiện
       reader.readAsDataURL(file);
     } else {
-      // Đọc file dưới dạng text cho các file code
       reader.readAsText(file);
     }
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       if (e.target?.result) {
         const content = e.target.result.toString();
         const newFile: Partial<CodeFile> = {
@@ -50,11 +50,12 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({
           folderId: currentFolder || undefined,
           updatedAt: new Date(),
         };
-        createNewFile(newFile);
+        await createNewFile(newFile);
+        // Trigger reload sau khi tạo file
+        window.dispatchEvent(new Event("fileExplorer:reload"));
       }
     };
 
-    // Reset input value để có thể tải lại cùng một file
     event.target.value = "";
   };
 
@@ -145,7 +146,9 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({
       };
     }
 
-    // Reset input value
+    // Trigger reload sau khi hoàn thành tất cả các thao tác
+    window.dispatchEvent(new Event("fileExplorer:reload"));
+
     event.target.value = "";
   };
 
@@ -266,6 +269,9 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({
         }
       }
     }
+
+    // Trigger reload sau khi hoàn thành tất cả các thao tác
+    window.dispatchEvent(new Event("fileExplorer:reload"));
   };
 
   // Nếu không có children, chỉ hiển thị các nút tải lên

@@ -38,17 +38,20 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
     // Thiết lập interval để kiểm tra định kỳ
     const intervalId = setInterval(checkUIState, 1000);
 
-    // Lưu trạng thái UI vào localStorage khi component được mount
-    if (!showCodeAssistant) {
-      setLocalStorage("ui_state_magic", "magic_room");
-    }
+    // Chỉ set magic_room khi component được mount lần đầu
+    const initialMount = () => {
+      const currentState = getLocalStorage("ui_state_magic", "none");
+      if (currentState === "none") {
+        setLocalStorage("ui_state_magic", "magic_room");
+      }
+    };
+    initialMount();
 
-    // Khi component unmount, đặt lại trạng thái và xóa interval
+    // Khi component unmount, chỉ xóa interval
     return () => {
       clearInterval(intervalId);
-      setLocalStorage("ui_state_magic", "none");
     };
-  }, [showCodeAssistant]);
+  }, []);
 
   if (showCodeAssistant) {
     return (

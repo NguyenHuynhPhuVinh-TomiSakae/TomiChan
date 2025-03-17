@@ -25,6 +25,7 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { getLocalStorage } from "../../../../../utils/localStorage";
 
 declare module "react" {
   interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
@@ -74,7 +75,39 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
     openEditFolderModal,
     openDeleteFolderModal,
     getCurrentPath,
+    loadFiles,
+    loadFolders,
   } = useCodeAssistant();
+
+  // Thêm useEffect để theo dõi thay đổi của ui_state_magic
+  React.useEffect(() => {
+    const checkUIState = () => {
+      const currentState = getLocalStorage("ui_state_magic", "none");
+      if (currentState === "magic_room" || currentState === "none") {
+        onClose();
+      }
+    };
+
+    const intervalId = setInterval(checkUIState, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [onClose]);
+
+  // Thêm useEffect để lắng nghe sự kiện reload
+  React.useEffect(() => {
+    const handleReload = async () => {
+      await loadFiles();
+      await loadFolders();
+    };
+
+    window.addEventListener("fileExplorer:reload", handleReload);
+
+    return () => {
+      window.removeEventListener("fileExplorer:reload", handleReload);
+    };
+  }, [loadFiles, loadFolders]);
 
   const downloadFile = (file: any) => {
     const blob = new Blob([file.content], { type: "text/plain;charset=utf-8" });

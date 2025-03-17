@@ -1,7 +1,8 @@
 import { getLocalStorage } from "../utils/localStorage";
+import { chatDB } from "../utils/db";
 
 export function useSystemPrompt() {
-  const getEnhancedSystemPrompt = (provider: string) => {
+  const getEnhancedSystemPrompt = async (provider: string) => {
     // Đọc trạng thái Magic Mode từ localStorage với tên biến mới
     const isMagicMode =
       getLocalStorage("ui_state_magic", "none") === "magic_room";
@@ -80,6 +81,145 @@ Assistant: [SEARCH_QUERY]weather in Hanoi today[/SEARCH_QUERY]
 
 `;
       enhancedPrompt = searchPrompt + enhancedPrompt;
+    }
+
+    // Kiểm tra xem có đang ở chế độ code_manager không
+    const isCodeManager =
+      getLocalStorage("ui_state_magic", "none") === "code_manager";
+
+    if (isCodeManager) {
+      // Lấy danh sách files và folders từ DB
+      const files = await chatDB.getAllCodeFiles();
+      const folders = await chatDB.getAllFolders();
+
+      // Tạo cấu trúc thư mục dạng cây
+      const createFileTree = () => {
+        const buildTree = (parentId?: string, indent: string = "") => {
+          let tree = "";
+
+          // Lấy folders con của parentId hiện tại
+          const subFolders = folders.filter((f) => f.parentId === parentId);
+
+          // Thêm folders
+          for (const folder of subFolders) {
+            tree += `${indent}📁 ${folder.name}\n`;
+
+            // Thêm files trong folder
+            const filesInFolder = files.filter((f) => f.folderId === folder.id);
+            for (const file of filesInFolder) {
+              tree += `${indent}  📄 ${file.name}\n`;
+            }
+
+            // Đệ quy cho subfolders
+            tree += buildTree(folder.id, indent + "  ");
+          }
+
+          return tree;
+        };
+
+        let tree = "Cấu trúc thư mục hiện tại:\n";
+
+        // Thêm folders gốc
+        tree += buildTree();
+
+        // Thêm files không thuộc folder nào
+        const rootFiles = files.filter((f) => !f.folderId);
+        for (const file of rootFiles) {
+          tree += `📄 ${file.name}\n`;
+        }
+
+        return tree;
+      };
+
+      const codeManagerPrompt = `
+Bạn đang ở trong chế độ Quản Lý Mã Nguồn. Dưới đây là cấu trúc thư mục và file hiện tại:
+
+${createFileTree()}
+
+Bạn có thể sử dụng các lệnh sau để quản lý files và folders:
+
+1. Tạo file mới:
+[CreateFile]
+name: tên_file
+path: đường_dẫn_thư_mục (để trống nếu ở thư mục gốc)
+content: nội_dung_file
+[/CreateFile]
+
+2. Tạo thư mục mới:
+[CreateFolder]
+name: tên_thư_mục
+path: đường_dẫn_thư_mục_cha (để trống nếu ở thư mục gốc)
+[/CreateFolder]
+
+3. Đổi tên file:
+[RenameFile]
+path: đường_dẫn_file_hiện_tại
+newName: tên_file_mới
+[/RenameFile]
+
+4. Đổi tên thư mục:
+[RenameFolder]
+path: đường_dẫn_thư_mục_hiện_tại
+newName: tên_thư_mục_mới
+[/RenameFolder]
+
+5. Xóa file:
+[DeleteFile]
+path: đường_dẫn_file_cần_xóa
+[/DeleteFile]
+
+6. Xóa thư mục:
+[DeleteFolder]
+path: đường_dẫn_thư_mục_cần_xóa
+[/DeleteFolder]
+
+Ví dụ:
+- Tạo file trong thư mục gốc:
+[CreateFile]
+name: main.js
+content: console.log("Hello World");
+[/CreateFile]
+
+- Tạo file trong thư mục con:
+[CreateFile]
+name: utils.js
+path: src/utils
+content: export function add(a, b) { return a + b; }
+[/CreateFile]
+
+- Tạo thư mục mới:
+[CreateFolder]
+name: components
+path: src
+[/CreateFolder]
+
+- Đổi tên file:
+[RenameFile]
+path: src/utils/helpers.js
+newName: utils.js
+[/RenameFile]
+
+- Đổi tên thư mục:
+[RenameFolder]
+path: src/utils
+newName: helpers
+[/RenameFolder]
+
+- Xóa file:
+[DeleteFile]
+path: src/utils/old-file.js
+[/DeleteFile]
+
+- Xóa thư mục:
+[DeleteFolder]
+path: src/deprecated
+[/DeleteFolder]
+
+Bạn có thể tham khảo cấu trúc này để hỗ trợ người dùng tốt hơn trong việc quản lý code.
+
+Khi người dùng muốn quay lại Phòng Ma Thuật, hãy trả về [CodeManager]0[/CodeManager].
+`;
+      enhancedPrompt = codeManagerPrompt + enhancedPrompt;
     }
 
     // Thêm hướng dẫn cho Magic Mode nếu được bật

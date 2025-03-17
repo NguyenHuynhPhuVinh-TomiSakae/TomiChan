@@ -23,6 +23,8 @@ import {
   IconPlayerPlay,
   IconExternalLink,
   IconWand,
+  IconFilePlus,
+  IconFolderPlus,
 } from "@tabler/icons-react";
 import "katex/dist/katex.min.css";
 import { MathJaxContext, MathJax } from "better-react-mathjax";
@@ -45,6 +47,13 @@ const customSchema = {
     "search-link",
     "search-block",
     "magic-mode",
+    "code-manager",
+    "create-file",
+    "create-folder",
+    "rename-file",
+    "rename-folder",
+    "delete-file",
+    "delete-folder",
   ],
 };
 
@@ -87,6 +96,43 @@ interface CustomComponents extends Components {
     node: any;
     children: React.ReactNode;
   }) => JSX.Element | null;
+  "code-manager": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element | null;
+  "create-file": ({ children }: { children: React.ReactNode }) => JSX.Element;
+  "create-folder": ({ children }: { children: React.ReactNode }) => JSX.Element;
+  "rename-file": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "rename-folder": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "delete-file": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
+  "delete-folder": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
 }
 
 export default function Markdown({ content, className = "" }: MarkdownProps) {
@@ -114,6 +160,34 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     .replace(
       /\[MagicMode\]([\s\S]*?)\[\/MagicMode\]/g,
       (_, p1) => `<magic-mode>${p1}</magic-mode>`
+    )
+    .replace(
+      /\[CodeManager\]([\s\S]*?)\[\/CodeManager\]/g,
+      (_, p1) => `<code-manager>${p1}</code-manager>`
+    )
+    .replace(
+      /\[CreateFile\]([\s\S]*?)\[\/CreateFile\]/g,
+      (_, p1) => `<create-file>${p1}</create-file>`
+    )
+    .replace(
+      /\[CreateFolder\]([\s\S]*?)\[\/CreateFolder\]/g,
+      (_, p1) => `<create-folder>${p1}</create-folder>`
+    )
+    .replace(
+      /\[RenameFile\]([\s\S]*?)\[\/RenameFile\]/g,
+      (_, p1) => `<rename-file>${p1}</rename-file>`
+    )
+    .replace(
+      /\[RenameFolder\]([\s\S]*?)\[\/RenameFolder\]/g,
+      (_, p1) => `<rename-folder>${p1}</rename-folder>`
+    )
+    .replace(
+      /\[DeleteFile\]([\s\S]*?)\[\/DeleteFile\]/g,
+      (_, p1) => `<delete-file>${p1}</delete-file>`
+    )
+    .replace(
+      /\[DeleteFolder\]([\s\S]*?)\[\/DeleteFolder\]/g,
+      (_, p1) => `<delete-folder>${p1}</delete-folder>`
     );
 
   const components: CustomComponents = {
@@ -152,6 +226,132 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
       }
 
       return null;
+    },
+
+    "code-manager": ({ children }) => {
+      // Xử lý thẻ MagicMode
+      const modeNumber = children?.toString() || "0";
+
+      // Kiểm tra xem có phải là mode quay về magic room không (mode 0)
+      if (modeNumber === "0") {
+        return (
+          <div className="my-4 p-4 rounded-lg border-2 border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+            <div className="flex items-center gap-2 mb-2">
+              <IconWand className="text-purple-500" size={20} />
+              <span className="font-semibold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+                Quay về Phòng Ma Thuật
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Đã kích hoạt tính năng Quay về Phòng Ma Thuật.
+            </p>
+          </div>
+        );
+      }
+
+      return null;
+    },
+
+    "create-file": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFilePlus className="text-blue-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 text-transparent bg-clip-text">
+              Tạo File Mới
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
+    },
+
+    "create-folder": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-green-500/30 bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFolderPlus className="text-green-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-green-400 via-emerald-500 to-green-500 text-transparent bg-clip-text">
+              Tạo Thư Mục Mới
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
+    },
+
+    "rename-file": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-yellow-500/30 bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFilePlus className="text-yellow-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 text-transparent bg-clip-text">
+              Đổi Tên File
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
+    },
+
+    "rename-folder": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-red-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFolderPlus className="text-orange-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-orange-400 via-red-500 to-orange-500 text-transparent bg-clip-text">
+              Đổi Tên Thư Mục
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
+    },
+
+    "delete-file": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-red-500/30 bg-gradient-to-r from-red-500/10 to-pink-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFilePlus className="text-red-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-red-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+              Xóa File
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
+    },
+
+    "delete-folder": ({ children }) => {
+      const content = children?.toString() || "";
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-pink-500/30 bg-gradient-to-r from-pink-500/10 to-purple-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconFolderPlus className="text-pink-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-pink-400 via-purple-500 to-pink-500 text-transparent bg-clip-text">
+              Xóa Thư Mục
+            </span>
+          </div>
+          <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            {content}
+          </pre>
+        </div>
+      );
     },
 
     think: ({ children }) => {

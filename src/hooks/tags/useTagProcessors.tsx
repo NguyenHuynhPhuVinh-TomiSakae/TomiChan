@@ -2,13 +2,15 @@ import { Message } from "../../types";
 import { useImageProcessor } from "./useImageProcessor";
 import { useSearchProcessor } from "./useSearchProcessor";
 import { useMagicModeProcessor } from "./useMagicModeProcessor";
+import { useCodeManagerProcessor } from "./useCodeManagerProcessor";
 
 export function useTagProcessors() {
   const { processImageTag } = useImageProcessor();
   const { processSearchTag } = useSearchProcessor();
   const { processMagicModeTag } = useMagicModeProcessor();
+  const { processCodeManagerTag } = useCodeManagerProcessor();
 
-  const processMessageTags = (
+  const processMessageTags = async (
     content: string,
     messageId: string,
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
@@ -20,26 +22,28 @@ export function useTagProcessors() {
     messageIndex?: number,
     sendFollowUpMessage?: (searchResults: string) => Promise<void>
   ) => {
-    processMagicModeTag(content);
-
-    processImageTag(
-      content,
-      messageId,
-      setMessages,
-      saveChat,
-      chatId,
-      model,
-      setIsGeneratingImage,
-      messageIndex
-    );
-
-    processSearchTag(
-      content,
-      messageId,
-      setMessages,
-      setIsSearching,
-      sendFollowUpMessage
-    );
+    // Xử lý các tag theo thứ tự
+    await Promise.all([
+      processMagicModeTag(content),
+      processImageTag(
+        content,
+        messageId,
+        setMessages,
+        saveChat,
+        chatId,
+        model,
+        setIsGeneratingImage,
+        messageIndex
+      ),
+      processSearchTag(
+        content,
+        messageId,
+        setMessages,
+        setIsSearching,
+        sendFollowUpMessage
+      ),
+      processCodeManagerTag(content),
+    ]);
   };
 
   return { processMessageTags };

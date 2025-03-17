@@ -16,6 +16,19 @@ export function useCodeViewProcessor() {
         setLocalStorage("code_file_path", path);
       }
     }
+
+    // Xử lý CodeEditor tag để quay về
+    const codeEditorRegex = /\[CodeEditor\]([\s\S]*?)\[\/CodeEditor\]/g;
+    const editorMatches = content.matchAll(codeEditorRegex);
+
+    for (const match of editorMatches) {
+      const value = match[1].trim();
+      if (value === "0") {
+        // Quay về code_manager
+        setLocalStorage("ui_state_magic", "code_manager");
+        setLocalStorage("code_file_path", "");
+      }
+    }
   };
 
   return { processCodeViewTag };

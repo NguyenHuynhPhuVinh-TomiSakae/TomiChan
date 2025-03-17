@@ -45,6 +45,7 @@ const checkForSpecialTags = (content: string) => {
     ["[OpenMedia]", "[/OpenMedia]"],
     ["[MediaView]", "[/MediaView]"],
     ["[OpenCode]", "[/OpenCode]"],
+    ["[CodeEditor]", "[/CodeEditor]"],
   ];
 
   return tags.some(

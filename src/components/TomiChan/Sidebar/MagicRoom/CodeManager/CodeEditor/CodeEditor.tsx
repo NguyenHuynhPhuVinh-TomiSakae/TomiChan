@@ -23,6 +23,10 @@ import MediaViewer from "./MediaViewer";
 import UnsavedChangesModal from "./UnsavedChangesModal";
 import FileExplorer from "../FileExplorer/FileExplorer";
 import { useE2B } from "./hooks/useE2B";
+import {
+  setLocalStorage,
+  getLocalStorage,
+} from "../../../../../../utils/localStorage";
 
 interface CodeEditorProps {
   file: CodeFile;
@@ -92,6 +96,36 @@ export default function CodeEditor({
     runCommand,
     setIsTerminalMode,
   } = useE2B();
+
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Đợi sau khi component mount mới bắt đầu kiểm tra UI
+  useEffect(() => {
+    // Đánh dấu đã khởi tạo sau 1 giây
+    const initTimer = setTimeout(() => {
+      setIsInitialized(true);
+      // Đặt trạng thái UI thành code_view sau khi component mount
+      setLocalStorage("ui_state_magic", "code_view");
+    }, 1000);
+
+    return () => clearTimeout(initTimer);
+  }, []);
+
+  // Kiểm tra trạng thái UI để quay về
+  useEffect(() => {
+    // Chỉ kiểm tra khi đã khởi tạo
+    if (!isInitialized) return;
+
+    const checkUiState = () => {
+      const currentState = getLocalStorage("ui_state_magic", "none");
+      if (currentState === "code_manager") {
+        onBack?.();
+      }
+    };
+
+    const intervalId = setInterval(checkUiState, 1000);
+    return () => clearInterval(intervalId);
+  }, [onBack, isInitialized]);
 
   // Thêm hàm để chạy mã
   const handleRunCode = async (language: string) => {

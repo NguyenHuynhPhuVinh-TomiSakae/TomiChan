@@ -128,9 +128,17 @@ Assistant: [SEARCH_QUERY]weather in Hanoi today[/SEARCH_QUERY]
       enhancedPrompt = searchPrompt + enhancedPrompt;
     }
 
-    // Kiểm tra xem có đang ở chế độ code_manager không
-    // Đã chuyển phần này lên trên
-    // const isCodeManager = uiState === "code_manager";
+    // Kiểm tra xem có đang ở chế độ code_view không
+    const isCodeView = uiState === "code_view";
+
+    if (isCodeView) {
+      const codeViewPrompt = `
+Bạn đang ở trong chế độ Xem/Chỉnh sửa Code. Khi người dùng muốn quay lại Code Manager, hãy sử dụng:
+[CodeEditor]0[/CodeEditor]
+`;
+      enhancedPrompt = codeViewPrompt + enhancedPrompt;
+    }
+
     // Kiểm tra xem có đang ở chế độ media_view không
     const isMediaView = uiState === "media_view";
 

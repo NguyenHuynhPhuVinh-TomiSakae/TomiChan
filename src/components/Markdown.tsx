@@ -58,6 +58,7 @@ const customSchema = {
     "open-media",
     "media-view",
     "open-code",
+    "code-editor",
   ],
 };
 
@@ -158,6 +159,13 @@ interface CustomComponents extends Components {
     node: any;
     children: React.ReactNode;
   }) => JSX.Element;
+  "code-editor": ({
+    node,
+    children,
+  }: {
+    node: any;
+    children: React.ReactNode;
+  }) => JSX.Element;
 }
 
 export default function Markdown({ content, className = "" }: MarkdownProps) {
@@ -225,6 +233,10 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
     .replace(
       /\[OpenCode\]([\s\S]*?)\[\/OpenCode\]/g,
       (_, p1) => `<open-code>${p1}</open-code>`
+    )
+    .replace(
+      /\[CodeEditor\]([\s\S]*?)\[\/CodeEditor\]/g,
+      (_, p1) => `<code-editor>${p1}</code-editor>`
     );
 
   const components: CustomComponents = {
@@ -442,6 +454,25 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
           <div className="flex items-center gap-2 mb-2">
             <IconArrowLeft className="text-purple-500" size={20} />
             <span className="font-semibold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+              Quay về Code Manager
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Đã kích hoạt tính năng quay về Code Manager.
+          </p>
+        </div>
+      );
+    },
+
+    "code-editor": ({ children }) => {
+      const content = children?.toString() || "";
+      if (content !== "0") return <></>;
+
+      return (
+        <div className="my-4 p-4 rounded-lg border-2 border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-purple-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <IconArrowLeft className="text-indigo-500" size={20} />
+            <span className="font-semibold bg-gradient-to-r from-indigo-400 via-purple-500 to-indigo-500 text-transparent bg-clip-text">
               Quay về Code Manager
             </span>
           </div>

@@ -7,10 +7,10 @@ import {
   IconArrowLeft,
 } from "@tabler/icons-react";
 import React from "react";
-import { SearchResultBlock } from "../SearchResultBlock";
-import { SearchLinkBlock } from "../SearchResultBlock";
-import { SearchingBlock } from "../SearchResultBlock";
-import { ThinkBlock } from "../ThinkBlock";
+import { SearchResultBlock } from "./SearchResultBlock";
+import { SearchLinkBlock } from "./SearchResultBlock";
+import { SearchingBlock } from "./SearchResultBlock";
+import { ThinkBlock } from "./ThinkBlock";
 import { FileCreationPreview } from "./FileCreationPreview";
 
 interface CustomUIComponentsProps {

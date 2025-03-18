@@ -97,12 +97,10 @@ export default function CodeEditor({
 
   // Cập nhật useEffect để sử dụng sessionStorage và events
   useEffect(() => {
-    // Đặt trạng thái UI thành code_view sau khi component mount
-    setSessionStorage("ui_state_magic", "code_view");
-
     // Lắng nghe event để quay về code_manager
     const handleBackToManager = () => {
       onBack?.();
+      setSessionStorage("ui_state_magic", "code_manager");
     };
 
     emitter.on(MAGIC_EVENTS.CLOSE_CODE_FILE, handleBackToManager);

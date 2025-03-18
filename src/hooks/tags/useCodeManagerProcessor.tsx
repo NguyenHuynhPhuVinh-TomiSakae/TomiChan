@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { chatDB } from "../../utils/db";
 import type { CodeFile, CodeFolder } from "../../types";
 import { emitter, FILE_EXPLORER_EVENTS, MAGIC_EVENTS } from "../../lib/events";
+import { setSessionStorage } from "@/utils/sessionStorage";
 
 export function useCodeManagerProcessor() {
   const { createNewFile, createNewFolder, folders, files } = useCodeAssistant();
@@ -17,6 +18,7 @@ export function useCodeManagerProcessor() {
       const modeNumber = match[1];
       if (modeNumber === "0") {
         // Thay thế setLocalStorage bằng event
+        setSessionStorage("ui_state_magic", "magic_room");
         emitter.emit(MAGIC_EVENTS.BACK_TO_MAGIC_ROOM);
       }
     }
@@ -219,6 +221,7 @@ export function useCodeManagerProcessor() {
 
         if (targetFile) {
           // Thay thế localStorage bằng event
+          setSessionStorage("ui_state_magic", "media_view");
           emitter.emit(MAGIC_EVENTS.OPEN_MEDIA, { fileName: targetFile.name });
         }
       }

@@ -1,3 +1,4 @@
+import { setSessionStorage } from "@/utils/sessionStorage";
 import { emitter, MAGIC_EVENTS } from "../../lib/events";
 
 export function useMediaViewProcessor() {
@@ -7,6 +8,7 @@ export function useMediaViewProcessor() {
 
     if (matches) {
       // Phát event để đóng media view
+      setSessionStorage("ui_state_magic", "code_manager");
       emitter.emit(MAGIC_EVENTS.CLOSE_MEDIA);
     }
   };

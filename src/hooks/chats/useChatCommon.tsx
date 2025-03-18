@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { generateImage } from "../../lib/together";
 import { useTagProcessors } from "../tags/useTagProcessors";
 import { useSearchProcessor } from "../tags/useSearchProcessor";
-import { useSystemPrompt } from "../useSystemPrompt";
+import { useSystemPrompt } from "../systemPrompts/useSystemPrompt";
 import { useChat } from "./useChat";
 import { getApiKey } from "../../utils/getApiKey";
 import { getSessionStorage } from "../../utils/sessionStorage";

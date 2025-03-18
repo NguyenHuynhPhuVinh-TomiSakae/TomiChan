@@ -4,6 +4,7 @@ import { chatDB } from "../../../../../../utils/db";
 import type { CodeFile, CodeFolder } from "../../../../../../types";
 import { FILE_EXPLORER_EVENTS } from "@/lib/events";
 import { emitter } from "@/lib/events";
+import { setSessionStorage } from "../../../../../../utils/sessionStorage";
 
 export function useCodeAssistant() {
   const [files, setFiles] = useState<CodeFile[]>([]);
@@ -177,8 +178,35 @@ export function useCodeAssistant() {
     setSelectedFolder(null);
   };
 
+  const isMediaFile = (fileName: string) => {
+    const extension = fileName.split(".").pop()?.toLowerCase();
+    return [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "svg",
+      "mp3",
+      "wav",
+      "ogg",
+      "aac",
+      "mp4",
+      "webm",
+      "ogv",
+      "mov",
+      "pdf",
+    ].includes(extension || "");
+  };
+
   const handleFileOpen = (file: CodeFile) => {
     setActiveFile(file);
+
+    if (isMediaFile(file.name)) {
+      setSessionStorage("ui_state_magic", "media_view");
+    } else {
+      setSessionStorage("ui_state_magic", "code_view");
+    }
   };
 
   const handleEditorBack = async () => {

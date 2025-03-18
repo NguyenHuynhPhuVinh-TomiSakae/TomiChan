@@ -12,6 +12,7 @@ import { chatDB } from "../utils/db";
 import { useMediaQuery } from "react-responsive";
 import LoadingScreen from "../components/TomiChan/LoadingScreen";
 import { getLocalStorage, setLocalStorage } from "@/utils/localStorage";
+import { setSessionStorage } from "@/utils/sessionStorage";
 
 export default function Home() {
   const [isCollapsed, setIsCollapsed] = React.useState(true);
@@ -95,6 +96,11 @@ export default function Home() {
   };
 
   const handleToggleMagicMode = () => {
+    if (isMagicMode) {
+      setSessionStorage("ui_state_magic", "none");
+    } else {
+      setSessionStorage("ui_state_magic", "magic_room");
+    }
     setIsMagicMode(!isMagicMode);
     if (isCollapsed) {
       handleToggleCollapse();

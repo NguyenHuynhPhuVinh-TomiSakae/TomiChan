@@ -255,10 +255,21 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
   const renderFolderContents = (folderId: string | null) => {
     const foldersInCurrent = folders.filter((folder) => {
       if (currentProject) {
-        // Nếu đang trong project, chỉ lấy folders của project đó
-        return (
-          folder.projectId === currentProject && folder.parentId === folderId
-        );
+        if (!currentFolder) {
+          // Nếu đang trong project và chưa vào thư mục con nào
+          // Chỉ lấy các thư mục trực tiếp của project (không có parentId hoặc parentId là null)
+          return (
+            folder.projectId === currentProject &&
+            (!folder.parentId || folder.parentId === null)
+          );
+        } else {
+          // Nếu đang trong một thư mục con của project
+          // Lấy các thư mục con của thư mục hiện tại
+          return (
+            folder.projectId === currentProject &&
+            folder.parentId === currentFolder
+          );
+        }
       } else {
         // Nếu đang ở root, lấy folders không thuộc project nào
         return !folder.projectId && folder.parentId === folderId;
@@ -267,8 +278,20 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
 
     const filesInCurrent = files.filter((file) => {
       if (currentProject) {
-        // Nếu đang trong project, chỉ lấy files của project đó
-        return file.projectId === currentProject && file.folderId === folderId;
+        if (!currentFolder) {
+          // Nếu đang trong project và chưa vào thư mục con nào
+          // Chỉ lấy các file trực tiếp của project (không có folderId hoặc folderId là null)
+          return (
+            file.projectId === currentProject &&
+            (!file.folderId || file.folderId === null)
+          );
+        } else {
+          // Nếu đang trong một thư mục con của project
+          // Lấy các file của thư mục hiện tại
+          return (
+            file.projectId === currentProject && file.folderId === currentFolder
+          );
+        }
       } else {
         // Nếu đang ở root, lấy files không thuộc project nào
         return !file.projectId && file.folderId === folderId;
@@ -291,7 +314,7 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
     }
 
     return (
-      <>
+      <div className="grid grid-cols-1 gap-2">
         {foldersInCurrent.map((folder) => (
           <div
             key={folder.id}
@@ -470,7 +493,7 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
             </div>
           </div>
         ))}
-      </>
+      </div>
     );
   };
 

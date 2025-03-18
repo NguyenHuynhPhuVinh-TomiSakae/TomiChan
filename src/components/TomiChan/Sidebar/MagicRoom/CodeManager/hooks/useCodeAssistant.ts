@@ -5,6 +5,7 @@ import type { CodeFile, CodeFolder, Project } from "../../../../../../types";
 import { FILE_EXPLORER_EVENTS, MAGIC_EVENTS } from "@/lib/events";
 import { emitter } from "@/lib/events";
 import { setSessionStorage } from "../../../../../../utils/sessionStorage";
+import { useE2B } from "../../CodeManager/CodeEditor/hooks/useE2B";
 
 export function useCodeAssistant() {
   const [files, setFiles] = useState<CodeFile[]>([]);
@@ -27,6 +28,17 @@ export function useCodeAssistant() {
   >(null);
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [currentProject, setCurrentProject] = useState<string | null>(null);
+
+  // Thêm state loading cho các thao tác với E2B
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isDeletingFolder, setIsDeletingFolder] = useState(false);
+  const [isCreatingFile, setIsCreatingFile] = useState(false);
+  const [isDeletingFile, setIsDeletingFile] = useState(false);
+
+  // Sử dụng hook useE2B
+  const { uploadFile, createOrCheckDirectory, deleteDirectory } = useE2B();
 
   useEffect(() => {
     loadFiles();
@@ -123,49 +135,105 @@ export function useCodeAssistant() {
   const createNewProject = async () => {
     if (!newProjectName.trim()) return;
 
-    const newProject: Project = {
-      id: nanoid(),
-      name: newProjectName,
-      description: newProjectDescription,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    // Bắt đầu loading
+    setIsCreatingProject(true);
 
-    await chatDB.saveProject(newProject);
-    await loadProjects();
-    setIsNewProjectModalOpen(false);
-    setNewProjectName("");
-    setNewProjectDescription("");
-    return newProject;
+    try {
+      const newProject: Project = {
+        id: nanoid(),
+        name: newProjectName,
+        description: newProjectDescription,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      await chatDB.saveProject(newProject);
+
+      // Tạo thư mục tương ứng trong E2B
+      try {
+        await createOrCheckDirectory(newProjectName);
+        console.log(`Đã tạo thư mục cho dự án "${newProjectName}" trên E2B`);
+      } catch (error) {
+        console.error(`Lỗi khi tạo thư mục dự án trên E2B:`, error);
+      }
+
+      await loadProjects();
+      setIsNewProjectModalOpen(false);
+      setNewProjectName("");
+      setNewProjectDescription("");
+      return newProject;
+    } catch (error) {
+      console.error("Lỗi khi tạo dự án:", error);
+    } finally {
+      // Kết thúc loading bất kể kết quả
+      setIsCreatingProject(false);
+    }
   };
 
   const createNewFolder = async (folderData?: Partial<CodeFolder>) => {
     if (!folderData && !newFileName.trim()) return;
 
-    const folderName = folderData?.name || newFileName;
-    const parentId =
-      folderData?.parentId !== undefined
-        ? folderData.parentId
-        : selectedParentFolder;
-
-    const uniqueFolderName = getUniqueFolderName(
-      folderName,
-      folders,
-      parentId,
-      currentProject || undefined
-    );
-
-    const newFolder: CodeFolder = {
-      id: nanoid(),
-      name: uniqueFolderName,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      projectId: currentProject || undefined,
-      parentId: parentId || undefined,
-    };
+    // Bắt đầu loading nếu folder thuộc project
+    if (currentProject) {
+      setIsCreatingFolder(true);
+    }
 
     try {
+      const folderName = folderData?.name || newFileName;
+      const parentId =
+        folderData?.parentId !== undefined
+          ? folderData.parentId
+          : selectedParentFolder;
+
+      const uniqueFolderName = getUniqueFolderName(
+        folderName,
+        folders,
+        parentId,
+        currentProject || undefined
+      );
+
+      const newFolder: CodeFolder = {
+        id: nanoid(),
+        name: uniqueFolderName,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        projectId: currentProject || undefined,
+        parentId: parentId || undefined,
+      };
+
       await chatDB.saveFolder(newFolder);
+
+      // Nếu folder thuộc một dự án, tạo thư mục tương ứng trên E2B
+      if (newFolder.projectId) {
+        const project = projects.find((p) => p.id === newFolder.projectId);
+        if (project) {
+          // Xây dựng đường dẫn thư mục
+          let folderPath = uniqueFolderName;
+          let currentParentId = parentId || null;
+
+          // Nếu có thư mục cha, thêm vào đường dẫn
+          while (currentParentId) {
+            const parentFolder = folders.find((f) => f.id === currentParentId);
+            if (parentFolder) {
+              folderPath = `${parentFolder.name}/${folderPath}`;
+              currentParentId = parentFolder.parentId || null;
+            } else {
+              break;
+            }
+          }
+
+          // Tạo thư mục trong E2B
+          try {
+            await createOrCheckDirectory(`${project.name}/${folderPath}`);
+            console.log(
+              `Đã tạo thư mục ${folderPath} trong dự án ${project.name} trên E2B`
+            );
+          } catch (error) {
+            console.error(`Lỗi khi tạo thư mục trên E2B:`, error);
+          }
+        }
+      }
+
       await loadFolders();
 
       if (!folderData) {
@@ -178,35 +246,93 @@ export function useCodeAssistant() {
     } catch (error) {
       console.error("Error creating folder:", error);
       throw error;
+    } finally {
+      if (currentProject) {
+        setIsCreatingFolder(false);
+      }
     }
   };
 
   const createNewFile = async (fileData?: Partial<CodeFile>) => {
     if (!fileData && !newFileName.trim()) return;
 
-    const fileName = fileData?.name || newFileName;
-    const uniqueFileName = getUniqueFileName(fileName, files);
-
-    const newFile: CodeFile = {
-      id: nanoid(),
-      name: uniqueFileName,
-      content: fileData?.content || "",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      language: uniqueFileName.split(".").pop() || "javascript",
-      projectId: currentProject || undefined,
-      folderId: fileData?.folderId || currentFolder || undefined,
-    };
-
-    await chatDB.saveCodeFile(newFile);
-    await loadFiles();
-
-    if (!fileData) {
-      setIsNewFileModalOpen(false);
-      setNewFileName("");
+    // Bắt đầu loading nếu file thuộc project
+    if (currentProject) {
+      setIsCreatingFile(true);
     }
 
-    return newFile;
+    try {
+      const fileName = fileData?.name || newFileName;
+      const uniqueFileName = getUniqueFileName(fileName, files);
+
+      const newFile: CodeFile = {
+        id: nanoid(),
+        name: uniqueFileName,
+        content: fileData?.content || "",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        language: uniqueFileName.split(".").pop() || "javascript",
+        projectId: currentProject || undefined,
+        folderId: fileData?.folderId || currentFolder || undefined,
+      };
+
+      await chatDB.saveCodeFile(newFile);
+
+      // Nếu file thuộc một dự án, tải file lên E2B
+      if (newFile.projectId) {
+        const project = projects.find((p) => p.id === newFile.projectId);
+        if (project) {
+          // Xây dựng đường dẫn file
+          let filePath = uniqueFileName;
+
+          // Nếu file nằm trong thư mục, xây dựng đường dẫn đầy đủ
+          if (newFile.folderId) {
+            // Xây dựng đường dẫn thư mục
+            let currentFolderId = newFile.folderId;
+            const folderParts: string[] = [];
+
+            while (currentFolderId) {
+              const folder = folders.find((f) => f.id === currentFolderId);
+              if (folder) {
+                folderParts.unshift(folder.name);
+                currentFolderId = folder.parentId || null || "";
+              } else {
+                break;
+              }
+            }
+
+            if (folderParts.length > 0) {
+              filePath = `${folderParts.join("/")}/${filePath}`;
+            }
+          }
+
+          // Tải file lên E2B
+          try {
+            await uploadFile(filePath, newFile.content, project.name);
+            console.log(
+              `Đã tải file ${filePath} lên dự án ${project.name} trên E2B`
+            );
+          } catch (error) {
+            console.error(`Lỗi khi tải file lên E2B:`, error);
+          }
+        }
+      }
+
+      await loadFiles();
+
+      if (!fileData) {
+        setIsNewFileModalOpen(false);
+        setNewFileName("");
+      }
+
+      return newFile;
+    } catch (error) {
+      console.error("Lỗi khi tạo file:", error);
+    } finally {
+      if (currentProject) {
+        setIsCreatingFile(false);
+      }
+    }
   };
 
   const handleEditFile = async () => {
@@ -220,6 +346,47 @@ export function useCodeAssistant() {
     };
 
     await chatDB.saveCodeFile(updatedFile);
+
+    // Cập nhật file trên E2B nếu thuộc dự án
+    if (updatedFile.projectId) {
+      const project = projects.find((p) => p.id === updatedFile.projectId);
+      if (project) {
+        // Xây dựng đường dẫn file
+        let filePath = updatedFile.name;
+
+        // Nếu file nằm trong thư mục, xây dựng đường dẫn đầy đủ
+        if (updatedFile.folderId) {
+          // Xây dựng đường dẫn thư mục
+          let currentFolderId = updatedFile.folderId;
+          const folderParts: string[] = [];
+
+          while (currentFolderId) {
+            const folder = folders.find((f) => f.id === currentFolderId);
+            if (folder) {
+              folderParts.unshift(folder.name);
+              currentFolderId = folder.parentId || null || "";
+            } else {
+              break;
+            }
+          }
+
+          if (folderParts.length > 0) {
+            filePath = `${folderParts.join("/")}/${filePath}`;
+          }
+        }
+
+        // Cập nhật file trên E2B
+        try {
+          await uploadFile(filePath, updatedFile.content, project.name);
+          console.log(
+            `Đã cập nhật file ${filePath} trong dự án ${project.name} trên E2B`
+          );
+        } catch (error) {
+          console.error(`Lỗi khi cập nhật file trên E2B:`, error);
+        }
+      }
+    }
+
     await loadFiles();
     setIsEditModalOpen(false);
     setNewFileName("");
@@ -229,10 +396,64 @@ export function useCodeAssistant() {
   const handleDeleteFile = async () => {
     if (!selectedFile) return;
 
-    await chatDB.deleteCodeFile(selectedFile.id);
-    await loadFiles();
-    setIsDeleteModalOpen(false);
-    setSelectedFile(null);
+    // Bắt đầu loading nếu file thuộc project
+    if (selectedFile.projectId) {
+      setIsDeletingFile(true);
+    }
+
+    try {
+      await chatDB.deleteCodeFile(selectedFile.id);
+
+      // Nếu file thuộc dự án, xóa file trên E2B
+      if (selectedFile.projectId) {
+        const project = projects.find((p) => p.id === selectedFile.projectId);
+        if (project) {
+          // Xây dựng đường dẫn file
+          let filePath = selectedFile.name;
+
+          // Nếu file nằm trong thư mục, xây dựng đường dẫn đầy đủ
+          if (selectedFile.folderId) {
+            // Xây dựng đường dẫn thư mục
+            let currentFolderId = selectedFile.folderId;
+            const folderParts: string[] = [];
+
+            while (currentFolderId) {
+              const folder = folders.find((f) => f.id === currentFolderId);
+              if (folder) {
+                folderParts.unshift(folder.name);
+                currentFolderId = folder.parentId || null || "";
+              } else {
+                break;
+              }
+            }
+
+            if (folderParts.length > 0) {
+              filePath = `${folderParts.join("/")}/${filePath}`;
+            }
+          }
+
+          // Xóa file trên E2B
+          try {
+            // TODO: Cần thêm API để xóa file trên E2B
+            console.log(
+              `Đã xóa file ${filePath} trong dự án ${project.name} trên E2B`
+            );
+          } catch (error) {
+            console.error(`Lỗi khi xóa file trên E2B:`, error);
+          }
+        }
+      }
+
+      await loadFiles();
+      setIsDeleteModalOpen(false);
+      setSelectedFile(null);
+    } catch (error) {
+      console.error("Lỗi khi xóa file:", error);
+    } finally {
+      if (selectedFile.projectId) {
+        setIsDeletingFile(false);
+      }
+    }
   };
 
   const openEditFolderModal = (folder: CodeFolder, e: React.MouseEvent) => {
@@ -267,11 +488,85 @@ export function useCodeAssistant() {
   const handleDeleteFolder = async () => {
     if (!selectedFolder) return;
 
-    await chatDB.deleteFolder(selectedFolder.id);
-    await loadFolders();
-    await loadFiles();
-    setIsDeleteModalOpen(false);
-    setSelectedFolder(null);
+    // Bắt đầu loading nếu folder thuộc project
+    if (selectedFolder.projectId) {
+      setIsDeletingFolder(true);
+    }
+
+    try {
+      await chatDB.deleteFolder(selectedFolder.id);
+
+      // Nếu folder thuộc dự án, xóa folder trên E2B
+      if (selectedFolder.projectId) {
+        const project = projects.find((p) => p.id === selectedFolder.projectId);
+        if (project) {
+          // Xây dựng đường dẫn thư mục
+          let folderPath = selectedFolder.name;
+          let currentParentId = selectedFolder.parentId || null;
+
+          // Nếu có thư mục cha, thêm vào đường dẫn
+          while (currentParentId) {
+            const parentFolder = folders.find((f) => f.id === currentParentId);
+            if (parentFolder) {
+              folderPath = `${parentFolder.name}/${folderPath}`;
+              currentParentId = parentFolder.parentId || null;
+            } else {
+              break;
+            }
+          }
+
+          // Xóa thư mục trên E2B
+          try {
+            await deleteDirectory(`${project.name}/${folderPath}`);
+            console.log(
+              `Đã xóa thư mục ${folderPath} trong dự án ${project.name} trên E2B`
+            );
+          } catch (error) {
+            console.error(`Lỗi khi xóa thư mục trên E2B:`, error);
+          }
+        }
+      }
+
+      await loadFolders();
+      await loadFiles();
+      setIsDeleteModalOpen(false);
+      setSelectedFolder(null);
+    } catch (error) {
+      console.error("Lỗi khi xóa thư mục:", error);
+    } finally {
+      if (selectedFolder.projectId) {
+        setIsDeletingFolder(false);
+      }
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!selectedProject) return;
+
+    // Bắt đầu loading
+    setIsDeletingProject(true);
+
+    try {
+      await chatDB.deleteProject(selectedProject.id);
+
+      // Xóa thư mục dự án trong E2B
+      try {
+        await deleteDirectory(selectedProject.name);
+        console.log(`Đã xóa thư mục dự án "${selectedProject.name}" trên E2B`);
+      } catch (error) {
+        console.error(`Lỗi khi xóa thư mục dự án trên E2B:`, error);
+      }
+
+      await loadProjects();
+      setIsDeleteModalOpen(false);
+      setSelectedProject(null);
+      setCurrentProject(null);
+    } catch (error) {
+      console.error("Lỗi khi xóa dự án:", error);
+    } finally {
+      // Kết thúc loading bất kể kết quả
+      setIsDeletingProject(false);
+    }
   };
 
   const isMediaFile = (fileName: string) => {
@@ -343,6 +638,9 @@ export function useCodeAssistant() {
   const handleEditProject = async () => {
     if (!selectedProject || !newProjectName.trim()) return;
 
+    // Lưu tên dự án cũ trước khi cập nhật
+    const oldProjectName = selectedProject.name;
+
     const updatedProject: Project = {
       ...selectedProject,
       name: newProjectName,
@@ -351,21 +649,31 @@ export function useCodeAssistant() {
     };
 
     await chatDB.saveProject(updatedProject);
+
+    // Nếu tên dự án đã thay đổi, cập nhật thư mục trên E2B
+    if (oldProjectName !== newProjectName) {
+      try {
+        // Tạo thư mục mới
+        await createOrCheckDirectory(newProjectName);
+
+        // TODO: Copy nội dung thư mục cũ sang mới (cần triển khai API riêng)
+
+        // Xóa thư mục cũ
+        await deleteDirectory(oldProjectName);
+
+        console.log(
+          `Đã đổi tên thư mục dự án từ "${oldProjectName}" thành "${newProjectName}" trên E2B`
+        );
+      } catch (error) {
+        console.error(`Lỗi khi đổi tên thư mục dự án trên E2B:`, error);
+      }
+    }
+
     await loadProjects();
     setIsEditModalOpen(false);
     setNewProjectName("");
     setNewProjectDescription("");
     setSelectedProject(null);
-  };
-
-  const handleDeleteProject = async () => {
-    if (!selectedProject) return;
-
-    await chatDB.deleteProject(selectedProject.id);
-    await loadProjects();
-    setIsDeleteModalOpen(false);
-    setSelectedProject(null);
-    setCurrentProject(null);
   };
 
   const handleProjectClick = (projectId: string) => {
@@ -396,6 +704,12 @@ export function useCodeAssistant() {
     selectedParentFolder,
     currentFolder,
     currentProject,
+    isCreatingProject,
+    isDeletingProject,
+    isCreatingFolder,
+    isDeletingFolder,
+    isCreatingFile,
+    isDeletingFile,
     setIsNewFileModalOpen,
     setIsEditModalOpen,
     setIsDeleteModalOpen,

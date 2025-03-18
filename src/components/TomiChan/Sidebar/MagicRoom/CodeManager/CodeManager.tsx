@@ -100,6 +100,12 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
     loadProjects,
     setCurrentProject,
     setCurrentFolder,
+    isCreatingProject,
+    isDeletingProject,
+    isCreatingFolder,
+    isCreatingFile,
+    isDeletingFolder,
+    isDeletingFile,
   } = useCodeAssistant();
 
   // Thêm useEffect để gán ui_state khi khởi tạo
@@ -1033,6 +1039,21 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
             folders={folders}
             selectedParentFolder={selectedParentFolder}
             onParentFolderChange={setSelectedParentFolder}
+            isLoading={
+              (isNewProjectModalOpen && isCreatingProject) ||
+              (isDeleteModalOpen && selectedProject && isDeletingProject) ||
+              (isNewFolderModalOpen && currentProject && isCreatingFolder) ||
+              (isDeleteModalOpen &&
+                selectedFolder &&
+                selectedFolder.projectId &&
+                isDeletingFolder) ||
+              (isDeleteModalOpen &&
+                selectedFile &&
+                selectedFile.projectId &&
+                isDeletingFile) ||
+              (isNewFileModalOpen && currentProject && isCreatingFile) ||
+              undefined
+            }
           />
         </>
       )}

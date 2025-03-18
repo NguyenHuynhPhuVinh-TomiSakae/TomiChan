@@ -15,6 +15,143 @@ export function useE2B() {
     setError("");
   }, []);
 
+  // Hàm kiểm tra và tạo thư mục trên E2B
+  const createOrCheckDirectory = useCallback(async (directoryName: string) => {
+    try {
+      const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
+
+      // Kiểm tra xem thư mục đã tồn tại chưa
+      const checkResponse = await fetch("/api/file/checkDirectory", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-E2B-API-Key": e2bApiKey,
+        },
+        body: JSON.stringify({ directoryPath: directoryName }),
+      });
+
+      const checkData = await checkResponse.json();
+
+      // Nếu thư mục chưa tồn tại, tạo mới
+      if (!checkData.exists) {
+        const createResponse = await fetch("/api/file/createDirectory", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-E2B-API-Key": e2bApiKey,
+          },
+          body: JSON.stringify({ directoryPath: directoryName }),
+        });
+
+        return await createResponse.json();
+      }
+
+      return checkData;
+    } catch (e) {
+      console.error("Lỗi khi kiểm tra/tạo thư mục:", e);
+      throw e;
+    }
+  }, []);
+
+  // Hàm xóa thư mục trên E2B
+  const deleteDirectory = useCallback(async (directoryName: string) => {
+    try {
+      const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
+
+      const response = await fetch("/api/file/deleteDirectory", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-E2B-API-Key": e2bApiKey,
+        },
+        body: JSON.stringify({ directoryPath: directoryName }),
+      });
+
+      return await response.json();
+    } catch (e) {
+      console.error("Lỗi khi xóa thư mục:", e);
+      throw e;
+    }
+  }, []);
+
+  // Hàm đổi tên thư mục trên E2B
+  const renameDirectory = useCallback(
+    async (oldDirectoryPath: string, newDirectoryPath: string) => {
+      try {
+        const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
+
+        const response = await fetch("/api/file/renameDirectory", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-E2B-API-Key": e2bApiKey,
+          },
+          body: JSON.stringify({ oldDirectoryPath, newDirectoryPath }),
+        });
+
+        return await response.json();
+      } catch (e) {
+        console.error("Lỗi khi đổi tên thư mục:", e);
+        throw e;
+      }
+    },
+    []
+  );
+
+  // Hàm đổi tên file trên E2B
+  const renameFile = useCallback(
+    async (oldFilePath: string, newFilePath: string) => {
+      try {
+        const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
+
+        const response = await fetch("/api/file/renameFile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-E2B-API-Key": e2bApiKey,
+          },
+          body: JSON.stringify({ oldFilePath, newFilePath }),
+        });
+
+        return await response.json();
+      } catch (e) {
+        console.error("Lỗi khi đổi tên file:", e);
+        throw e;
+      }
+    },
+    []
+  );
+
+  // Hàm tải file lên E2B
+  const uploadFile = useCallback(
+    async (filePath: string, content: string, projectName?: string) => {
+      try {
+        const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
+
+        // Nếu có projectName, tạo thư mục cho project trước
+        if (projectName) {
+          await createOrCheckDirectory(projectName);
+          filePath = `${projectName}/${filePath}`;
+        }
+
+        const response = await fetch("/api/file/upload", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-E2B-API-Key": e2bApiKey,
+          },
+          body: JSON.stringify({ filePath, content }),
+        });
+
+        return await response.json();
+      } catch (e) {
+        console.error("Lỗi khi tải file lên E2B:", e);
+        throw e;
+      }
+    },
+    [createOrCheckDirectory]
+  );
+
   // Hàm để tìm và nhúng các file CSS và JS vào HTML
   const processHtmlWithDependencies = useCallback(async (htmlCode: string) => {
     try {
@@ -202,5 +339,10 @@ export function useE2B() {
     setIsTerminalMode,
     outputImages,
     setOutputImages,
+    uploadFile,
+    createOrCheckDirectory,
+    deleteDirectory,
+    renameFile,
+    renameDirectory,
   };
 }

@@ -19,7 +19,6 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
   const [showCodeAssistant, setShowCodeAssistant] = useState(false);
 
   useEffect(() => {
-    setSessionStorage("ui_state_magic", "magic_room");
     emitter.on(MAGIC_EVENTS.OPEN_CODE_ASSISTANT, () => {
       setShowCodeAssistant(true);
     });

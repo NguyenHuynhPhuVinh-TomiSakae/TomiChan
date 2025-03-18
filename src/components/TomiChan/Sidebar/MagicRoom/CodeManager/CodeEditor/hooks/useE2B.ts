@@ -8,6 +8,7 @@ export function useE2B() {
   const [error, setError] = useState("");
   const [showOutput, setShowOutput] = useState(false);
   const [isTerminalMode, setIsTerminalMode] = useState(false);
+  const [outputImages, setOutputImages] = useState<string[]>([]);
 
   const clearOutput = useCallback(() => {
     setOutput("");
@@ -139,6 +140,7 @@ export function useE2B() {
       setIsRunning(true);
       clearOutput();
       setShowOutput(true);
+      setOutputImages([]);
 
       try {
         if (language === "html") {
@@ -171,10 +173,11 @@ export function useE2B() {
 
         if (data.error) {
           setError(data.error);
-        } else if (data.output) {
-          setOutput(data.output);
         } else {
-          setError("Không nhận được kết quả từ server");
+          setOutput(data.output || "");
+          if (data.images && data.images.length > 0) {
+            setOutputImages(data.images);
+          }
         }
       } catch (e) {
         console.error("Error in runCode:", e);
@@ -197,5 +200,7 @@ export function useE2B() {
     setShowOutput,
     isTerminalMode,
     setIsTerminalMode,
+    outputImages,
+    setOutputImages,
   };
 }

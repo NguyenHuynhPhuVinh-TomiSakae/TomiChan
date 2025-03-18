@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { chatDB } from "../../utils/db";
 import { emitter, MAGIC_EVENTS, FILE_EXPLORER_EVENTS } from "../../lib/events";
+import { setSessionStorage } from "@/utils/sessionStorage";
 
 export function useCodeViewProcessor() {
   useEffect(() => {
@@ -110,6 +111,7 @@ export function useCodeViewProcessor() {
       const path = codeContent.match(/path:\s*(.*)/)?.[1]?.trim();
 
       if (path) {
+        setSessionStorage("ui_state_magic", "code_view");
         emitter.emit(MAGIC_EVENTS.OPEN_CODE_FILE, { filePath: path });
       }
     }
@@ -119,6 +121,7 @@ export function useCodeViewProcessor() {
     const editorMatches = content.match(codeEditorRegex);
 
     if (editorMatches) {
+      setSessionStorage("ui_state_magic", "code_manager");
       // Phát event để đóng code file và quay về code_manager
       emitter.emit(MAGIC_EVENTS.CLOSE_CODE_FILE);
     }

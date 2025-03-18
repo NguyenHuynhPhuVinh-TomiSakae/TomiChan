@@ -2,7 +2,7 @@
 import TomiChat from "../components/TomiChan/TomiChat";
 import ChatInput from "../components/TomiChan/ChatInput/ChatInput";
 import Sidebar from "../components/TomiChan/Sidebar/Sidebar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ChatMessages from "../components/TomiChan/ChatMessages/ChatMessages";
 import Header from "../components/TomiChan/Header";
 import { useThemeContext } from "../providers/ThemeProvider";
@@ -12,6 +12,7 @@ import { chatDB } from "../utils/db";
 import { useMediaQuery } from "react-responsive";
 import LoadingScreen from "../components/TomiChan/LoadingScreen";
 import { getLocalStorage, setLocalStorage } from "@/utils/localStorage";
+import { setSessionStorage } from "@/utils/sessionStorage";
 
 export default function Home() {
   const [isCollapsed, setIsCollapsed] = React.useState(true);
@@ -33,6 +34,10 @@ export default function Home() {
   const [showLoading, setShowLoading] = React.useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isMagicMode, setIsMagicMode] = useState(false);
+
+  useEffect(() => {
+    setSessionStorage("ui_state_magic", "none");
+  }, []);
 
   const handleToggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -95,6 +100,11 @@ export default function Home() {
   };
 
   const handleToggleMagicMode = () => {
+    if (isMagicMode) {
+      setSessionStorage("ui_state_magic", "none");
+    } else {
+      setSessionStorage("ui_state_magic", "magic_room");
+    }
     setIsMagicMode(!isMagicMode);
     if (isCollapsed) {
       handleToggleCollapse();

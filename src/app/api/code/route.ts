@@ -31,8 +31,15 @@ export async function POST(request: Request) {
       const output = execution.logs.stdout.join("\n").trim() || "";
       const error = execution.logs.stderr.join("\n").trim() || "";
 
+      // Thêm xử lý cho kết quả matplotlib
+      const results = execution.results || [];
+      const images = results
+        .filter((result) => result.png)
+        .map((result) => result.png);
+
       return NextResponse.json({
         output: error ? error : output,
+        images: images,
       });
     }
   } catch (error) {

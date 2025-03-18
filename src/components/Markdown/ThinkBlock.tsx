@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useThemeContext } from "../providers/ThemeProvider";
+import { useThemeContext } from "../../providers/ThemeProvider";
 import { IconBrain, IconChevronDown } from "@tabler/icons-react";
 
 interface ThinkBlockProps {

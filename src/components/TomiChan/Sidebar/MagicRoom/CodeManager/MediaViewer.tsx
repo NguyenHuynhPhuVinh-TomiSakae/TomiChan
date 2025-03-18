@@ -26,9 +26,6 @@ export default function MediaViewer({
   };
 
   React.useEffect(() => {
-    // Đặt trạng thái UI thành media_view khi component mount
-    setSessionStorage("ui_state_magic", "media_view");
-
     // Lắng nghe sự kiện đóng media
 
     emitter.on(MAGIC_EVENTS.CLOSE_MEDIA, handleCloseMedia);

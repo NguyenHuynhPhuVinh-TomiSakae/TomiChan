@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { nanoid } from "nanoid";
 import { chatDB } from "../../../../../../utils/db";
 import type { CodeFile, CodeFolder } from "../../../../../../types";
-import { FILE_EXPLORER_EVENTS } from "@/lib/events";
+import { FILE_EXPLORER_EVENTS, MAGIC_EVENTS } from "@/lib/events";
 import { emitter } from "@/lib/events";
+import { setSessionStorage } from "../../../../../../utils/sessionStorage";
 
 export function useCodeAssistant() {
   const [files, setFiles] = useState<CodeFile[]>([]);
@@ -56,12 +57,46 @@ export function useCodeAssistant() {
     );
   };
 
+  const getUniqueFileName = (baseName: string, existingFiles: CodeFile[]) => {
+    const extension = baseName.includes(".")
+      ? `.${baseName.split(".").pop()}`
+      : "";
+    const nameWithoutExt = baseName.replace(extension, "");
+    let newName = baseName;
+    let counter = 1;
+
+    while (existingFiles.some((file) => file.name === newName)) {
+      newName = `${nameWithoutExt} (${counter})${extension}`;
+      counter++;
+    }
+
+    return newName;
+  };
+
+  const getUniqueFolderName = (
+    baseName: string,
+    existingFolders: CodeFolder[]
+  ) => {
+    let newName = baseName;
+    let counter = 1;
+
+    while (existingFolders.some((folder) => folder.name === newName)) {
+      newName = `${baseName} (${counter})`;
+      counter++;
+    }
+
+    return newName;
+  };
+
   const createNewFolder = async (folderData?: Partial<CodeFolder>) => {
     if (!folderData && !newFileName.trim()) return;
 
+    const folderName = folderData?.name || newFileName;
+    const uniqueFolderName = getUniqueFolderName(folderName, folders);
+
     const newFolder: CodeFolder = {
       id: nanoid(),
-      name: folderData?.name || newFileName,
+      name: uniqueFolderName,
       createdAt: new Date(),
       updatedAt: new Date(),
       parentId:
@@ -90,14 +125,16 @@ export function useCodeAssistant() {
   const createNewFile = async (fileData?: Partial<CodeFile>) => {
     if (!fileData && !newFileName.trim()) return;
 
+    const fileName = fileData?.name || newFileName;
+    const uniqueFileName = getUniqueFileName(fileName, files);
+
     const newFile: CodeFile = {
       id: nanoid(),
-      name: fileData?.name || newFileName,
+      name: uniqueFileName,
       content: fileData?.content || "",
       createdAt: new Date(),
       updatedAt: new Date(),
-      language:
-        (fileData?.name || newFileName).split(".").pop() || "javascript",
+      language: uniqueFileName.split(".").pop() || "javascript",
       folderId: fileData?.folderId || currentFolder || undefined,
     };
 
@@ -177,8 +214,37 @@ export function useCodeAssistant() {
     setSelectedFolder(null);
   };
 
+  const isMediaFile = (fileName: string) => {
+    const extension = fileName.split(".").pop()?.toLowerCase();
+    return [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "svg",
+      "mp3",
+      "wav",
+      "ogg",
+      "aac",
+      "mp4",
+      "webm",
+      "ogv",
+      "mov",
+      "pdf",
+    ].includes(extension || "");
+  };
+
   const handleFileOpen = (file: CodeFile) => {
     setActiveFile(file);
+
+    if (isMediaFile(file.name)) {
+      setSessionStorage("ui_state_magic", "media_view");
+    } else {
+      setSessionStorage("ui_state_magic", "code_view");
+    }
+
+    emitter.emit(MAGIC_EVENTS.OPEN_CODE_FILE, { filePath: "" });
   };
 
   const handleEditorBack = async () => {

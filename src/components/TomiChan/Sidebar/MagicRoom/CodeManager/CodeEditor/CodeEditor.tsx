@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
 import {
   IconArrowLeft,
@@ -23,8 +23,13 @@ import MediaViewer from "./MediaViewer";
 import UnsavedChangesModal from "./UnsavedChangesModal";
 import FileExplorer from "../FileExplorer/FileExplorer";
 import { useE2B } from "./hooks/useE2B";
-import { setSessionStorage } from "../../../../../../utils/sessionStorage";
+import {
+  getSessionStorage,
+  setSessionStorage,
+} from "../../../../../../utils/sessionStorage";
 import { emitter, MAGIC_EVENTS } from "../../../../../../lib/events";
+import Image from "next/image";
+import Terminal from "./Terminal";
 
 interface CodeEditorProps {
   file: CodeFile;
@@ -40,7 +45,8 @@ export default function CodeEditor({
   onClose,
 }: CodeEditorProps) {
   // Thêm state cho File Explorer
-  const [showFileExplorer, setShowFileExplorer] = useState(false);
+  const [showFileExplorer, setShowFileExplorer] = useState(true);
+  const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
 
   // Sử dụng các custom hooks
   const {
@@ -93,16 +99,14 @@ export default function CodeEditor({
     isTerminalMode,
     runCommand,
     setIsTerminalMode,
+    outputImages,
   } = useE2B();
-
   // Cập nhật useEffect để sử dụng sessionStorage và events
   useEffect(() => {
-    // Đặt trạng thái UI thành code_view sau khi component mount
-    setSessionStorage("ui_state_magic", "code_view");
-
     // Lắng nghe event để quay về code_manager
     const handleBackToManager = () => {
       onBack?.();
+      setSessionStorage("ui_state_magic", "code_manager");
     };
 
     emitter.on(MAGIC_EVENTS.CLOSE_CODE_FILE, handleBackToManager);
@@ -185,6 +189,7 @@ export default function CodeEditor({
     } else {
       setSessionStorage("ui_state_magic", "code_manager");
       onBack?.();
+      emitter.emit(MAGIC_EVENTS.CLOSE_CODE_FILE);
     }
   };
 
@@ -193,7 +198,9 @@ export default function CodeEditor({
     await handleSave();
     setShowUnsavedModal(false);
     setSessionStorage("ui_state_magic", "code_manager");
-    onBack?.();
+    if (getSessionStorage("pendingFileToOpen")) {
+      onBack?.();
+    }
   };
 
   // Xử lý khi người dùng chọn bỏ thay đổi trong modal
@@ -201,7 +208,7 @@ export default function CodeEditor({
     setShowUnsavedModal(false);
 
     // Kiểm tra xem có file đang chờ mở không
-    const pendingFile = sessionStorage.getItem("pendingFileToOpen");
+    const pendingFile = getSessionStorage("pendingFileToOpen");
     if (pendingFile && onFileOpen) {
       try {
         const fileToOpen = JSON.parse(pendingFile);
@@ -212,7 +219,7 @@ export default function CodeEditor({
       }
     } else {
       // Nếu đang có file chờ đóng
-      const pendingFileId = sessionStorage.getItem("pendingFileToClose");
+      const pendingFileId = getSessionStorage("pendingFileToClose");
       if (pendingFileId) {
         closeFile(pendingFileId);
         sessionStorage.removeItem("pendingFileToClose");
@@ -497,76 +504,20 @@ export default function CodeEditor({
               />
             </div>
 
-            {/* Output Panel - Terminal Style */}
-            {showOutput && (
-              <div className="absolute bottom-0 left-0 right-0 h-1/3 border-t border-gray-700 flex flex-col bg-black z-10 font-mono">
-                <div className="flex justify-between items-center p-2 bg-gray-900 border-b border-gray-700 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <IconTerminal2 size={16} className="text-gray-400" />
-                    <h3 className="text-sm text-gray-300">Terminal</h3>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setIsTerminalMode(!isTerminalMode)}
-                      className="text-xs px-2 py-1 rounded text-gray-300 hover:bg-gray-800 transition-colors cursor-pointer"
-                    >
-                      {isTerminalMode ? "Code Mode" : "Terminal Mode"}
-                    </button>
-                    <button
-                      onClick={clearOutput}
-                      className="text-xs px-2 py-1 rounded text-gray-300 hover:bg-gray-800 transition-colors cursor-pointer"
-                    >
-                      Xóa
-                    </button>
-                    <button
-                      onClick={() => setShowOutput(false)}
-                      className="text-xs px-2 py-1 rounded text-gray-300 hover:bg-gray-800 transition-colors cursor-pointer"
-                    >
-                      Ẩn
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1 overflow-auto p-3 text-sm bg-black text-gray-100">
-                  {isRunning ? (
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <div className="animate-spin h-4 w-4 border-2 border-gray-500 border-t-gray-300 rounded-full"></div>
-                      Đang thực thi...
-                    </div>
-                  ) : error ? (
-                    <div className="text-red-400">
-                      <span className="text-red-500">Lỗi: </span>
-                      <span className="whitespace-pre-wrap">{error}</span>
-                    </div>
-                  ) : output ? (
-                    <div className="whitespace-pre-wrap font-mono">
-                      <span className="text-green-400">$ </span>
-                      <span className="text-gray-300">{output}</span>
-                    </div>
-                  ) : (
-                    <div className="text-gray-500">Sẵn sàng</div>
-                  )}
-                  {isTerminalMode && (
-                    <div className="mt-2 flex items-center">
-                      <span className="text-green-400">$ </span>
-                      <input
-                        type="text"
-                        className="flex-1 ml-2 bg-transparent border-none outline-none text-gray-300"
-                        placeholder="Nhập lệnh..."
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            const command = e.currentTarget.value;
-                            if (command) {
-                              runCommand(command);
-                              e.currentTarget.value = "";
-                            }
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            <Terminal
+              isRunning={isRunning}
+              error={error}
+              output={output}
+              isTerminalMode={isTerminalMode}
+              outputImages={outputImages}
+              showOutput={showOutput}
+              setShowOutput={setShowOutput}
+              setIsTerminalMode={setIsTerminalMode}
+              clearOutput={clearOutput}
+              runCommand={runCommand}
+              isExpanded={isTerminalExpanded}
+              setIsExpanded={setIsTerminalExpanded}
+            />
           </div>
         </div>
       </div>

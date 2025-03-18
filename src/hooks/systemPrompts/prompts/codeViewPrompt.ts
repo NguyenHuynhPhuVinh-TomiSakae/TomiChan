@@ -1,3 +1,5 @@
+import { getFileManagementPrompt } from "./fileManagementPrompt";
+
 export const getCodeViewPrompt = (
   currentFile: string,
   currentFileContent: string,
@@ -19,6 +21,8 @@ ${currentFileContent}
 \`\`\``
     : ""
 }
+
+${getFileManagementPrompt()}
 
 Khi bạn sửa code của một hoặc nhiều file, hãy luôn đặt đường dẫn đầy đủ của từng file trong thẻ [PATH][/PATH] trước khi đưa ra code đã sửa. Mỗi file cần sửa phải có một thẻ PATH riêng. Ví dụ:
 

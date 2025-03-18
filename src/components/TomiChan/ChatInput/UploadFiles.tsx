@@ -243,7 +243,7 @@ export default function UploadFiles({
   }, []);
 
   // Hiển thị danh sách file đã gửi cho AI nếu fileType là "ai-files" và đang ở trong Code View
-  if (fileType === "ai-files" && isCodeView) {
+  if (fileType === "ai-files" && isCodeView && sentFiles.length > 0) {
     return (
       <div className="relative border-b border-black dark:border-white">
         <div className="font-medium text-sm py-1 px-2 bg-purple-100 dark:bg-purple-900 border-b border-black dark:border-white flex items-center">

@@ -57,12 +57,46 @@ export function useCodeAssistant() {
     );
   };
 
+  const getUniqueFileName = (baseName: string, existingFiles: CodeFile[]) => {
+    const extension = baseName.includes(".")
+      ? `.${baseName.split(".").pop()}`
+      : "";
+    const nameWithoutExt = baseName.replace(extension, "");
+    let newName = baseName;
+    let counter = 1;
+
+    while (existingFiles.some((file) => file.name === newName)) {
+      newName = `${nameWithoutExt} (${counter})${extension}`;
+      counter++;
+    }
+
+    return newName;
+  };
+
+  const getUniqueFolderName = (
+    baseName: string,
+    existingFolders: CodeFolder[]
+  ) => {
+    let newName = baseName;
+    let counter = 1;
+
+    while (existingFolders.some((folder) => folder.name === newName)) {
+      newName = `${baseName} (${counter})`;
+      counter++;
+    }
+
+    return newName;
+  };
+
   const createNewFolder = async (folderData?: Partial<CodeFolder>) => {
     if (!folderData && !newFileName.trim()) return;
 
+    const folderName = folderData?.name || newFileName;
+    const uniqueFolderName = getUniqueFolderName(folderName, folders);
+
     const newFolder: CodeFolder = {
       id: nanoid(),
-      name: folderData?.name || newFileName,
+      name: uniqueFolderName,
       createdAt: new Date(),
       updatedAt: new Date(),
       parentId:
@@ -91,14 +125,16 @@ export function useCodeAssistant() {
   const createNewFile = async (fileData?: Partial<CodeFile>) => {
     if (!fileData && !newFileName.trim()) return;
 
+    const fileName = fileData?.name || newFileName;
+    const uniqueFileName = getUniqueFileName(fileName, files);
+
     const newFile: CodeFile = {
       id: nanoid(),
-      name: fileData?.name || newFileName,
+      name: uniqueFileName,
       content: fileData?.content || "",
       createdAt: new Date(),
       updatedAt: new Date(),
-      language:
-        (fileData?.name || newFileName).split(".").pop() || "javascript",
+      language: uniqueFileName.split(".").pop() || "javascript",
       folderId: fileData?.folderId || currentFolder || undefined,
     };
 

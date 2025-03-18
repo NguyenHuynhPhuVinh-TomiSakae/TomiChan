@@ -78,7 +78,7 @@ export function FileModal({
               leaveTo="opacity-0 scale-95"
             >
               <Dialog.Panel className="w-full max-w-md transform bg-white dark:bg-gray-800 rounded-lg p-6 text-left align-middle shadow-xl transition-all flex flex-col">
-                <Dialog.Title className="text-xl font-semibold mb-4">
+                <Dialog.Title className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
                   {modalConfig[type].title}
                 </Dialog.Title>
 
@@ -88,14 +88,14 @@ export function FileModal({
                       type="text"
                       value={fileName}
                       onChange={(e) => onFileNameChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
                       placeholder="Nhập tên..."
                       autoFocus
                     />
                   )}
 
                   {type === "delete" && (
-                    <p className="mb-4">
+                    <p className="mb-4 text-gray-700 dark:text-gray-300">
                       Bạn có chắc chắn muốn xóa{" "}
                       {selectedFolder
                         ? `thư mục "${selectedFolder.name}" và tất cả nội dung bên trong`
@@ -110,13 +110,13 @@ export function FileModal({
                 <div className="flex justify-end gap-2 mt-4">
                   <button
                     onClick={onClose}
-                    className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
+                    className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200 cursor-pointer"
                   >
                     Hủy
                   </button>
                   <button
                     onClick={onSubmit}
-                    className={`px-4 py-2 text-white rounded-lg ${modalConfig[type].submitClass} cursor-pointer`}
+                    className={`px-4 py-2 text-white rounded-lg transition-colors duration-200 cursor-pointer ${modalConfig[type].submitClass}`}
                   >
                     {modalConfig[type].submitText}
                   </button>

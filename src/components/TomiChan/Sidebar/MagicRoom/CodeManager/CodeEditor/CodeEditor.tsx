@@ -183,6 +183,7 @@ export default function CodeEditor({
     } else {
       setSessionStorage("ui_state_magic", "code_manager");
       onBack?.();
+      emitter.emit(MAGIC_EVENTS.CLOSE_CODE_FILE);
     }
   };
 

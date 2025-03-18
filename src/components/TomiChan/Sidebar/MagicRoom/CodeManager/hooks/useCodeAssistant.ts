@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { nanoid } from "nanoid";
 import { chatDB } from "../../../../../../utils/db";
 import type { CodeFile, CodeFolder } from "../../../../../../types";
-import { FILE_EXPLORER_EVENTS } from "@/lib/events";
+import { FILE_EXPLORER_EVENTS, MAGIC_EVENTS } from "@/lib/events";
 import { emitter } from "@/lib/events";
 import { setSessionStorage } from "../../../../../../utils/sessionStorage";
 
@@ -207,6 +207,8 @@ export function useCodeAssistant() {
     } else {
       setSessionStorage("ui_state_magic", "code_view");
     }
+
+    emitter.emit(MAGIC_EVENTS.OPEN_CODE_FILE, { filePath: "" });
   };
 
   const handleEditorBack = async () => {

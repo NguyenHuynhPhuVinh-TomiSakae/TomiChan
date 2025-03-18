@@ -1,19 +1,24 @@
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { CodeFile, CodeFolder } from "../../../../../../types";
+import { CodeFile, CodeFolder, Project } from "../../../../../../types";
 
 interface FileModalProps {
-  type: "new" | "edit" | "delete" | "newFolder";
+  type: "new" | "edit" | "delete" | "newFolder" | "newProject";
   isOpen: boolean;
   onClose: () => void;
   fileName: string;
+  projectName?: string;
+  projectDescription?: string;
   onFileNameChange: (name: string) => void;
+  onProjectNameChange?: (name: string) => void;
+  onProjectDescriptionChange?: (description: string) => void;
   onSubmit: () => void;
   selectedFile?: CodeFile;
   folders?: CodeFolder[];
   selectedParentFolder?: string | null;
   onParentFolderChange?: (folderId: string | null) => void;
   selectedFolder?: CodeFolder | null;
+  selectedProject?: Project | null;
 }
 
 export function FileModal({
@@ -21,10 +26,15 @@ export function FileModal({
   isOpen,
   onClose,
   fileName,
+  projectName = "",
+  projectDescription = "",
   onFileNameChange,
+  onProjectNameChange,
+  onProjectDescriptionChange,
   onSubmit,
   selectedFile,
   selectedFolder,
+  selectedProject,
 }: FileModalProps) {
   if (!isOpen) return null;
 
@@ -39,8 +49,17 @@ export function FileModal({
       submitText: "Tạo",
       submitClass: "bg-purple-500 hover:bg-purple-600",
     },
+    newProject: {
+      title: "Tạo dự án mới",
+      submitText: "Tạo",
+      submitClass: "bg-purple-500 hover:bg-purple-600",
+    },
     edit: {
-      title: "Đổi tên tệp",
+      title: selectedProject
+        ? "Đổi tên dự án"
+        : selectedFolder
+        ? "Đổi tên thư mục"
+        : "Đổi tên tệp",
       submitText: "Lưu",
       submitClass: "bg-purple-500 hover:bg-purple-600",
     },
@@ -83,7 +102,52 @@ export function FileModal({
                 </Dialog.Title>
 
                 <div className="overflow-y-auto grow">
-                  {type !== "delete" && (
+                  {type === "delete" ? (
+                    <p className="mb-4 text-gray-700 dark:text-gray-300">
+                      Bạn có chắc chắn muốn xóa{" "}
+                      {selectedProject
+                        ? `dự án "${selectedProject.name}" và tất cả nội dung bên trong`
+                        : selectedFolder
+                        ? `thư mục "${selectedFolder.name}" và tất cả nội dung bên trong`
+                        : selectedFile
+                        ? `tệp "${selectedFile.name}"`
+                        : "mục này"}{" "}
+                      không?
+                    </p>
+                  ) : type === "newProject" ||
+                    (type === "edit" && selectedProject) ? (
+                    <>
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Tên dự án
+                        </label>
+                        <input
+                          type="text"
+                          value={projectName}
+                          onChange={(e) =>
+                            onProjectNameChange?.(e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
+                          placeholder="Nhập tên dự án..."
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Mô tả (tùy chọn)
+                        </label>
+                        <textarea
+                          value={projectDescription}
+                          onChange={(e) =>
+                            onProjectDescriptionChange?.(e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
+                          placeholder="Nhập mô tả dự án..."
+                          rows={3}
+                        />
+                      </div>
+                    </>
+                  ) : (
                     <input
                       type="text"
                       value={fileName}
@@ -92,18 +156,6 @@ export function FileModal({
                       placeholder="Nhập tên..."
                       autoFocus
                     />
-                  )}
-
-                  {type === "delete" && (
-                    <p className="mb-4 text-gray-700 dark:text-gray-300">
-                      Bạn có chắc chắn muốn xóa{" "}
-                      {selectedFolder
-                        ? `thư mục "${selectedFolder.name}" và tất cả nội dung bên trong`
-                        : selectedFile
-                        ? `tệp "${selectedFile.name}"`
-                        : "mục này"}{" "}
-                      không?
-                    </p>
                   )}
                 </div>
 

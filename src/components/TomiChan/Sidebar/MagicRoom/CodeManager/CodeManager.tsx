@@ -14,6 +14,7 @@ import {
   IconDownload,
   IconDotsVertical,
   IconFileOff,
+  IconFolderCode,
 } from "@tabler/icons-react";
 import { FileModal } from "./Modals/FileModal";
 import CodeEditor from "./CodeEditor";
@@ -49,39 +50,56 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
   const {
     files,
     folders,
+    projects,
     isNewFileModalOpen,
     isEditModalOpen,
     isDeleteModalOpen,
+    isNewProjectModalOpen,
     isNewFolderModalOpen,
-    setIsNewFolderModalOpen,
     newFileName,
+    newProjectName,
+    newProjectDescription,
     selectedFile,
     activeFile,
     selectedFolder,
+    selectedProject,
     selectedParentFolder,
     currentFolder,
+    currentProject,
     setIsNewFileModalOpen,
     setIsEditModalOpen,
     setIsDeleteModalOpen,
+    setIsNewProjectModalOpen,
+    setIsNewFolderModalOpen,
     setNewFileName,
+    setNewProjectName,
+    setNewProjectDescription,
     setSelectedFile,
     setSelectedFolder,
+    setSelectedProject,
     setSelectedParentFolder,
     createNewFile,
     createNewFolder,
+    createNewProject,
     handleEditFile,
     handleDeleteFile,
     handleEditFolder,
     handleDeleteFolder,
+    handleEditProject,
+    handleDeleteProject,
     handleFileOpen,
     handleEditorBack,
     handleFolderClick,
+    handleProjectClick,
     handlePathClick,
     openEditFolderModal,
     openDeleteFolderModal,
     getCurrentPath,
     loadFiles,
     loadFolders,
+    loadProjects,
+    setCurrentProject,
+    setCurrentFolder,
   } = useCodeAssistant();
 
   // Thêm useEffect để gán ui_state khi khởi tạo
@@ -236,17 +254,25 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
 
   const renderFolderContents = (folderId: string | null) => {
     const foldersInCurrent = folders.filter((folder) => {
-      if (folderId === null) {
-        return folder.parentId === undefined || folder.parentId === null;
+      if (currentProject) {
+        // Nếu đang trong project, chỉ lấy folders của project đó
+        return (
+          folder.projectId === currentProject && folder.parentId === folderId
+        );
+      } else {
+        // Nếu đang ở root, lấy folders không thuộc project nào
+        return !folder.projectId && folder.parentId === folderId;
       }
-      return folder.parentId === folderId;
     });
 
     const filesInCurrent = files.filter((file) => {
-      if (folderId === null) {
-        return file.folderId === undefined || file.folderId === null;
+      if (currentProject) {
+        // Nếu đang trong project, chỉ lấy files của project đó
+        return file.projectId === currentProject && file.folderId === folderId;
+      } else {
+        // Nếu đang ở root, lấy files không thuộc project nào
+        return !file.projectId && file.folderId === folderId;
       }
-      return file.folderId === folderId;
     });
 
     // Kiểm tra nếu không có thư mục và file nào
@@ -448,6 +474,280 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
     );
   };
 
+  const renderProjectList = () => {
+    const rootFolders = folders.filter(
+      (f) => !f.projectId && (!f.parentId || f.parentId === null)
+    );
+    const rootFiles = files.filter(
+      (f) => !f.projectId && (!f.folderId || f.folderId === null)
+    );
+
+    if (
+      projects.length === 0 &&
+      rootFolders.length === 0 &&
+      rootFiles.length === 0
+    ) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-gray-500 dark:text-gray-400">
+          <IconFolderCode size={48} className="mb-4 opacity-50" />
+          <p className="text-lg font-medium mb-2">Chưa có dự án nào</p>
+          <p className="text-sm text-center max-w-md">
+            Tạo dự án mới để bắt đầu quản lý mã nguồn của bạn.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className={`${
+          isGridView ? "grid grid-cols-2 md:grid-cols-3 gap-4" : "space-y-2"
+        }`}
+      >
+        {projects.map((project) => (
+          <div
+            key={project.id}
+            className={`${
+              isGridView
+                ? "p-4 border rounded-lg border-gray-200 dark:border-gray-800"
+                : "p-2"
+            } hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group relative ${
+              currentProject === project.id
+                ? "bg-gray-100 dark:bg-gray-800"
+                : ""
+            }`}
+            onClick={() => handleProjectClick(project.id)}
+          >
+            <div className="flex items-center flex-1">
+              <IconFolderCode size={20} className="mr-2 text-blue-500" />
+              <div className="flex-1">
+                <span className="block truncate font-medium">
+                  {project.name}
+                </span>
+                {project.description && (
+                  <span className="block text-sm text-gray-500 dark:text-gray-400 truncate">
+                    {project.description}
+                  </span>
+                )}
+              </div>
+              <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 hover:opacity-100">
+                <Menu as="div" className="relative inline-block text-left">
+                  <div>
+                    <Menu.Button
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <IconDotsVertical size={18} />
+                    </Menu.Button>
+                  </div>
+                  <Transition
+                    as={Fragment}
+                    enter="transition ease-out duration-100"
+                    enterFrom="transform opacity-0 scale-95"
+                    enterTo="transform opacity-100 scale-100"
+                    leave="transition ease-in duration-75"
+                    leaveFrom="transform opacity-100 scale-100"
+                    leaveTo="transform opacity-0 scale-95"
+                  >
+                    <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <div className="py-1">
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedProject(project);
+                                setNewProjectName(project.name);
+                                setNewProjectDescription(
+                                  project.description || ""
+                                );
+                                setIsEditModalOpen(true);
+                              }}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm`}
+                            >
+                              <IconEdit size={16} className="mr-2" />
+                              Đổi tên
+                            </button>
+                          )}
+                        </Menu.Item>
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedProject(project);
+                                setIsDeleteModalOpen(true);
+                              }}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm text-red-500`}
+                            >
+                              <IconTrash size={16} className="mr-2" />
+                              Xóa
+                            </button>
+                          )}
+                        </Menu.Item>
+                      </div>
+                    </Menu.Items>
+                  </Transition>
+                </Menu>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {rootFolders.map((folder) => (
+          <div
+            key={folder.id}
+            className={`${
+              isGridView
+                ? "p-4 border rounded-lg border-gray-200 dark:border-gray-800"
+                : "p-2"
+            } hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group relative`}
+            onClick={() => handleFolderClick(folder.id)}
+          >
+            <div className="flex items-center flex-1">
+              <IconFolder size={20} className="mr-2 text-yellow-500" />
+              <span className="flex-1 truncate">{folder.name}</span>
+              <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 hover:opacity-100">
+                <Menu as="div" className="relative inline-block text-left">
+                  <div>
+                    <Menu.Button
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <IconDotsVertical size={18} />
+                    </Menu.Button>
+                  </div>
+                  <Transition
+                    as={Fragment}
+                    enter="transition ease-out duration-100"
+                    enterFrom="transform opacity-0 scale-95"
+                    enterTo="transform opacity-100 scale-100"
+                    leave="transition ease-in duration-75"
+                    leaveFrom="transform opacity-100 scale-100"
+                    leaveTo="transform opacity-0 scale-95"
+                  >
+                    <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <div className="py-1">
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => openEditFolderModal(folder, e)}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm`}
+                            >
+                              <IconEdit size={16} className="mr-2" />
+                              Đổi tên
+                            </button>
+                          )}
+                        </Menu.Item>
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => openDeleteFolderModal(folder, e)}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm text-red-500`}
+                            >
+                              <IconTrash size={16} className="mr-2" />
+                              Xóa
+                            </button>
+                          )}
+                        </Menu.Item>
+                      </div>
+                    </Menu.Items>
+                  </Transition>
+                </Menu>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {rootFiles.map((file) => (
+          <div
+            key={file.id}
+            className={`${
+              isGridView
+                ? "p-4 border rounded-lg border-gray-200 dark:border-gray-800"
+                : "p-3 flex items-center"
+            } hover:bg-gray-50 dark:hover:bg-gray-900 group cursor-pointer relative`}
+            onClick={() => handleFileOpen(file)}
+          >
+            <div className={`${isGridView ? "" : "flex-1"} flex items-center`}>
+              <FileIcon fileName={file.name} />
+              <span className="flex-1 truncate">{file.name}</span>
+              <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 hover:opacity-100">
+                <Menu as="div" className="relative inline-block text-left">
+                  <div>
+                    <Menu.Button
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <IconDotsVertical size={18} />
+                    </Menu.Button>
+                  </div>
+                  <Transition
+                    as={Fragment}
+                    enter="transition ease-out duration-100"
+                    enterFrom="transform opacity-0 scale-95"
+                    enterTo="transform opacity-100 scale-100"
+                    leave="transition ease-in duration-75"
+                    leaveFrom="transform opacity-100 scale-100"
+                    leaveTo="transform opacity-0 scale-95"
+                  >
+                    <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <div className="py-1">
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFile(file);
+                                setNewFileName(file.name);
+                                setIsEditModalOpen(true);
+                              }}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm`}
+                            >
+                              <IconEdit size={16} className="mr-2" />
+                              Đổi tên
+                            </button>
+                          )}
+                        </Menu.Item>
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFile(file);
+                                setIsDeleteModalOpen(true);
+                              }}
+                              className={`${
+                                active ? "bg-gray-100 dark:bg-gray-700" : ""
+                              } flex w-full items-center px-4 py-2 text-sm text-red-500`}
+                            >
+                              <IconTrash size={16} className="mr-2" />
+                              Xóa
+                            </button>
+                          )}
+                        </Menu.Item>
+                      </div>
+                    </Menu.Items>
+                  </Transition>
+                </Menu>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const isMediaFile = (fileName: string) => {
     const extension = fileName.split(".").pop()?.toLowerCase();
     return [
@@ -530,6 +830,14 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
               </button>
               <div className="flex gap-2">
                 <button
+                  onClick={() => setIsNewProjectModalOpen(true)}
+                  className="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
+                  title="Tạo dự án mới"
+                >
+                  <IconFolderCode size={20} className="mr-1" />
+                  <span className="hidden sm:inline">Dự án mới</span>
+                </button>
+                <button
                   onClick={() => {
                     setSelectedParentFolder(currentFolder);
                     setIsNewFolderModalOpen(true);
@@ -564,34 +872,50 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
           </div>
 
           {/* Navigation path */}
-          <div className="flex items-center p-4 gap-2 text-sm text-gray-500 border-b border-gray-200 dark:border-gray-800">
-            <button
-              onClick={() => handlePathClick(null)}
-              className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer"
-            >
-              Thư mục gốc
-            </button>
-            {currentFolder && folders.find((f) => f.id === currentFolder) && (
-              <>
-                {getCurrentPath()
-                  .split(" / ")
-                  .map((name, index, array) => {
-                    const folder = folders.find((f) => f.name === name);
-                    return (
-                      <React.Fragment key={folder?.id || index}>
-                        <span className="text-gray-400">\</span>
-                        <button
-                          onClick={() => handlePathClick(folder?.id || null)}
-                          className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer"
-                        >
-                          {name}
-                        </button>
-                      </React.Fragment>
-                    );
-                  })}
-              </>
-            )}
-          </div>
+          {(currentProject || currentFolder) && (
+            <div className="flex items-center p-4 gap-2 text-sm text-gray-500 border-b border-gray-200 dark:border-gray-800">
+              <button
+                onClick={() => {
+                  setCurrentProject(null);
+                  setCurrentFolder(null);
+                }}
+                className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer"
+              >
+                {currentProject ? "Dự án" : "Thư mục gốc"}
+              </button>
+              {currentProject && (
+                <>
+                  <span className="text-gray-400">\</span>
+                  <button
+                    onClick={() => handlePathClick(null)}
+                    className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer"
+                  >
+                    {projects.find((p) => p.id === currentProject)?.name}
+                  </button>
+                </>
+              )}
+              {currentFolder && folders.find((f) => f.id === currentFolder) && (
+                <>
+                  {getCurrentPath()
+                    .split(" / ")
+                    .map((name, index, array) => {
+                      const folder = folders.find((f) => f.name === name);
+                      return (
+                        <React.Fragment key={folder?.id || index}>
+                          <span className="text-gray-400">\</span>
+                          <button
+                            onClick={() => handlePathClick(folder?.id || null)}
+                            className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer"
+                          >
+                            {name}
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
+                </>
+              )}
+            </div>
+          )}
 
           {/* Main Content */}
           <FileUploadZone
@@ -601,21 +925,27 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
             isMediaFile={isMediaFile}
             className="flex-1 overflow-y-auto p-4 relative"
           >
-            <div
-              className={`${
-                isGridView
-                  ? "grid grid-cols-2 md:grid-cols-3 gap-4"
-                  : "space-y-2"
-              }`}
-            >
-              {renderFolderContents(currentFolder)}
-            </div>
+            {currentProject || currentFolder ? (
+              <div
+                className={`${
+                  isGridView
+                    ? "grid grid-cols-2 md:grid-cols-3 gap-4"
+                    : "space-y-2"
+                }`}
+              >
+                {renderFolderContents(currentFolder)}
+              </div>
+            ) : (
+              renderProjectList()
+            )}
           </FileUploadZone>
 
-          {/* Modal */}
+          {/* Modals */}
           <FileModal
             type={
-              isNewFolderModalOpen
+              isNewProjectModalOpen
+                ? "newProject"
+                : isNewFolderModalOpen
                 ? "newFolder"
                 : isNewFileModalOpen
                 ? "new"
@@ -627,32 +957,47 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
               isNewFileModalOpen ||
               isEditModalOpen ||
               isDeleteModalOpen ||
-              isNewFolderModalOpen
+              isNewFolderModalOpen ||
+              isNewProjectModalOpen
             }
             onClose={() => {
               setIsNewFileModalOpen(false);
               setIsEditModalOpen(false);
               setIsDeleteModalOpen(false);
               setIsNewFolderModalOpen(false);
+              setIsNewProjectModalOpen(false);
               setNewFileName("");
+              setNewProjectName("");
+              setNewProjectDescription("");
               setSelectedFile(null);
               setSelectedFolder(null);
+              setSelectedProject(null);
             }}
             fileName={newFileName}
+            projectName={newProjectName}
+            projectDescription={newProjectDescription}
             onFileNameChange={setNewFileName}
+            onProjectNameChange={setNewProjectName}
+            onProjectDescriptionChange={setNewProjectDescription}
             onSubmit={() => {
-              if (isNewFileModalOpen) {
+              if (isNewProjectModalOpen) {
+                createNewProject();
+              } else if (isNewFileModalOpen) {
                 createNewFile();
               } else if (isNewFolderModalOpen) {
                 createNewFolder();
               } else if (isEditModalOpen) {
-                if (selectedFolder) {
+                if (selectedProject) {
+                  handleEditProject();
+                } else if (selectedFolder) {
                   handleEditFolder();
                 } else {
                   handleEditFile();
                 }
               } else if (isDeleteModalOpen) {
-                if (selectedFolder) {
+                if (selectedProject) {
+                  handleDeleteProject();
+                } else if (selectedFolder) {
                   handleDeleteFolder();
                 } else {
                   handleDeleteFile();
@@ -661,6 +1006,7 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
             }}
             selectedFile={selectedFile || undefined}
             selectedFolder={selectedFolder}
+            selectedProject={selectedProject}
             folders={folders}
             selectedParentFolder={selectedParentFolder}
             onParentFolderChange={setSelectedParentFolder}

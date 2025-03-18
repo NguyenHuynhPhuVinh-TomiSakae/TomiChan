@@ -3,7 +3,7 @@ import { IconFolderPlus, IconFilePlus, IconDots } from "@tabler/icons-react";
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { chatDB } from "../../../../../../utils/db";
-import type { CodeFile, CodeFolder } from "../../../../../../types";
+import type { CodeFile, CodeFolder, Project } from "../../../../../../types";
 import FolderNode from "./FolderNode";
 import FileItem from "./FileItem";
 import NewItemInput from "./NewItemInput";
@@ -35,10 +35,12 @@ export default function FileExplorer({
   const [creatingFileId, setCreatingFileId] = useState<string | null>(null);
   const [creatingRootFolder, setCreatingRootFolder] = useState(false);
   const [creatingRootFile, setCreatingRootFile] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   const loadData = async () => {
     const allFolders = await chatDB.getAllFolders();
     const allFiles = await chatDB.getAllCodeFiles();
+    const allProjects = await chatDB.getAllProjects();
 
     // Sắp xếp thư mục và file theo bảng chữ cái
     const sortedFolders = allFolders.sort((a, b) =>
@@ -48,6 +50,7 @@ export default function FileExplorer({
 
     setFolders(sortedFolders);
     setFiles(sortedFiles);
+    setProjects(allProjects);
 
     // Mặc định mở thư mục gốc
     const rootFolders = sortedFolders.filter((f) => !f.parentId);
@@ -204,11 +207,30 @@ export default function FileExplorer({
     });
   };
 
-  // Lấy thư mục gốc (không có parentId)
-  const rootFolders = folders.filter((folder) => !folder.parentId);
+  // Lấy thông tin file đang active và project của nó
+  const activeFile = files.find((f) => f.id === activeFileId);
+  const activeProject = activeFile?.projectId
+    ? projects.find((p) => p.id === activeFile.projectId)
+    : null;
 
-  // Lấy file không thuộc thư mục nào
-  const rootFiles = files.filter((file) => !file.folderId);
+  // Lọc các thư mục và file dựa vào project của file đang active
+  const rootFolders = folders.filter((folder) => {
+    if (activeFile?.projectId) {
+      // Nếu đang trong project, chỉ hiển thị thư mục gốc của project đó
+      return folder.projectId === activeFile.projectId && !folder.parentId;
+    }
+    // Nếu không trong project nào, chỉ hiển thị thư mục gốc không thuộc project nào
+    return !folder.projectId && !folder.parentId;
+  });
+
+  const rootFiles = files.filter((file) => {
+    if (activeFile?.projectId) {
+      // Nếu đang trong project, chỉ hiển thị file gốc của project đó
+      return file.projectId === activeFile.projectId && !file.folderId;
+    }
+    // Nếu không trong project nào, chỉ hiển thị file gốc không thuộc project nào
+    return !file.projectId && !file.folderId;
+  });
 
   return (
     <div
@@ -217,7 +239,7 @@ export default function FileExplorer({
       <div className="p-2 flex flex-col h-full">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-medium text-gray-700 dark:text-gray-300">
-            EXPLORER
+            {activeProject ? activeProject.name : "ROOT"}
           </h3>
           <Menu as="div" className="relative inline-block text-left">
             <div>
@@ -307,6 +329,7 @@ export default function FileExplorer({
                   type="folder"
                   level={0}
                   parentId=""
+                  projectId={activeProject?.id}
                   onCancel={handleCancelCreateFolder}
                 />
               )}
@@ -328,6 +351,7 @@ export default function FileExplorer({
                   type="file"
                   level={0}
                   parentId=""
+                  projectId={activeProject?.id}
                   onCancel={handleCancelCreateFile}
                 />
               )}

@@ -92,12 +92,27 @@ export function useCodeAssistant() {
 
   const getUniqueFolderName = (
     baseName: string,
-    existingFolders: CodeFolder[]
+    existingFolders: CodeFolder[],
+    parentId?: string | null,
+    projectId?: string
   ) => {
     let newName = baseName;
     let counter = 1;
 
-    while (existingFolders.some((folder) => folder.name === newName)) {
+    const siblingFolders = existingFolders.filter((folder) => {
+      if (projectId) {
+        return (
+          folder.projectId === projectId &&
+          ((!parentId && !folder.parentId) || folder.parentId === parentId)
+        );
+      } else if (parentId) {
+        return !folder.projectId && folder.parentId === parentId;
+      } else {
+        return !folder.projectId && !folder.parentId;
+      }
+    });
+
+    while (siblingFolders.some((folder) => folder.name === newName)) {
       newName = `${baseName} (${counter})`;
       counter++;
     }
@@ -128,7 +143,17 @@ export function useCodeAssistant() {
     if (!folderData && !newFileName.trim()) return;
 
     const folderName = folderData?.name || newFileName;
-    const uniqueFolderName = getUniqueFolderName(folderName, folders);
+    const parentId =
+      folderData?.parentId !== undefined
+        ? folderData.parentId
+        : selectedParentFolder;
+
+    const uniqueFolderName = getUniqueFolderName(
+      folderName,
+      folders,
+      parentId,
+      currentProject || undefined
+    );
 
     const newFolder: CodeFolder = {
       id: nanoid(),
@@ -136,10 +161,7 @@ export function useCodeAssistant() {
       createdAt: new Date(),
       updatedAt: new Date(),
       projectId: currentProject || undefined,
-      parentId:
-        folderData?.parentId !== undefined
-          ? folderData.parentId
-          : selectedParentFolder || undefined,
+      parentId: parentId || undefined,
     };
 
     try {

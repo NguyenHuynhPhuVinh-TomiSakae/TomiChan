@@ -12,6 +12,7 @@ interface NewItemInputProps {
   level: number;
   parentId: string;
   onCancel: () => void;
+  projectId?: string;
 }
 
 const NewItemInput: React.FC<NewItemInputProps> = ({
@@ -19,6 +20,7 @@ const NewItemInput: React.FC<NewItemInputProps> = ({
   level,
   parentId,
   onCancel,
+  projectId,
 }) => {
   const [name, setName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +44,7 @@ const NewItemInput: React.FC<NewItemInputProps> = ({
           id: nanoid(),
           name: name.trim(),
           parentId: parentId === "" ? null : parentId,
+          projectId: projectId,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -52,6 +55,7 @@ const NewItemInput: React.FC<NewItemInputProps> = ({
           name: name.trim(),
           content: "",
           folderId: parentId === "" ? null : parentId,
+          projectId: projectId,
           language: name.trim().split(".").pop() || "javascript",
           createdAt: new Date(),
           updatedAt: new Date(),

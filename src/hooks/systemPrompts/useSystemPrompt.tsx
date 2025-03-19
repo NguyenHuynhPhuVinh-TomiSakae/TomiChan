@@ -20,6 +20,7 @@ import { getSentFilesPrompt } from "./prompts/sentFilesPrompt";
 import { getSystemTagPrompt } from "./prompts/systemTagPrompt";
 import { getProjectManagementPrompt } from "./prompts/fileManagementPrompt";
 import { getEmailToolPrompt } from "./prompts/emailToolPrompt";
+import { getTVUScheduleToolPrompt } from "./prompts/tvuScheduleToolPrompt";
 
 export function useSystemPrompt() {
   const [uiState, setUiState] = useState(
@@ -238,13 +239,19 @@ export function useSystemPrompt() {
       enhancedPrompt = getSentFilesPrompt(sentFiles) + enhancedPrompt;
     }
 
-    // Kiểm tra xem công cụ email có được bật không
+    // Kiểm tra xem công cụ nào đã được bật
     const enabledTools = JSON.parse(getLocalStorage("enabled_tools", "[]"));
     const isEmailEnabled = enabledTools.includes("email");
+    const isTVUScheduleEnabled = enabledTools.includes("tvu_schedule");
 
     if (isEmailEnabled) {
       const emailToolPrompt = getEmailToolPrompt();
       enhancedPrompt = emailToolPrompt + enhancedPrompt;
+    }
+
+    if (isTVUScheduleEnabled) {
+      const tvuScheduleToolPrompt = getTVUScheduleToolPrompt();
+      enhancedPrompt = tvuScheduleToolPrompt + enhancedPrompt;
     }
 
     // Luôn luôn thêm systemTagInstruction vào cuối

@@ -62,6 +62,8 @@ const customSchema = {
     "code-editor",
     "file-path",
     "email-block",
+    "tvu-schedule-block",
+    "tvu-schedule-result",
   ],
 };
 

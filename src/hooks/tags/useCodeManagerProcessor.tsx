@@ -38,18 +38,52 @@ export function useCodeManagerProcessor() {
       const fileContent = match[1];
       const name = fileContent.match(/name:\s*(.*)/)?.[1]?.trim();
       const path = fileContent.match(/path:\s*(.*)/)?.[1]?.trim();
+      const projectId = fileContent.match(/projectId:\s*(.*)/)?.[1]?.trim();
       const fileData = fileContent
         .match(/content:\s*([\s\S]*?)(?=\[\/CreateFile\]|$)/)?.[1]
         ?.trim();
 
       if (name) {
+        console.log(
+          `Chuẩn bị tạo file: ${name}, projectId: ${projectId || "undefined"}`
+        );
+
         // Tìm folder ID từ tên folder
-        const targetFolder = folders.find((f) => f.name === path);
-        await createNewFile({
+        const targetFolder = folders.find((f) => {
+          // Nếu có projectId, folder phải thuộc project đó
+          if (projectId && path) {
+            return f.name === path && f.projectId === projectId;
+          }
+          // Nếu không có projectId, tìm folder không thuộc project nào
+          if (path) {
+            return f.name === path && !f.projectId;
+          }
+          return false;
+        });
+
+        // Log ra thông tin tìm được
+        if (path) {
+          console.log(
+            `Tìm folder: ${path}, kết quả: ${
+              targetFolder ? targetFolder.id : "không tìm thấy"
+            }`
+          );
+        }
+
+        // Đảm bảo projectId được chuyển đúng kiểu dữ liệu
+        const fileCreateInfo: Partial<CodeFile> = {
           name,
           content: fileData || "",
           folderId: targetFolder?.id,
-        });
+        };
+
+        // Chỉ thêm projectId nếu nó tồn tại
+        if (projectId) {
+          fileCreateInfo.projectId = projectId;
+          console.log(`Thêm projectId: ${projectId} vào thông tin file`);
+        }
+
+        await createNewFile(fileCreateInfo);
         hasChanges = true;
       }
     }
@@ -66,14 +100,50 @@ export function useCodeManagerProcessor() {
       const folderContent = match[1];
       const name = folderContent.match(/name:\s*(.*)/)?.[1]?.trim();
       const path = folderContent.match(/path:\s*(.*)/)?.[1]?.trim();
+      const projectId = folderContent.match(/projectId:\s*(.*)/)?.[1]?.trim();
 
       if (name) {
+        console.log(
+          `Chuẩn bị tạo thư mục: ${name}, projectId: ${
+            projectId || "undefined"
+          }`
+        );
+
         // Tìm parent folder ID từ tên folder
-        const parentFolder = folders.find((f) => f.name === path);
-        await createNewFolder({
+        const parentFolder = folders.find((f) => {
+          // Nếu có projectId, folder phải thuộc project đó
+          if (projectId && path) {
+            return f.name === path && f.projectId === projectId;
+          }
+          // Nếu không có projectId, tìm folder không thuộc project nào
+          if (path) {
+            return f.name === path && !f.projectId;
+          }
+          return false;
+        });
+
+        // Log ra thông tin tìm được
+        if (path) {
+          console.log(
+            `Tìm folder cha: ${path}, kết quả: ${
+              parentFolder ? parentFolder.id : "không tìm thấy"
+            }`
+          );
+        }
+
+        // Đảm bảo projectId được chuyển đúng kiểu dữ liệu
+        const folderCreateInfo: Partial<CodeFolder> = {
           name,
           parentId: parentFolder?.id,
-        });
+        };
+
+        // Chỉ thêm projectId nếu nó tồn tại
+        if (projectId) {
+          folderCreateInfo.projectId = projectId;
+          console.log(`Thêm projectId: ${projectId} vào thông tin thư mục`);
+        }
+
+        await createNewFolder(folderCreateInfo);
         hasChanges = true;
       }
     }

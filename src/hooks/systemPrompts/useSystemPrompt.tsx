@@ -187,7 +187,12 @@ export function useSystemPrompt() {
       // Sử dụng createProjectFileTree nếu file thuộc project, ngược lại sử dụng createFileTree nhưng không hiển thị danh sách dự án
       try {
         let fileTree;
+        let currentProject = null;
+
         if (projectId) {
+          // Tìm thông tin project
+          currentProject = projects.find((p) => p.id === projectId) || null;
+
           // Nếu file thuộc project, chỉ hiện file và thư mục trong project đó
           fileTree = createProjectFileTree(projectId, fileName);
         } else {
@@ -196,13 +201,14 @@ export function useSystemPrompt() {
         }
 
         enhancedPrompt =
-          getCodeViewPrompt(fileName, fileContent, fileTree) + enhancedPrompt;
+          getCodeViewPrompt(fileName, fileContent, fileTree, currentProject) +
+          enhancedPrompt;
       } catch (error) {
         console.error("Lỗi khi lấy cấu trúc file:", error);
 
         // Fallback về createFileTree nếu có lỗi
         enhancedPrompt =
-          getCodeViewPrompt(fileName, fileContent, createFileTree()) +
+          getCodeViewPrompt(fileName, fileContent, createFileTree(), null) +
           enhancedPrompt;
       }
     }

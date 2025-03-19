@@ -155,7 +155,7 @@ export function useCodeAssistant() {
       folderName,
       folders,
       parentId,
-      currentProject || undefined
+      folderData?.projectId || currentProject || undefined
     );
 
     const newFolder: CodeFolder = {
@@ -163,7 +163,7 @@ export function useCodeAssistant() {
       name: uniqueFolderName,
       createdAt: new Date(),
       updatedAt: new Date(),
-      projectId: currentProject || undefined,
+      projectId: folderData?.projectId || currentProject || undefined,
       parentId: parentId || undefined,
     };
 
@@ -197,7 +197,7 @@ export function useCodeAssistant() {
       createdAt: new Date(),
       updatedAt: new Date(),
       language: uniqueFileName.split(".").pop() || "javascript",
-      projectId: currentProject || undefined,
+      projectId: fileData?.projectId || currentProject || undefined,
       folderId: fileData?.folderId || currentFolder || undefined,
     };
 

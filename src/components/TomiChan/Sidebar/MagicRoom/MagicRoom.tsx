@@ -82,67 +82,84 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
         {/* Tools Grid */}
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <motion.button
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             onClick={() => {
               setSessionStorage("ui_state_magic", "code_manager");
               setShowCodeAssistant(true);
             }}
-            className="w-full p-6 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/20 flex items-center gap-4 transition-all cursor-pointer"
+            className="w-full p-5 rounded-xl bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-gray-900 border border-gray-200 dark:border-gray-700 flex items-center gap-4 transition-colors cursor-pointer"
           >
             <IconWand className="text-purple-500 w-8 h-8" />
-            <div className="text-left">
-              <h3 className="text-lg font-semibold">Quản Lý Mã Nguồn</h3>
-              <p className="text-gray-600 dark:text-gray-400">
+            <div className="text-left flex-1">
+              <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">
+                Quản Lý Mã Nguồn
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 AI hỗ trợ viết code, debug và tối ưu hóa
               </p>
             </div>
           </motion.button>
 
           <motion.button
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="w-full p-6 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border border-blue-500/20 flex items-center gap-4 transition-all opacity-30"
+            className="w-full p-5 rounded-xl bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-gray-900 border border-gray-200 dark:border-gray-700 flex items-center gap-4 transition-colors"
           >
             <IconBook className="text-blue-500 w-8 h-8" />
-            <div className="text-left">
-              <h3 className="text-lg font-semibold">Sáng Tạo Truyện</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Công cụ hỗ trợ sáng tác và phát triển cốt truyện
+            <div className="text-left flex-1">
+              <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">
+                Sáng Tạo Truyện
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Công cụ hỗ trợ sáng tác, phát triển cốt truyện
               </p>
             </div>
+            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded">
+              Đang phát triển
+            </span>
           </motion.button>
 
           <motion.button
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="w-full p-6 rounded-xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 hover:from-green-500/20 hover:to-emerald-500/20 border border-green-500/20 flex items-center gap-4 transition-all opacity-30"
+            className="w-full p-5 rounded-xl bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-gray-900 border border-gray-200 dark:border-gray-700 flex items-center gap-4 transition-colors"
           >
             <IconLanguage className="text-green-500 w-8 h-8" />
-            <div className="text-left">
-              <h3 className="text-lg font-semibold">Dịch Truyện</h3>
-              <p className="text-gray-600 dark:text-gray-400">
+            <div className="text-left flex-1">
+              <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">
+                Dịch Truyện
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Dịch thuật thông minh với độ chính xác cao
               </p>
             </div>
+            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded">
+              Đang phát triển
+            </span>
           </motion.button>
 
           <motion.button
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="w-full p-6 rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 hover:from-amber-500/20 hover:to-yellow-500/20 border border-amber-500/20 flex items-center gap-4 transition-all opacity-30"
+            className="w-full p-5 rounded-xl bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-gray-900 border border-gray-200 dark:border-gray-700 flex items-center gap-4 transition-colors"
           >
             <IconListCheck className="text-amber-500 w-8 h-8" />
-            <div className="text-left">
-              <h3 className="text-lg font-semibold">Quản Lý Công Việc</h3>
-              <p className="text-gray-600 dark:text-gray-400">
+            <div className="text-left flex-1">
+              <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">
+                Quản Lý Công Việc
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Lập kế hoạch và theo dõi tiến độ thông minh
               </p>
             </div>
+            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded">
+              Đang phát triển
+            </span>
           </motion.button>
         </div>
       </div>

@@ -133,12 +133,14 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
           emitter.emit(MAGIC_EVENTS.ACCEPT_CODE, {
             filePath: filePath,
             newContent: codeContent,
+            projectId: projectId,
           });
         }
       };
 
       // Tìm file path từ nội dung gốc trước code block
       let filePath = "";
+      let projectId: string | undefined = undefined;
       if (node?.position?.start?.offset) {
         // Lấy nội dung từ đầu đến vị trí bắt đầu của code block
         const previousText = content.substring(0, node.position.start.offset);
@@ -150,7 +152,16 @@ export default function Markdown({ content, className = "" }: MarkdownProps) {
         if (pathMatches.length > 0) {
           // Lấy thẻ PATH cuối cùng
           const lastPathMatch = pathMatches[pathMatches.length - 1];
-          filePath = lastPathMatch[1].trim();
+          const pathContent = lastPathMatch[1].trim();
+
+          // Kiểm tra xem có định dạng path|projectId không
+          const pathParts = pathContent.split("|");
+          filePath = pathParts[0].trim();
+
+          // Nếu có projectId
+          if (pathParts.length > 1) {
+            projectId = pathParts[1].trim();
+          }
         }
       }
 

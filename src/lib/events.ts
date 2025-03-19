@@ -6,12 +6,16 @@ type Events = {
   "fileExplorer:reload": void;
   "media:openFile": { fileName: string };
   "media:closeFile": void;
-  "code:openFile": { filePath: string };
+  "code:openFile": {
+    filePath: string;
+    projectId?: string;
+  };
   "code:closeFile": void;
   "magic:backToRoom": void;
   "code:accept": {
     filePath: string;
     newContent: string;
+    projectId?: string;
   };
   "file:contentUpdated": {
     fileId: string;

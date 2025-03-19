@@ -36,6 +36,11 @@ export interface CustomComponents extends Components {
   "delete-file": (props: BaseComponentProps) => JSX.Element;
   "delete-folder": (props: BaseComponentProps) => JSX.Element;
 
+  // Project operations
+  "create-project": (props: { children: React.ReactNode }) => JSX.Element;
+  "update-project": (props: BaseComponentProps) => JSX.Element;
+  "delete-project": (props: BaseComponentProps) => JSX.Element;
+
   // Media và Code
   "open-media": (props: BaseComponentProps) => JSX.Element;
   "media-view": (props: BaseComponentProps) => JSX.Element;

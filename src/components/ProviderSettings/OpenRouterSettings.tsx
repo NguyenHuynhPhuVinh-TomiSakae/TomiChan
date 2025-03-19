@@ -45,8 +45,14 @@ export default function OpenRouterSettings({
   const [isMistralOpen, setIsMistralOpen] = useState(false);
   const [isOthersOpen, setIsOthersOpen] = useState(false);
 
+  // Thêm state cho nhóm OlympicCoder
+  const [isOlympicCoderOpen, setIsOlympicCoderOpen] = useState(false);
+
   // Định nghĩa option theo nhóm
   const groupGoogleOptions = [
+    { value: "google/gemma-3-1b-it:free", label: "Gemma 3 1B" },
+    { value: "google/gemma-3-4b-it:free", label: "Gemma 3 4B" },
+    { value: "google/gemma-3-12b-it:free", label: "Gemma 3 12B" },
     { value: "google/gemma-3-27b-it:free", label: "Gemma 3 27B" },
     {
       value: "google/gemini-2.0-flash-lite-preview-02-05:free",
@@ -201,6 +207,12 @@ export default function OpenRouterSettings({
     { value: "gryphe/mythomax-l2-13b:free", label: "MythoMax 13B" },
   ];
 
+  // Thêm options cho OlympicCoder
+  const groupOlympicCoderOptions = [
+    { value: "open-r1/olympiccoder-7b:free", label: "OlympicCoder 7B" },
+    { value: "open-r1/olympiccoder-32b:free", label: "OlympicCoder 32B" },
+  ];
+
   // Khi mở modal, load lại dữ liệu và mở nhóm chứa model đã lưu
   useEffect(() => {
     if (isOpen) {
@@ -222,7 +234,15 @@ export default function OpenRouterSettings({
       setTopK(Number(getLocalStorage("openrouter_top_k", "40")));
 
       // Mở nhóm chứa model vừa lưu
-      if (savedModel.startsWith("google/")) {
+      if (savedModel.startsWith("open-r1/")) {
+        setIsGoogleOpen(false);
+        setIsDeepSeekOpen(false);
+        setIsQwenOpen(false);
+        setIsMetaOpen(false);
+        setIsMistralOpen(false);
+        setIsOthersOpen(false);
+        setIsOlympicCoderOpen(true);
+      } else if (savedModel.startsWith("google/")) {
         setIsGoogleOpen(true);
         setIsDeepSeekOpen(false);
         setIsQwenOpen(false);
@@ -310,321 +330,213 @@ export default function OpenRouterSettings({
       isOpen={isOpen}
       onClose={onClose}
       title="Cài đặt OpenRouter"
-      maxWidth="md"
+      maxWidth="4xl"
       onReset={handleReset}
       onSave={handleSave}
     >
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          API Key
-        </label>
-        <input
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-          placeholder="sk-or-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        />
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Lấy API Key tại{" "}
-          <a
-            href="https://openrouter.ai/keys"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            OpenRouter Dashboard
-          </a>
-        </p>
-      </div>
-      {/* Phần chọn mô hình với nhóm và radio */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Chọn mô hình
-        </label>
-        <div className="space-y-3">
-          {/* Nhóm Google */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setIsGoogleOpen(!isGoogleOpen)}
-              className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
-            >
-              <span>Google</span>
-              {isGoogleOpen ? (
-                <IconChevronUp size={18} />
-              ) : (
-                <IconChevronDown size={18} />
-              )}
-            </button>
-            {isGoogleOpen && (
-              <div className="mt-2 space-y-2">
-                {groupGoogleOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center cursor-pointer border rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-900"
-                  >
-                    <input
-                      type="radio"
-                      name="openrouter_model"
-                      value={option.value}
-                      checked={model === option.value}
-                      onChange={() => handleModelChange(option.value)}
-                      className="mr-2"
-                    />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* Nhóm DeepSeek */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setIsDeepSeekOpen(!isDeepSeekOpen)}
-              className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
-            >
-              <span>DeepSeek</span>
-              {isDeepSeekOpen ? (
-                <IconChevronUp size={18} />
-              ) : (
-                <IconChevronDown size={18} />
-              )}
-            </button>
-            {isDeepSeekOpen && (
-              <div className="mt-2 space-y-2">
-                {groupDeepSeekOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center cursor-pointer border rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-900"
-                  >
-                    <input
-                      type="radio"
-                      name="openrouter_model"
-                      value={option.value}
-                      checked={model === option.value}
-                      onChange={() => handleModelChange(option.value)}
-                      className="mr-2"
-                    />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* Nhóm Qwen */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setIsQwenOpen(!isQwenOpen)}
-              className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
-            >
-              <span>Qwen</span>
-              {isQwenOpen ? (
-                <IconChevronUp size={18} />
-              ) : (
-                <IconChevronDown size={18} />
-              )}
-            </button>
-            {isQwenOpen && (
-              <div className="mt-2 space-y-2">
-                {groupQwenOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center cursor-pointer border rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-900"
-                  >
-                    <input
-                      type="radio"
-                      name="openrouter_model"
-                      value={option.value}
-                      checked={model === option.value}
-                      onChange={() => handleModelChange(option.value)}
-                      className="mr-2"
-                    />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* Nhóm Meta */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setIsMetaOpen(!isMetaOpen)}
-              className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
-            >
-              <span>Meta</span>
-              {isMetaOpen ? (
-                <IconChevronUp size={18} />
-              ) : (
-                <IconChevronDown size={18} />
-              )}
-            </button>
-            {isMetaOpen && (
-              <div className="mt-2 space-y-2">
-                {groupMetaOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center cursor-pointer border rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-900"
-                  >
-                    <input
-                      type="radio"
-                      name="openrouter_model"
-                      value={option.value}
-                      checked={model === option.value}
-                      onChange={() => handleModelChange(option.value)}
-                      className="mr-2"
-                    />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* Nhóm Mistral */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setIsMistralOpen(!isMistralOpen)}
-              className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
-            >
-              <span>Mistral</span>
-              {isMistralOpen ? (
-                <IconChevronUp size={18} />
-              ) : (
-                <IconChevronDown size={18} />
-              )}
-            </button>
-            {isMistralOpen && (
-              <div className="mt-2 space-y-2">
-                {groupMistralOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center cursor-pointer border rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-900"
-                  >
-                    <input
-                      type="radio"
-                      name="openrouter_model"
-                      value={option.value}
-                      checked={model === option.value}
-                      onChange={() => handleModelChange(option.value)}
-                      className="mr-2"
-                    />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* Nhóm Others */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setIsOthersOpen(!isOthersOpen)}
-              className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
-            >
-              <span>Others</span>
-              {isOthersOpen ? (
-                <IconChevronUp size={18} />
-              ) : (
-                <IconChevronDown size={18} />
-              )}
-            </button>
-            {isOthersOpen && (
-              <div className="mt-2 space-y-2">
-                {groupOthersOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center cursor-pointer border rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-900"
-                  >
-                    <input
-                      type="radio"
-                      name="openrouter_model"
-                      value={option.value}
-                      checked={model === option.value}
-                      onChange={() => handleModelChange(option.value)}
-                      className="mr-2"
-                    />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <form>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Cột trái - Cài đặt chung */}
+          <div className="space-y-4 order-2 md:order-1">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                API Key
+              </label>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+                placeholder="sk-or-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              />
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                Lấy API Key tại{" "}
+                <a
+                  href="https://openrouter.ai/keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  OpenRouter Dashboard
+                </a>
+              </p>
+            </div>
 
-      <form className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            System Prompt
-          </label>
-          <textarea
-            value={systemPrompt}
-            onChange={(e) => setSystemPrompt(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                System Prompt
+              </label>
+              <textarea
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Temperature ({temperature})
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="2"
-            step="0.1"
-            value={temperature}
-            onChange={(e) => setTemperature(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Temperature ({temperature})
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                value={temperature}
+                onChange={(e) => setTemperature(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Max Tokens
-          </label>
-          <input
-            type="number"
-            value={maxTokens}
-            onChange={(e) => setMaxTokens(Number(e.target.value))}
-            min="1"
-            max="32768"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Max Tokens
+              </label>
+              <input
+                type="number"
+                value={maxTokens}
+                onChange={(e) => setMaxTokens(Number(e.target.value))}
+                min="1"
+                max="32768"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Top P ({topP})
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={topP}
-            onChange={(e) => setTopP(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Top P ({topP})
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={topP}
+                onChange={(e) => setTopP(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Top K
-          </label>
-          <input
-            type="number"
-            value={topK}
-            onChange={(e) => setTopK(Number(e.target.value))}
-            min="1"
-            max="100"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
-          />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Top K
+              </label>
+              <input
+                type="number"
+                value={topK}
+                onChange={(e) => setTopK(Number(e.target.value))}
+                min="1"
+                max="100"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
+              />
+            </div>
+          </div>
+
+          {/* Cột phải - Chọn mô hình */}
+          <div className="space-y-4 order-1 md:order-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Chọn mô hình
+            </label>
+            <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+              {[
+                {
+                  title: "OlympicCoder",
+                  options: groupOlympicCoderOptions,
+                  isOpen: isOlympicCoderOpen,
+                  setIsOpen: setIsOlympicCoderOpen,
+                },
+                {
+                  title: "Google",
+                  options: groupGoogleOptions,
+                  isOpen: isGoogleOpen,
+                  setIsOpen: setIsGoogleOpen,
+                },
+                {
+                  title: "DeepSeek",
+                  options: groupDeepSeekOptions,
+                  isOpen: isDeepSeekOpen,
+                  setIsOpen: setIsDeepSeekOpen,
+                },
+                {
+                  title: "Qwen",
+                  options: groupQwenOptions,
+                  isOpen: isQwenOpen,
+                  setIsOpen: setIsQwenOpen,
+                },
+                {
+                  title: "Meta",
+                  options: groupMetaOptions,
+                  isOpen: isMetaOpen,
+                  setIsOpen: setIsMetaOpen,
+                },
+                {
+                  title: "Mistral",
+                  options: groupMistralOptions,
+                  isOpen: isMistralOpen,
+                  setIsOpen: setIsMistralOpen,
+                },
+                {
+                  title: "Others",
+                  options: groupOthersOptions,
+                  isOpen: isOthersOpen,
+                  setIsOpen: setIsOthersOpen,
+                },
+              ].map((group) => (
+                <div
+                  key={group.title}
+                  className="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden"
+                >
+                  <button
+                    type="button"
+                    onClick={() => group.setIsOpen(!group.isOpen)}
+                    className="w-full flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <span className="font-medium">{group.title}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-500">
+                        {group.options.length} mô hình
+                      </span>
+                      {group.isOpen ? (
+                        <IconChevronUp size={18} />
+                      ) : (
+                        <IconChevronDown size={18} />
+                      )}
+                    </div>
+                  </button>
+                  {group.isOpen && (
+                    <div className="p-2 space-y-2">
+                      {group.options.map((option) => (
+                        <label
+                          key={option.value}
+                          className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors ${
+                            model === option.value
+                              ? "bg-blue-50 dark:bg-blue-900"
+                              : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="openrouter_model"
+                            value={option.value}
+                            checked={model === option.value}
+                            onChange={() => handleModelChange(option.value)}
+                            className="mr-2"
+                          />
+                          <div>
+                            <div className="font-medium">{option.label}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {option.value}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </form>
     </ModalWrapper>

@@ -160,85 +160,8 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
     >
       <form>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Chọn mô hình
-            </label>
-            <div className="space-y-3">
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setIsGroupAOpen(!isGroupAOpen)}
-                  className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
-                >
-                  <span>Nhóm AI phân tích tốt</span>
-                  {isGroupAOpen ? (
-                    <IconChevronUp size={18} />
-                  ) : (
-                    <IconChevronDown size={18} />
-                  )}
-                </button>
-                {isGroupAOpen && (
-                  <div className="mt-2 space-y-2">
-                    {groupAOptions.map((option) => (
-                      <label
-                        key={option.value}
-                        className="flex items-center p-2 border rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900"
-                      >
-                        <input
-                          type="radio"
-                          name="groq_model"
-                          value={option.value}
-                          checked={model === option.value}
-                          onChange={() => handleModelChange(option.value)}
-                          className="mr-2"
-                        />
-                        <span>{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setIsGroupBOpen(!isGroupBOpen)}
-                  className="w-full flex justify-between items-center p-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none cursor-pointer"
-                >
-                  <span>Nhóm AI phản hồi nhanh</span>
-                  {isGroupBOpen ? (
-                    <IconChevronUp size={18} />
-                  ) : (
-                    <IconChevronDown size={18} />
-                  )}
-                </button>
-                {isGroupBOpen && (
-                  <div className="mt-2 space-y-2">
-                    {groupBOptions.map((option) => (
-                      <label
-                        key={option.value}
-                        className="flex items-center p-2 border rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900"
-                      >
-                        <input
-                          type="radio"
-                          name="groq_model"
-                          value={option.value}
-                          checked={model === option.value}
-                          onChange={() => handleModelChange(option.value)}
-                          className="mr-2"
-                        />
-                        <span>{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
+          <div className="space-y-4 order-2 md:order-1">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 API Key
               </label>
@@ -269,8 +192,8 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
               <textarea
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
                 rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white bg-white dark:bg-black"
                 placeholder="Nhập system prompt cho AI..."
               />
             </div>
@@ -317,6 +240,80 @@ export default function GroqSettings({ isOpen, onClose }: GroqSettingsProps) {
                 onChange={(e) => setMaxOutputTokens(Number(e.target.value))}
                 className="w-full"
               />
+            </div>
+          </div>
+
+          <div className="space-y-4 order-1 md:order-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Chọn mô hình
+            </label>
+            <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+              {[
+                {
+                  title: "Nhóm AI phân tích tốt",
+                  options: groupAOptions,
+                  isOpen: isGroupAOpen,
+                  setIsOpen: setIsGroupAOpen,
+                },
+                {
+                  title: "Nhóm AI phản hồi nhanh",
+                  options: groupBOptions,
+                  isOpen: isGroupBOpen,
+                  setIsOpen: setIsGroupBOpen,
+                },
+              ].map((group) => (
+                <div
+                  key={group.title}
+                  className="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden"
+                >
+                  <button
+                    type="button"
+                    onClick={() => group.setIsOpen(!group.isOpen)}
+                    className="w-full flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <span className="font-medium">{group.title}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-500">
+                        {group.options.length} mô hình
+                      </span>
+                      {group.isOpen ? (
+                        <IconChevronUp size={18} />
+                      ) : (
+                        <IconChevronDown size={18} />
+                      )}
+                    </div>
+                  </button>
+                  {group.isOpen && (
+                    <div className="p-2 space-y-2">
+                      {group.options.map((option) => (
+                        <label
+                          key={option.value}
+                          className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors ${
+                            model === option.value
+                              ? "bg-blue-50 dark:bg-blue-900"
+                              : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="groq_model"
+                            value={option.value}
+                            checked={model === option.value}
+                            onChange={() => handleModelChange(option.value)}
+                            className="mr-2"
+                          />
+                          <div>
+                            <div className="font-medium">{option.label}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {option.value}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>

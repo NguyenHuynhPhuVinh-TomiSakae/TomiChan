@@ -5,6 +5,9 @@ import {
   IconPlayerPlay,
   IconWand,
   IconArrowLeft,
+  IconBuildingSkyscraper,
+  IconPencil,
+  IconTrash,
 } from "@tabler/icons-react";
 import React from "react";
 import { SearchResultBlock } from "./SearchResultBlock";
@@ -96,6 +99,85 @@ export const CustomUIComponents = {
         <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
           {content}
         </pre>
+      </div>
+    );
+  },
+
+  "create-project": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    const name = content.match(/name:\s*(.*)/)?.[1]?.trim();
+    const description = content.match(/description:\s*(.*)/)?.[1]?.trim() || "";
+
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconBuildingSkyscraper className="text-blue-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-blue-400 via-purple-500 to-blue-500 text-transparent bg-clip-text">
+            Tạo Dự Án Mới
+          </span>
+        </div>
+        <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+          <div>
+            <strong>Tên dự án:</strong> {name}
+          </div>
+          {description && (
+            <div>
+              <strong>Mô tả:</strong> {description}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  },
+
+  "update-project": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    const id = content.match(/id:\s*(.*)/)?.[1]?.trim();
+    const name = content.match(/name:\s*(.*)/)?.[1]?.trim();
+    const description = content.match(/description:\s*(.*)/)?.[1]?.trim() || "";
+
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-orange-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconPencil className="text-amber-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-transparent bg-clip-text">
+            Cập Nhật Dự Án
+          </span>
+        </div>
+        <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+          <div>
+            <strong>ID dự án:</strong> {id}
+          </div>
+          <div>
+            <strong>Tên mới:</strong> {name}
+          </div>
+          {description && (
+            <div>
+              <strong>Mô tả mới:</strong> {description}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  },
+
+  "delete-project": ({ children }: CustomUIComponentsProps) => {
+    const content = children?.toString() || "";
+    const id = content.match(/id:\s*(.*)/)?.[1]?.trim();
+
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-red-500/30 bg-gradient-to-r from-red-500/10 to-pink-500/10">
+        <div className="flex items-center gap-2 mb-2">
+          <IconTrash className="text-red-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-red-400 via-pink-500 to-red-500 text-transparent bg-clip-text">
+            Xóa Dự Án
+          </span>
+        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div>
+            <strong>ID dự án:</strong> {id}
+          </div>
+        </div>
       </div>
     );
   },

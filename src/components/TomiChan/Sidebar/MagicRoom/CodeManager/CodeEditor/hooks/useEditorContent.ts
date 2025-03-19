@@ -7,6 +7,7 @@ import type { CodeFile } from "../../../../../../../types";
 import { useCodeAssistant } from "../../hooks/useCodeAssistant";
 import { useOpenedFiles } from "../../hooks/useOpenedFiles";
 import { emitter, MAGIC_EVENTS } from "../../../../../../../lib/events";
+import { FILE_EXPLORER_EVENTS } from "../../../../../../../lib/events";
 
 export function useEditorContent(file: CodeFile) {
   const [content, setContent] = useState(file.content);
@@ -234,6 +235,51 @@ export function useEditorContent(file: CodeFile) {
       emitter.off(MAGIC_EVENTS.FILE_CONTENT_UPDATED, handleFileContentUpdated);
     };
   }, [activeFileId, updateFileContent, openedFiles]);
+
+  // Thêm useEffect để lắng nghe sự kiện reload từ FileExplorer
+  useEffect(() => {
+    const handleFileExplorerReload = async () => {
+      // Lấy danh sách file mới nhất từ database
+      const allFiles = await chatDB.getAllCodeFiles();
+
+      // Cập nhật các file đang mở nếu có thay đổi (đổi tên, nội dung)
+      for (const openedFile of openedFiles) {
+        const updatedFile = allFiles.find((f) => f.id === openedFile.id);
+
+        // Nếu file không còn tồn tại trong database (đã bị xóa)
+        if (!updatedFile) {
+          // Xóa file khỏi danh sách đang mở
+          removeOpenedFile(openedFile.id);
+          continue;
+        }
+
+        // Nếu file đã được cập nhật (tên hoặc nội dung)
+        if (
+          updatedFile.name !== openedFile.name ||
+          updatedFile.content !== openedFile.content
+        ) {
+          // Cập nhật file trong danh sách đang mở
+          updateOpenedFile(updatedFile);
+
+          // Nếu đây là file đang active, cập nhật nội dung hiển thị
+          if (activeFileId === updatedFile.id) {
+            setContent(updatedFile.content);
+            setOriginalContent(updatedFile.content);
+            contentRef.current = updatedFile.content;
+            originalContentRef.current = updatedFile.content;
+          }
+        }
+      }
+    };
+
+    // Đăng ký lắng nghe sự kiện reload
+    emitter.on(FILE_EXPLORER_EVENTS.RELOAD, handleFileExplorerReload);
+
+    // Cleanup
+    return () => {
+      emitter.off(FILE_EXPLORER_EVENTS.RELOAD, handleFileExplorerReload);
+    };
+  }, [openedFiles, activeFileId, updateOpenedFile, removeOpenedFile]);
 
   return {
     content,

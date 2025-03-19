@@ -62,8 +62,13 @@ const FolderNode: React.FC<FolderNodeProps> = ({
   onDeleteFile,
 }) => {
   const isExpanded = expandedFolders.has(folder.id);
+
+  // Đảm bảo chỉ lấy đúng các thư mục con trực tiếp
   const childFolders = folders.filter((f) => f.parentId === folder.id);
+
+  // Đảm bảo chỉ lấy đúng các file trong thư mục hiện tại
   const childFiles = files.filter((f) => f.folderId === folder.id);
+
   const [editingFolderName, setEditingFolderName] = useState("");
   const [isEditingFolder, setIsEditingFolder] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -356,6 +361,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
               type="folder"
               level={level + 1}
               parentId={folder.id}
+              projectId={folder.projectId}
               onCancel={handleCancelCreateFolder}
             />
           )}
@@ -377,6 +383,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
               type="file"
               level={level + 1}
               parentId={folder.id}
+              projectId={folder.projectId}
               onCancel={handleCancelCreateFile}
             />
           )}

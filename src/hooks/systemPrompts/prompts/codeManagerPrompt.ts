@@ -1,7 +1,7 @@
 import { getFileManagementPrompt } from "./fileManagementPrompt";
 
 export const getCodeManagerPrompt = (
-  createFileTree: () => string,
+  createFileTree: (projectId?: string) => string,
   isMediaView: boolean
 ) => {
   return `Bạn đang ở trong chế độ ${

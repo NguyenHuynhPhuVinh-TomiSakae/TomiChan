@@ -1,35 +1,45 @@
 import { useState, useEffect } from "react";
 import { nanoid } from "nanoid";
 import { chatDB } from "../../../../../../utils/db";
-import type { CodeFile, CodeFolder } from "../../../../../../types";
+import type { CodeFile, CodeFolder, Project } from "../../../../../../types";
 import { FILE_EXPLORER_EVENTS, MAGIC_EVENTS } from "@/lib/events";
 import { emitter } from "@/lib/events";
 import { setSessionStorage } from "../../../../../../utils/sessionStorage";
+import { toast } from "sonner";
+import { getApiKey } from "../../../../../../utils/getApiKey";
 
 export function useCodeAssistant() {
   const [files, setFiles] = useState<CodeFile[]>([]);
   const [folders, setFolders] = useState<CodeFolder[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectDescription, setNewProjectDescription] = useState("");
   const [selectedFile, setSelectedFile] = useState<CodeFile | null>(null);
   const [activeFile, setActiveFile] = useState<CodeFile | null>(null);
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<CodeFolder | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedParentFolder, setSelectedParentFolder] = useState<
     string | null
   >(null);
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
+  const [currentProject, setCurrentProject] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadFiles();
     loadFolders();
+    loadProjects();
 
-    // Lắng nghe sự kiện reload từ FileExplorer
     const handleReload = () => {
       loadFiles();
       loadFolders();
+      loadProjects();
     };
     emitter.on(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
 
@@ -37,6 +47,16 @@ export function useCodeAssistant() {
       emitter.off(FILE_EXPLORER_EVENTS.RELOAD, handleReload);
     };
   }, []);
+
+  const loadProjects = async () => {
+    const allProjects = await chatDB.getAllProjects();
+    setProjects(
+      allProjects.sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
+    );
+  };
 
   const loadFiles = async () => {
     const allFiles = await chatDB.getAllCodeFiles();
@@ -75,12 +95,27 @@ export function useCodeAssistant() {
 
   const getUniqueFolderName = (
     baseName: string,
-    existingFolders: CodeFolder[]
+    existingFolders: CodeFolder[],
+    parentId?: string | null,
+    projectId?: string
   ) => {
     let newName = baseName;
     let counter = 1;
 
-    while (existingFolders.some((folder) => folder.name === newName)) {
+    const siblingFolders = existingFolders.filter((folder) => {
+      if (projectId) {
+        return (
+          folder.projectId === projectId &&
+          ((!parentId && !folder.parentId) || folder.parentId === parentId)
+        );
+      } else if (parentId) {
+        return !folder.projectId && folder.parentId === parentId;
+      } else {
+        return !folder.projectId && !folder.parentId;
+      }
+    });
+
+    while (siblingFolders.some((folder) => folder.name === newName)) {
       newName = `${baseName} (${counter})`;
       counter++;
     }
@@ -88,21 +123,48 @@ export function useCodeAssistant() {
     return newName;
   };
 
+  const createNewProject = async () => {
+    if (!newProjectName.trim()) return;
+
+    const newProject: Project = {
+      id: nanoid(),
+      name: newProjectName,
+      description: newProjectDescription,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    await chatDB.saveProject(newProject);
+    await loadProjects();
+    setIsNewProjectModalOpen(false);
+    setNewProjectName("");
+    setNewProjectDescription("");
+    return newProject;
+  };
+
   const createNewFolder = async (folderData?: Partial<CodeFolder>) => {
     if (!folderData && !newFileName.trim()) return;
 
     const folderName = folderData?.name || newFileName;
-    const uniqueFolderName = getUniqueFolderName(folderName, folders);
+    const parentId =
+      folderData?.parentId !== undefined
+        ? folderData.parentId
+        : selectedParentFolder;
+
+    const uniqueFolderName = getUniqueFolderName(
+      folderName,
+      folders,
+      parentId,
+      folderData?.projectId || currentProject || undefined
+    );
 
     const newFolder: CodeFolder = {
       id: nanoid(),
       name: uniqueFolderName,
       createdAt: new Date(),
       updatedAt: new Date(),
-      parentId:
-        folderData?.parentId !== undefined
-          ? folderData.parentId
-          : selectedParentFolder || undefined,
+      projectId: folderData?.projectId || currentProject || undefined,
+      parentId: parentId || undefined,
     };
 
     try {
@@ -135,6 +197,7 @@ export function useCodeAssistant() {
       createdAt: new Date(),
       updatedAt: new Date(),
       language: uniqueFileName.split(".").pop() || "javascript",
+      projectId: fileData?.projectId || currentProject || undefined,
       folderId: fileData?.folderId || currentFolder || undefined,
     };
 
@@ -244,7 +307,10 @@ export function useCodeAssistant() {
       setSessionStorage("ui_state_magic", "code_view");
     }
 
-    emitter.emit(MAGIC_EVENTS.OPEN_CODE_FILE, { filePath: "" });
+    emitter.emit(MAGIC_EVENTS.OPEN_CODE_FILE, {
+      filePath: file.name,
+      projectId: file.projectId,
+    });
   };
 
   const handleEditorBack = async () => {
@@ -280,38 +346,110 @@ export function useCodeAssistant() {
     return path.join(" / ");
   };
 
+  const handleEditProject = async () => {
+    if (!selectedProject || !newProjectName.trim()) return;
+
+    const updatedProject: Project = {
+      ...selectedProject,
+      name: newProjectName,
+      description: newProjectDescription,
+      updatedAt: new Date(),
+    };
+
+    await chatDB.saveProject(updatedProject);
+    await loadProjects();
+    setIsEditModalOpen(false);
+    setNewProjectName("");
+    setNewProjectDescription("");
+    setSelectedProject(null);
+  };
+
+  const handleDeleteProject = async () => {
+    if (!selectedProject) return;
+
+    try {
+      setIsDeleting(true);
+      const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
+      await fetch("/api/e2b/delete-project", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-E2B-API-Key": e2bApiKey,
+        },
+        body: JSON.stringify({
+          projectId: selectedProject.id,
+        }),
+      });
+
+      await chatDB.deleteProject(selectedProject.id);
+      await loadProjects();
+      setIsDeleteModalOpen(false);
+      setSelectedProject(null);
+      setCurrentProject(null);
+    } catch (error) {
+      console.error("Lỗi khi xóa project:", error);
+      toast.error("Có lỗi xảy ra khi xóa project");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleProjectClick = (projectId: string) => {
+    setCurrentProject(projectId);
+    setCurrentFolder(null);
+  };
+
   return {
-    files,
-    folders,
+    files: files.filter(
+      (f) => !currentProject || f.projectId === currentProject
+    ),
+    folders: folders.filter(
+      (f) => !currentProject || f.projectId === currentProject
+    ),
+    projects,
     isNewFileModalOpen,
     isEditModalOpen,
     isDeleteModalOpen,
+    isNewProjectModalOpen,
     newFileName,
+    newProjectName,
+    newProjectDescription,
     selectedFile,
     activeFile,
     isNewFolderModalOpen,
     selectedFolder,
+    selectedProject,
     selectedParentFolder,
     currentFolder,
+    currentProject,
     setIsNewFileModalOpen,
     setIsEditModalOpen,
     setIsDeleteModalOpen,
+    setIsNewProjectModalOpen,
     setNewFileName,
+    setNewProjectName,
+    setNewProjectDescription,
     setSelectedFile,
     setActiveFile,
     setIsNewFolderModalOpen,
     setSelectedFolder,
+    setSelectedProject,
     setSelectedParentFolder,
     setCurrentFolder,
+    setCurrentProject,
     createNewFile,
     createNewFolder,
+    createNewProject,
     handleEditFile,
     handleDeleteFile,
     handleEditFolder,
     handleDeleteFolder,
+    handleEditProject,
+    handleDeleteProject,
     handleFileOpen,
     handleEditorBack,
     handleFolderClick,
+    handleProjectClick,
     handleBack,
     handlePathClick,
     openEditFolderModal,
@@ -319,5 +457,7 @@ export function useCodeAssistant() {
     getCurrentPath,
     loadFiles,
     loadFolders,
+    loadProjects,
+    isDeleting,
   };
 }

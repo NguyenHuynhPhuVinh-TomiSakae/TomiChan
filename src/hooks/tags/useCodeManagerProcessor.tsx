@@ -4,6 +4,8 @@ import { chatDB } from "../../utils/db";
 import type { CodeFile, CodeFolder } from "../../types";
 import { emitter, FILE_EXPLORER_EVENTS, MAGIC_EVENTS } from "../../lib/events";
 import { setSessionStorage } from "@/utils/sessionStorage";
+import { nanoid } from "nanoid";
+import { getApiKey } from "../../utils/getApiKey";
 
 export function useCodeManagerProcessor() {
   const { createNewFile, createNewFolder, folders, files } = useCodeAssistant();
@@ -36,18 +38,52 @@ export function useCodeManagerProcessor() {
       const fileContent = match[1];
       const name = fileContent.match(/name:\s*(.*)/)?.[1]?.trim();
       const path = fileContent.match(/path:\s*(.*)/)?.[1]?.trim();
+      const projectId = fileContent.match(/projectId:\s*(.*)/)?.[1]?.trim();
       const fileData = fileContent
         .match(/content:\s*([\s\S]*?)(?=\[\/CreateFile\]|$)/)?.[1]
         ?.trim();
 
       if (name) {
+        console.log(
+          `Chuẩn bị tạo file: ${name}, projectId: ${projectId || "undefined"}`
+        );
+
         // Tìm folder ID từ tên folder
-        const targetFolder = folders.find((f) => f.name === path);
-        await createNewFile({
+        const targetFolder = folders.find((f) => {
+          // Nếu có projectId, folder phải thuộc project đó
+          if (projectId && path) {
+            return f.name === path && f.projectId === projectId;
+          }
+          // Nếu không có projectId, tìm folder không thuộc project nào
+          if (path) {
+            return f.name === path && !f.projectId;
+          }
+          return false;
+        });
+
+        // Log ra thông tin tìm được
+        if (path) {
+          console.log(
+            `Tìm folder: ${path}, kết quả: ${
+              targetFolder ? targetFolder.id : "không tìm thấy"
+            }`
+          );
+        }
+
+        // Đảm bảo projectId được chuyển đúng kiểu dữ liệu
+        const fileCreateInfo: Partial<CodeFile> = {
           name,
           content: fileData || "",
           folderId: targetFolder?.id,
-        });
+        };
+
+        // Chỉ thêm projectId nếu nó tồn tại
+        if (projectId) {
+          fileCreateInfo.projectId = projectId;
+          console.log(`Thêm projectId: ${projectId} vào thông tin file`);
+        }
+
+        await createNewFile(fileCreateInfo);
         hasChanges = true;
       }
     }
@@ -64,14 +100,50 @@ export function useCodeManagerProcessor() {
       const folderContent = match[1];
       const name = folderContent.match(/name:\s*(.*)/)?.[1]?.trim();
       const path = folderContent.match(/path:\s*(.*)/)?.[1]?.trim();
+      const projectId = folderContent.match(/projectId:\s*(.*)/)?.[1]?.trim();
 
       if (name) {
+        console.log(
+          `Chuẩn bị tạo thư mục: ${name}, projectId: ${
+            projectId || "undefined"
+          }`
+        );
+
         // Tìm parent folder ID từ tên folder
-        const parentFolder = folders.find((f) => f.name === path);
-        await createNewFolder({
+        const parentFolder = folders.find((f) => {
+          // Nếu có projectId, folder phải thuộc project đó
+          if (projectId && path) {
+            return f.name === path && f.projectId === projectId;
+          }
+          // Nếu không có projectId, tìm folder không thuộc project nào
+          if (path) {
+            return f.name === path && !f.projectId;
+          }
+          return false;
+        });
+
+        // Log ra thông tin tìm được
+        if (path) {
+          console.log(
+            `Tìm folder cha: ${path}, kết quả: ${
+              parentFolder ? parentFolder.id : "không tìm thấy"
+            }`
+          );
+        }
+
+        // Đảm bảo projectId được chuyển đúng kiểu dữ liệu
+        const folderCreateInfo: Partial<CodeFolder> = {
           name,
           parentId: parentFolder?.id,
-        });
+        };
+
+        // Chỉ thêm projectId nếu nó tồn tại
+        if (projectId) {
+          folderCreateInfo.projectId = projectId;
+          console.log(`Thêm projectId: ${projectId} vào thông tin thư mục`);
+        }
+
+        await createNewFolder(folderCreateInfo);
         hasChanges = true;
       }
     }
@@ -88,16 +160,34 @@ export function useCodeManagerProcessor() {
       const fileContent = match[1];
       const path = fileContent.match(/path:\s*(.*)/)?.[1]?.trim();
       const newName = fileContent.match(/newName:\s*(.*)/)?.[1]?.trim();
+      const projectId = fileContent.match(/projectId:\s*(.*)/)?.[1]?.trim();
 
       if (path && newName) {
         const pathParts = path.split("/");
         const fileName = pathParts.pop() || "";
         const folderPath = pathParts.join("/");
-        const folder = folders.find((f) => f.name === folderPath);
 
-        const targetFile = files.find(
-          (f) => f.name === fileName && f.folderId === folder?.id
-        );
+        // Tìm folder phù hợp với đường dẫn, ưu tiên folder trong project nếu có projectId
+        const folder = folders.find((f) => {
+          if (projectId) {
+            return f.name === folderPath && f.projectId === projectId;
+          }
+          return f.name === folderPath && !f.projectId;
+        });
+
+        // Tìm file phù hợp, ưu tiên file trong project nếu có projectId
+        const targetFile = files.find((f) => {
+          if (projectId) {
+            return (
+              f.name === fileName &&
+              f.folderId === folder?.id &&
+              f.projectId === projectId
+            );
+          }
+          return (
+            f.name === fileName && f.folderId === folder?.id && !f.projectId
+          );
+        });
 
         if (targetFile) {
           // Trực tiếp cập nhật file trong DB thay vì qua useCodeAssistant
@@ -126,9 +216,45 @@ export function useCodeManagerProcessor() {
       const folderContent = match[1];
       const path = folderContent.match(/path:\s*(.*)/)?.[1]?.trim();
       const newName = folderContent.match(/newName:\s*(.*)/)?.[1]?.trim();
+      const projectId = folderContent.match(/projectId:\s*(.*)/)?.[1]?.trim();
 
       if (path && newName) {
-        const folder = folders.find((f) => f.name === path);
+        console.log(
+          `Đang xử lý RenameFolder - path: ${path}, newName: ${newName}, projectId: ${
+            projectId || "không có"
+          }`
+        );
+        console.log(`Danh sách folders có ${folders.length} phần tử`);
+
+        if (projectId) {
+          const foldersInProject = folders.filter(
+            (f) => f.projectId === projectId
+          );
+          console.log(
+            `Số lượng folders trong project ${projectId}: ${foldersInProject.length}`
+          );
+          console.log(
+            `Danh sách tên folders trong project: ${foldersInProject
+              .map((f) => f.name)
+              .join(", ")}`
+          );
+        }
+
+        // Tìm folder phù hợp, ưu tiên folder trong project nếu có projectId
+        const folder = folders.find((f) => {
+          if (projectId) {
+            return f.name === path && f.projectId === projectId;
+          }
+          return f.name === path && !f.projectId;
+        });
+
+        console.log(
+          `Kết quả tìm kiếm folder: ${
+            folder
+              ? `Tìm thấy folder với ID: ${folder.id}, tên: ${folder.name}`
+              : "Không tìm thấy folder"
+          }`
+        );
 
         if (folder) {
           // Trực tiếp cập nhật folder trong DB thay vì qua useCodeAssistant
@@ -138,8 +264,18 @@ export function useCodeManagerProcessor() {
             updatedAt: new Date(),
           };
 
+          console.log(
+            `Đang cập nhật folder trong DB: ${JSON.stringify(updatedFolder)}`
+          );
           await chatDB.saveFolder(updatedFolder);
+          console.log(`Đã cập nhật folder thành công!`);
           hasChanges = true;
+        } else {
+          console.error(
+            `Không thể đổi tên thư mục: không tìm thấy thư mục '${path}' trong project ${
+              projectId || "nào"
+            }`
+          );
         }
       }
     }
@@ -155,16 +291,34 @@ export function useCodeManagerProcessor() {
 
       const fileContent = match[1];
       const path = fileContent.match(/path:\s*(.*)/)?.[1]?.trim();
+      const projectId = fileContent.match(/projectId:\s*(.*)/)?.[1]?.trim();
 
       if (path) {
         const pathParts = path.split("/");
         const fileName = pathParts.pop() || "";
         const folderPath = pathParts.join("/");
-        const folder = folders.find((f) => f.name === folderPath);
 
-        const targetFile = files.find(
-          (f) => f.name === fileName && f.folderId === folder?.id
-        );
+        // Tìm folder phù hợp với đường dẫn, ưu tiên folder trong project nếu có projectId
+        const folder = folders.find((f) => {
+          if (projectId) {
+            return f.name === folderPath && f.projectId === projectId;
+          }
+          return f.name === folderPath && !f.projectId;
+        });
+
+        // Tìm file phù hợp, ưu tiên file trong project nếu có projectId
+        const targetFile = files.find((f) => {
+          if (projectId) {
+            return (
+              f.name === fileName &&
+              f.folderId === folder?.id &&
+              f.projectId === projectId
+            );
+          }
+          return (
+            f.name === fileName && f.folderId === folder?.id && !f.projectId
+          );
+        });
 
         if (targetFile) {
           // Trực tiếp xóa file trong DB thay vì qua useCodeAssistant
@@ -185,9 +339,17 @@ export function useCodeManagerProcessor() {
 
       const folderContent = match[1];
       const path = folderContent.match(/path:\s*(.*)/)?.[1]?.trim();
+      const projectId = folderContent.match(/projectId:\s*(.*)/)?.[1]?.trim();
 
       if (path) {
-        const folder = folders.find((f) => f.name === path);
+        // Tìm folder phù hợp, ưu tiên folder trong project nếu có projectId
+        const folder = folders.find((f) => {
+          if (projectId) {
+            return f.name === path && f.projectId === projectId;
+          }
+          return f.name === path && !f.projectId;
+        });
+
         if (folder) {
           // Trực tiếp xóa folder trong DB thay vì qua useCodeAssistant
           await chatDB.deleteFolder(folder.id);
@@ -207,22 +369,146 @@ export function useCodeManagerProcessor() {
 
       const mediaContent = match[1];
       const path = mediaContent.match(/path:\s*(.*)/)?.[1]?.trim();
+      const projectId = mediaContent.match(/projectId:\s*(.*)/)?.[1]?.trim();
 
       if (path) {
         // Tìm file từ đường dẫn
         const pathParts = path.split("/");
         const fileName = pathParts.pop() || "";
         const folderPath = pathParts.join("/");
-        const folder = folders.find((f) => f.name === folderPath);
 
-        const targetFile = files.find(
-          (f) => f.name === fileName && f.folderId === folder?.id
-        );
+        // Tìm folder phù hợp với đường dẫn, ưu tiên folder trong project nếu có projectId
+        const folder = folders.find((f) => {
+          if (projectId) {
+            return f.name === folderPath && f.projectId === projectId;
+          }
+          return f.name === folderPath && !f.projectId;
+        });
+
+        // Tìm file phù hợp, ưu tiên file trong project nếu có projectId
+        const targetFile = files.find((f) => {
+          if (projectId) {
+            return (
+              f.name === fileName &&
+              f.folderId === folder?.id &&
+              f.projectId === projectId
+            );
+          }
+          return (
+            f.name === fileName && f.folderId === folder?.id && !f.projectId
+          );
+        });
 
         if (targetFile) {
           // Thay thế localStorage bằng event
           setSessionStorage("ui_state_magic", "media_view");
-          emitter.emit(MAGIC_EVENTS.OPEN_MEDIA, { fileName: targetFile.name });
+          emitter.emit(MAGIC_EVENTS.OPEN_MEDIA, {
+            fileName: targetFile.name,
+            projectId: targetFile.projectId,
+          });
+        }
+      }
+    }
+
+    // Xử lý CreateProject tag
+    const createProjectRegex =
+      /\[CreateProject\]([\s\S]*?)\[\/CreateProject\]/g;
+    const projectMatches = content.matchAll(createProjectRegex);
+
+    for (const match of projectMatches) {
+      const tagContent = match[0];
+      if (processedTags.current.has(tagContent)) continue;
+      processedTags.current.add(tagContent);
+
+      const projectContent = match[1];
+      const name = projectContent.match(/name:\s*(.*)/)?.[1]?.trim();
+      const description =
+        projectContent.match(/description:\s*(.*)/)?.[1]?.trim() || "";
+
+      if (name) {
+        // Tạo project mới
+        const newProject = {
+          id: nanoid(),
+          name,
+          description,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        await chatDB.saveProject(newProject);
+        hasChanges = true;
+      }
+    }
+
+    // Xử lý UpdateProject tag
+    const updateProjectRegex =
+      /\[UpdateProject\]([\s\S]*?)\[\/UpdateProject\]/g;
+    const updateProjectMatches = content.matchAll(updateProjectRegex);
+
+    for (const match of updateProjectMatches) {
+      const tagContent = match[0];
+      if (processedTags.current.has(tagContent)) continue;
+      processedTags.current.add(tagContent);
+
+      const projectContent = match[1];
+      const id = projectContent.match(/id:\s*(.*)/)?.[1]?.trim();
+      const name = projectContent.match(/name:\s*(.*)/)?.[1]?.trim();
+      const description =
+        projectContent.match(/description:\s*(.*)/)?.[1]?.trim() || "";
+
+      if (id && name) {
+        // Tìm project theo id
+        const project = await chatDB.getProject(id);
+
+        if (project) {
+          // Cập nhật project
+          const updatedProject = {
+            ...project,
+            name,
+            description,
+            updatedAt: new Date(),
+          };
+
+          await chatDB.saveProject(updatedProject);
+          hasChanges = true;
+        }
+      }
+    }
+
+    // Xử lý DeleteProject tag
+    const deleteProjectRegex =
+      /\[DeleteProject\]([\s\S]*?)\[\/DeleteProject\]/g;
+    const deleteProjectMatches = content.matchAll(deleteProjectRegex);
+
+    for (const match of deleteProjectMatches) {
+      const tagContent = match[0];
+      if (processedTags.current.has(tagContent)) continue;
+      processedTags.current.add(tagContent);
+
+      const projectContent = match[1];
+      const id = projectContent.match(/id:\s*(.*)/)?.[1]?.trim();
+
+      if (id) {
+        try {
+          // Xóa project từ DB
+          await chatDB.deleteProject(id);
+
+          // Cần thêm xử lý xóa project từ E2B nếu cần
+          const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
+          fetch("/api/e2b/delete-project", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-E2B-API-Key": e2bApiKey,
+            },
+            body: JSON.stringify({
+              projectId: id,
+            }),
+          });
+
+          hasChanges = true;
+        } catch (error) {
+          console.error("Lỗi khi xóa project:", error);
         }
       }
     }

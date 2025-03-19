@@ -4,14 +4,21 @@ import mitt, { Emitter } from "mitt";
 type Events = {
   "magic:openCodeAssistant": void;
   "fileExplorer:reload": void;
-  "media:openFile": { fileName: string };
+  "media:openFile": {
+    fileName: string;
+    projectId?: string;
+  };
   "media:closeFile": void;
-  "code:openFile": { filePath: string };
+  "code:openFile": {
+    filePath: string;
+    projectId?: string;
+  };
   "code:closeFile": void;
   "magic:backToRoom": void;
   "code:accept": {
     filePath: string;
     newContent: string;
+    projectId?: string;
   };
   "file:contentUpdated": {
     fileId: string;

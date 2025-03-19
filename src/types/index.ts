@@ -32,6 +32,14 @@ export interface ChatHistory {
   provider: string;
 }
 
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface CodeFile {
   id: string;
   name: string;
@@ -39,7 +47,8 @@ export interface CodeFile {
   createdAt: Date;
   updatedAt: Date;
   language: string;
-  folderId?: string | null | undefined; // thêm trường này
+  projectId?: string; // ID của project chứa file này
+  folderId?: string | null | undefined;
 }
 
 export interface CodeFolder {
@@ -47,5 +56,6 @@ export interface CodeFolder {
   name: string;
   createdAt: Date;
   updatedAt: Date;
-  parentId?: string | null | undefined; // thêm trường này
+  projectId?: string; // ID của project chứa folder này
+  parentId?: string | null | undefined;
 }

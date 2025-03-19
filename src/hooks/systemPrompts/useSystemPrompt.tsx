@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getLocalStorage } from "../../utils/localStorage";
 import {
   getSessionStorage,
@@ -18,20 +18,35 @@ import { getImageGenerationPrompt } from "./prompts/imageGenerationPrompt";
 import { getSearchPrompt } from "./prompts/searchPrompt";
 import { getSentFilesPrompt } from "./prompts/sentFilesPrompt";
 import { getSystemTagPrompt } from "./prompts/systemTagPrompt";
+import { getProjectManagementPrompt } from "./prompts/fileManagementPrompt";
 
 export function useSystemPrompt() {
   const [uiState, setUiState] = useState(
     getSessionStorage("ui_state_magic", "none")
   );
-
-  const { files, folders, loadFilesAndFolders, createFileTree } =
-    useFileManager();
-  const { currentFile, currentFileContent, loadCurrentFileContent } =
-    useCurrentFile(files);
-  const { sentFiles, setSentFiles, loadSentFiles } = useSentFiles(
+  const [currentFile, setCurrentFile] = useState("");
+  const [currentFileContent, setCurrentFileContent] = useState("");
+  const [sentFiles, setSentFiles] = useState<any[]>([]);
+  const {
     files,
-    currentFile
-  );
+    folders,
+    projects,
+    loadFilesAndFolders,
+    createFileTree,
+    createProjectFileTree,
+    createFullFileTree,
+  } = useFileManager();
+
+  const {
+    currentFile: currentFileFromUseCurrentFile,
+    currentFileContent: currentFileContentFromUseCurrentFile,
+    loadCurrentFileContent,
+  } = useCurrentFile(files);
+  const {
+    sentFiles: sentFilesFromUseSentFiles,
+    setSentFiles: setSentFilesFromUseSentFiles,
+    loadSentFiles,
+  } = useSentFiles(files, currentFile);
 
   useEffect(() => {
     const checkUiState = async () => {
@@ -150,14 +165,56 @@ export function useSystemPrompt() {
     const isCodeView = uiState === "code_view";
 
     if (isCodeView) {
-      // Tải nội dung file hiện tại nếu cần
-      if (currentFile && !currentFileContent) {
+      // Sử dụng dữ liệu từ hook useCurrentFile
+      const fileName = currentFileFromUseCurrentFile;
+      let fileContent = currentFileContentFromUseCurrentFile;
+
+      // Nếu không có nội dung, tải nội dung file
+      if (fileName && !fileContent) {
         await loadCurrentFileContent();
+        fileContent = currentFileContentFromUseCurrentFile;
       }
 
-      enhancedPrompt =
-        getCodeViewPrompt(currentFile, currentFileContent, createFileTree()) +
-        enhancedPrompt;
+      // Tìm thông tin projectId cho file hiện tại
+      let projectId = "";
+      for (const file of files) {
+        if (file.name === fileName) {
+          projectId = file.projectId || "";
+          break;
+        }
+      }
+
+      // Sử dụng createProjectFileTree nếu file thuộc project, ngược lại sử dụng createFileTree nhưng không hiển thị danh sách dự án
+      try {
+        let fileTree;
+        let currentProject = null;
+
+        if (projectId) {
+          // Tìm thông tin project
+          currentProject = projects.find((p) => p.id === projectId) || null;
+
+          // Nếu file thuộc project, chỉ hiện file và thư mục trong project đó
+          fileTree = createProjectFileTree(projectId, fileName);
+        } else {
+          // Nếu file ở root, chỉ hiện file và thư mục ở root
+          fileTree = createFileTree(undefined);
+        }
+
+        enhancedPrompt =
+          getCodeViewPrompt(fileName, fileContent, fileTree, currentProject) +
+          enhancedPrompt;
+      } catch (error) {
+        console.error("Lỗi khi lấy cấu trúc file:", error);
+
+        // Fallback về createFileTree nếu có lỗi
+        enhancedPrompt =
+          getCodeViewPrompt(
+            fileName,
+            fileContent,
+            createFileTree(undefined),
+            null
+          ) + enhancedPrompt;
+      }
     }
 
     // Kiểm tra xem có đang ở chế độ media_view không
@@ -165,10 +222,12 @@ export function useSystemPrompt() {
 
     if (isCodeManager || isMediaView) {
       const codeManagerPrompt = getCodeManagerPrompt(
-        createFileTree,
+        createFullFileTree,
         isMediaView
       );
-      enhancedPrompt = codeManagerPrompt + enhancedPrompt;
+      const projectManagementPrompt = getProjectManagementPrompt();
+      enhancedPrompt =
+        projectManagementPrompt + codeManagerPrompt + enhancedPrompt;
     }
 
     // Thêm hướng dẫn cho Magic Mode nếu được bật

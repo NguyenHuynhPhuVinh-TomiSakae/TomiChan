@@ -61,6 +61,7 @@ const customSchema = {
     "open-code",
     "code-editor",
     "file-path",
+    "email-block",
   ],
 };
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   IconFilePlus,
@@ -8,6 +9,8 @@ import {
   IconBuildingSkyscraper,
   IconPencil,
   IconTrash,
+  IconMail,
+  IconSend,
 } from "@tabler/icons-react";
 import React from "react";
 import { SearchResultBlock } from "./SearchResultBlock";
@@ -337,5 +340,73 @@ export const CustomUIComponents = {
 
   think: ({ children }: CustomUIComponentsProps) => {
     return <ThinkBlock>{children}</ThinkBlock>;
+  },
+
+  "email-block": ({ children }: CustomUIComponentsProps) => {
+    // Chuyển đổi children thành string một cách an toàn
+    const rawContent = React.Children.toArray(children)
+      .map((child) => {
+        if (typeof child === "string") return child;
+        if (child && typeof child === "object" && "props" in child) {
+          return (child as any).props.children;
+        }
+        return "";
+      })
+      .join("");
+
+    // Tách nội dung email bằng regex
+    const to = rawContent.match(/TO:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
+    const subject = rawContent.match(/SUBJECT:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
+    const contentMatch = rawContent.match(
+      /CONTENT:\s*([\s\S]*?)(?=\[\/EMAIL\]|$)/
+    );
+    const emailContent = contentMatch?.[1]?.trim();
+
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
+        <div className="flex items-center gap-2 mb-3">
+          <IconMail className="text-blue-500" size={20} />
+          <span className="font-semibold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 text-transparent bg-clip-text">
+            Gửi Email
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-start gap-2">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300 w-20">
+              Đến:
+            </span>
+            <span className="text-sm text-gray-600 dark:text-gray-400 flex-1">
+              {to}
+            </span>
+          </div>
+
+          <div className="flex items-start gap-2">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300 w-20">
+              Tiêu đề:
+            </span>
+            <span className="text-sm text-gray-600 dark:text-gray-400 flex-1">
+              {subject}
+            </span>
+          </div>
+
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+            <div className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-2">
+              Nội dung:
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap pl-2 border-l-2 border-gray-200 dark:border-gray-700">
+              {emailContent}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <div className="text-xs text-gray-500 dark:text-gray-400 italic flex items-center gap-1">
+            <IconSend size={12} />
+            Email sẽ được gửi tự động...
+          </div>
+        </div>
+      </div>
+    );
   },
 };

@@ -19,6 +19,7 @@ import { getSearchPrompt } from "./prompts/searchPrompt";
 import { getSentFilesPrompt } from "./prompts/sentFilesPrompt";
 import { getSystemTagPrompt } from "./prompts/systemTagPrompt";
 import { getProjectManagementPrompt } from "./prompts/fileManagementPrompt";
+import { getEmailToolPrompt } from "./prompts/emailToolPrompt";
 
 export function useSystemPrompt() {
   const [uiState, setUiState] = useState(
@@ -239,6 +240,15 @@ export function useSystemPrompt() {
     // Thêm nội dung của các file đã gửi cho AI vào system prompt chỉ khi đang ở trong code view
     if (isCodeView && sentFiles.length > 0) {
       enhancedPrompt = getSentFilesPrompt(sentFiles) + enhancedPrompt;
+    }
+
+    // Kiểm tra xem công cụ email có được bật không
+    const enabledTools = JSON.parse(getLocalStorage("enabled_tools", "[]"));
+    const isEmailEnabled = enabledTools.includes("email");
+
+    if (isEmailEnabled) {
+      const emailToolPrompt = getEmailToolPrompt();
+      enhancedPrompt = emailToolPrompt + enhancedPrompt;
     }
 
     // Luôn luôn thêm systemTagInstruction vào cuối

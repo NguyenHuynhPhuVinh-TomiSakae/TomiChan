@@ -5,6 +5,7 @@ import { useMagicModeProcessor } from "./useMagicModeProcessor";
 import { useCodeManagerProcessor } from "./useCodeManagerProcessor";
 import { useMediaViewProcessor } from "./useMediaViewProcessor";
 import { useCodeViewProcessor } from "./useCodeViewProcessor";
+import { useEmailProcessor } from "./useEmailProcessor";
 
 export function useTagProcessors() {
   const { processImageTag } = useImageProcessor();
@@ -13,6 +14,7 @@ export function useTagProcessors() {
   const { processCodeManagerTag } = useCodeManagerProcessor();
   const { processMediaViewTag } = useMediaViewProcessor();
   const { processCodeViewTag } = useCodeViewProcessor();
+  const { processEmailTag } = useEmailProcessor();
 
   const processMessageTags = async (
     content: string,
@@ -49,6 +51,7 @@ export function useTagProcessors() {
         sendFollowUpMessage
       ),
       processCodeManagerTag(content),
+      processEmailTag(content, messageId, setMessages, saveChat, chatId, model),
     ]);
   };
 

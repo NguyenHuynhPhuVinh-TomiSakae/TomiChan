@@ -601,7 +601,7 @@ export default function ChatInput({
                     </motion.button>
 
                     <motion.div
-                      className={`absolute left-11 sm:left-14 bottom-6 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 border border-black dark:border-white flex items-center ${
+                      className={`absolute left-11 bottom-6 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 border border-black dark:border-white flex items-center ${
                         isMagicMode ? "" : "sm:left-16"
                       } ${isMagicMode ? "" : "sm:bottom-8"}`}
                       onClick={() => setShowToolModal(true)}

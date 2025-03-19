@@ -11,6 +11,14 @@ import {
   IconTrash,
   IconMail,
   IconSend,
+  IconCalendar,
+  IconClock,
+  IconSchool,
+  IconUser,
+  IconBuilding,
+  IconLoader2,
+  IconCalendarTime,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 import React from "react";
 import { SearchResultBlock } from "./SearchResultBlock";
@@ -406,6 +414,247 @@ export const CustomUIComponents = {
             Email sẽ được gửi tự động...
           </div>
         </div>
+      </div>
+    );
+  },
+
+  "tvu-schedule-block": ({ children }: CustomUIComponentsProps) => {
+    // Chuyển đổi children thành string một cách an toàn
+    const rawContent = React.Children.toArray(children)
+      .map((child) => {
+        if (typeof child === "string") return child;
+        if (child && typeof child === "object" && "props" in child) {
+          return (child as any).props.children;
+        }
+        return "";
+      })
+      .join("");
+
+    // Tách thông tin từ nội dung
+    const action = rawContent.match(/ACTION:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
+    const date = rawContent.match(/DATE:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
+
+    // Xác định tiêu đề dựa trên action
+    let title = "";
+    let subtitle = "";
+    switch (action) {
+      case "xem_hom_nay":
+        title = "Thời Khóa Biểu Hôm Nay";
+        subtitle = new Date().toLocaleDateString("vi-VN", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        break;
+      case "xem_ngay_mai":
+        title = "Thời Khóa Biểu Ngày Mai";
+        subtitle = new Date(Date.now() + 86400000).toLocaleDateString("vi-VN", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        break;
+      case "xem_theo_ngay":
+        title = "Thời Khóa Biểu Theo Ngày";
+        subtitle = new Date(date || "").toLocaleDateString("vi-VN", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        break;
+      case "xem_lich_thi":
+        title = "Lịch Thi";
+        subtitle = "Danh sách các môn thi";
+        break;
+    }
+
+    // Kiểm tra xem có kết quả hay chưa bằng cách tìm thẻ TVU_SCHEDULE_RESULT trong nội dung gốc
+    const hasResult = rawContent.includes("[TVU_SCHEDULE_RESULT]");
+
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+            <IconCalendar
+              className="text-blue-500 dark:text-blue-400"
+              size={24}
+            />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 text-transparent bg-clip-text">
+              {title}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {subtitle}
+            </p>
+          </div>
+        </div>
+
+        {/* Loading indicator - chỉ hiển thị khi chưa có kết quả */}
+        {!hasResult && (
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <IconLoader2 className="animate-spin" size={16} />
+            <span>Đang tải thời khóa biểu...</span>
+          </div>
+        )}
+      </div>
+    );
+  },
+
+  "tvu-schedule-result": ({ children }: CustomUIComponentsProps) => {
+    // Chuyển đổi children thành string một cách an toàn
+    const rawContent = React.Children.toArray(children)
+      .map((child) => {
+        if (typeof child === "string") return child;
+        if (child && typeof child === "object" && "props" in child) {
+          return (child as any).props.children;
+        }
+        return "";
+      })
+      .join("");
+
+    // Tách thông tin từ nội dung
+    const date = rawContent.match(/DATE:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
+    const action = rawContent.match(/ACTION:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
+
+    // Xác định tiêu đề dựa trên action
+    let title = "";
+    switch (action) {
+      case "xem_hom_nay":
+        title = "Thời Khóa Biểu Hôm Nay";
+        break;
+      case "xem_ngay_mai":
+        title = "Thời Khóa Biểu Ngày Mai";
+        break;
+      case "xem_theo_ngay":
+        title = "Thời Khóa Biểu Theo Ngày";
+        break;
+      case "xem_lich_thi":
+        title = "Lịch Thi";
+        break;
+      default:
+        title = "Thời Khóa Biểu";
+    }
+
+    // Hàm xác định buổi học dựa trên tiết
+    const getBuoi = (tiet: string) => {
+      // Tách số tiết, ví dụ "1-3" sẽ lấy tiết đầu tiên là 1
+      const tietDau = parseInt(tiet.split("-")[0]);
+
+      if (tietDau >= 1 && tietDau <= 5) return "Buổi sáng";
+      if (tietDau >= 6 && tietDau <= 10) return "Buổi chiều";
+      if (tietDau >= 11 && tietDau <= 15) return "Buổi tối";
+      return "";
+    };
+
+    // Lấy phần nội dung sau các thông tin header
+    const contentStart =
+      rawContent.indexOf(action || "") + (action || "").length;
+    const scheduleContent = rawContent.slice(contentStart).trim();
+
+    // Kiểm tra xem nội dung có phải là thông báo không có lịch không
+    const noSchedule = scheduleContent.includes("Không có lịch học vào ngày");
+
+    // Phân tích nội dung thành các môn học (mỗi môn cách nhau bởi dòng trống)
+    const subjects = !noSchedule
+      ? scheduleContent.split("\n\n").filter(Boolean)
+      : [];
+
+    return (
+      <div className="my-4 p-4 rounded-lg border-2 border-blue-500/30 bg-white dark:bg-gray-800 shadow-md">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+            <IconCalendarTime
+              className="text-blue-500 dark:text-blue-400"
+              size={24}
+            />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg text-blue-600 dark:text-blue-400">
+              {title}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {date
+                ? new Date(date).toLocaleDateString("vi-VN", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
+                : ""}
+            </p>
+          </div>
+        </div>
+
+        {/* No schedule message */}
+        {noSchedule && (
+          <div className="flex items-center gap-2 p-4 rounded-lg bg-gray-100 dark:bg-gray-700">
+            <IconAlertTriangle size={20} className="text-orange-500" />
+            <p className="text-gray-700 dark:text-gray-300">
+              {scheduleContent}
+            </p>
+          </div>
+        )}
+
+        {/* Schedule items */}
+        {!noSchedule && (
+          <div className="mt-4 space-y-4">
+            {subjects.map((subject, index) => {
+              // Phân tích thông tin môn học
+              const tenMon = subject.match(/📚 (.*?)(?=\n|$)/)?.[1]?.trim();
+              const giangVien = subject
+                .match(/👨‍🏫 GV: (.*?)(?=\n|$)/)?.[1]
+                ?.trim();
+              const phong = subject
+                .match(/🏢 Phòng: (.*?)(?=\n|$)/)?.[1]
+                ?.trim();
+              const tiet = subject.match(/⏰ Tiết (.*?)(?=\n|$)/)?.[1]?.trim();
+              const buoi = getBuoi(tiet || "");
+
+              return (
+                <div
+                  key={index}
+                  className="p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <IconSchool size={18} className="text-blue-500" />
+                        <span className="font-medium text-black dark:text-white">
+                          {tenMon}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <IconUser size={16} />
+                        <span>{giangVien}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <IconBuilding size={16} />
+                        <span>{phong}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 items-end">
+                      <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400">
+                        <IconClock size={14} />
+                        <span className="text-sm font-medium">Tiết {tiet}</span>
+                      </div>
+                      {buoi && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 italic">
+                          {buoi}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   },

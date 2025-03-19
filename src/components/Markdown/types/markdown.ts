@@ -50,4 +50,8 @@ export interface CustomComponents extends Components {
 
   // New component
   "email-block": (props: BaseComponentProps) => JSX.Element;
+
+  // TVU Schedule block
+  "tvu-schedule-block": (props: BaseComponentProps) => JSX.Element;
+  "tvu-schedule-result": (props: BaseComponentProps) => JSX.Element;
 }

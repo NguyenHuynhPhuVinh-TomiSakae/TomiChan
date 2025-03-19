@@ -121,8 +121,7 @@ export default function ToolsModal({
       >
         <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-800">
           {tools.map((tool) => {
-            const isInDevelopment =
-              tool.id === "tvu_schedule" || tool.id === "anime_search";
+            const isInDevelopment = tool.id === "anime_search";
             return (
               <div
                 key={tool.id}

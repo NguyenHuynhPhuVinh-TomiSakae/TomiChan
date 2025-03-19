@@ -6,6 +6,7 @@ import { useCodeManagerProcessor } from "./useCodeManagerProcessor";
 import { useMediaViewProcessor } from "./useMediaViewProcessor";
 import { useCodeViewProcessor } from "./useCodeViewProcessor";
 import { useEmailProcessor } from "./useEmailProcessor";
+import { useTVUScheduleProcessor } from "./useTVUScheduleProcessor";
 
 export function useTagProcessors() {
   const { processImageTag } = useImageProcessor();
@@ -15,6 +16,7 @@ export function useTagProcessors() {
   const { processMediaViewTag } = useMediaViewProcessor();
   const { processCodeViewTag } = useCodeViewProcessor();
   const { processEmailTag } = useEmailProcessor();
+  const { processTVUScheduleTag } = useTVUScheduleProcessor();
 
   const processMessageTags = async (
     content: string,
@@ -52,6 +54,14 @@ export function useTagProcessors() {
       ),
       processCodeManagerTag(content),
       processEmailTag(content, messageId, setMessages, saveChat, chatId, model),
+      processTVUScheduleTag(
+        content,
+        messageId,
+        setMessages,
+        saveChat,
+        chatId,
+        model
+      ),
     ]);
   };
 

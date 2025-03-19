@@ -340,13 +340,13 @@ export default function EmailToolModal({
                   !templateId.trim() ||
                   !publicKey.trim()
                 }
-                className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
                   email.trim() &&
                   appPassword.trim() &&
                   serviceId.trim() &&
                   templateId.trim() &&
                   publicKey.trim()
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 cursor-pointer"
                     : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed"
                 }`}
               >

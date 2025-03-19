@@ -84,6 +84,14 @@ const transformRules: TransformRule[] = [
     pattern: /\[EMAIL\]([\s\S]*?)\[\/EMAIL\]/g,
     replacement: "<email-block>$1</email-block>",
   },
+  {
+    pattern: /\[TVU_SCHEDULE\]([\s\S]*?)\[\/TVU_SCHEDULE\]/g,
+    replacement: "<tvu-schedule-block>$1</tvu-schedule-block>",
+  },
+  {
+    pattern: /\[TVU_SCHEDULE_RESULT\]([\s\S]*?)\[\/TVU_SCHEDULE_RESULT\]/g,
+    replacement: "<tvu-schedule-result>$1</tvu-schedule-result>",
+  },
 ];
 
 export function transformMarkdownContent(content: string): string {

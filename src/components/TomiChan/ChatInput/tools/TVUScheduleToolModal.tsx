@@ -19,14 +19,14 @@ export default function TVUScheduleToolModal({
   isEnabled,
 }: TVUScheduleToolModalProps) {
   const [studentId, setStudentId] = useState("");
-  const [semester, setSemester] = useState("");
+  const [password, setPassword] = useState("");
 
   // Load cấu hình từ localStorage khi mở modal
   useEffect(() => {
     const savedStudentId = getLocalStorage("tool:tvu_schedule:student_id", "");
-    const savedSemester = getLocalStorage("tool:tvu_schedule:semester", "");
+    const savedPassword = getLocalStorage("tool:tvu_schedule:password", "");
     setStudentId(savedStudentId);
-    setSemester(savedSemester);
+    setPassword(savedPassword);
   }, []);
 
   // Tự động lưu cấu hình khi người dùng nhập
@@ -37,14 +37,14 @@ export default function TVUScheduleToolModal({
   }, [studentId]);
 
   useEffect(() => {
-    if (semester) {
-      setLocalStorage("tool:tvu_schedule:semester", semester);
+    if (password.trim()) {
+      setLocalStorage("tool:tvu_schedule:password", password);
     }
-  }, [semester]);
+  }, [password]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentId.trim() || !semester) return;
+    if (!studentId.trim() || !password.trim()) return;
 
     // Bật công cụ
     onEnable();
@@ -91,9 +91,9 @@ export default function TVUScheduleToolModal({
           </h3>
           <p className="text-gray-600 dark:text-gray-400 text-sm">
             Công cụ Xem TKB TVU giúp bạn tra cứu và quản lý thời khóa biểu một
-            cách dễ dàng. Chỉ cần nhập mã số sinh viên và chọn học kỳ, bạn có
-            thể xem lịch học, lịch thi và các thông tin liên quan khác. Công cụ
-            này sẽ giúp bạn theo dõi lịch học hiệu quả hơn.
+            cách dễ dàng thông qua tài khoản TTSV. Chỉ cần nhập mã số sinh viên
+            và mật khẩu hệ thống TTSV để xem lịch học, lịch thi và các thông tin
+            liên quan khác.
           </p>
         </div>
 
@@ -104,14 +104,16 @@ export default function TVUScheduleToolModal({
           </h3>
           <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
             <p>1. Nhập mã số sinh viên của bạn</p>
-            <p>2. Chọn học kỳ muốn xem thời khóa biểu</p>
+            <p>2. Nhập mật khẩu TTSV</p>
             <p>3. Nhấn nút bật để kích hoạt công cụ</p>
           </div>
         </div>
 
         {/* Phần cấu hình */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <h3 className="font-medium text-black dark:text-white">Cấu hình</h3>
+          <h3 className="font-medium text-black dark:text-white">
+            Cấu hình đăng nhập TTSV
+          </h3>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -136,30 +138,34 @@ export default function TVUScheduleToolModal({
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Học kỳ
+              Mật khẩu TTSV
             </label>
-            <select
-              value={semester}
-              onChange={(e) => setSemester(e.target.value)}
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Nhập mật khẩu hệ thống TTSV"
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-black focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               required
-            >
-              <option value="">Chọn học kỳ</option>
-              <option value="2023-2024-1">Học kỳ 1 (2023-2024)</option>
-              <option value="2023-2024-2">Học kỳ 2 (2023-2024)</option>
-              <option value="2024-2025-1">Học kỳ 1 (2024-2025)</option>
-            </select>
+            />
+            <div className="flex items-start gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
+              <IconInfoCircle size={16} className="mt-0.5 flex-shrink-0" />
+              <p>
+                Sử dụng mật khẩu bạn đăng nhập vào hệ thống TTSV (hệ thống đào
+                tạo trực tuyến)
+              </p>
+            </div>
           </div>
 
           <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-            * Cấu hình sẽ được tự động lưu khi bạn nhập
+            * Thông tin đăng nhập sẽ được tự động lưu khi bạn nhập
           </p>
 
           <div className="flex justify-between items-center gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors cursor-pointer"
             >
               Đóng
             </button>
@@ -167,17 +173,17 @@ export default function TVUScheduleToolModal({
               <button
                 type="button"
                 onClick={handleDisable}
-                className="px-6 py-2 rounded-lg text-sm font-medium transition-colors bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800"
+                className="px-6 py-2 rounded-lg text-sm font-medium transition-colors bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 cursor-pointer"
               >
                 Tắt công cụ
               </button>
             ) : (
               <button
                 type="submit"
-                disabled={!studentId.trim() || !semester}
+                disabled={!studentId.trim() || !password.trim()}
                 className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  studentId.trim() && semester
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800"
+                  studentId.trim() && password.trim()
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 cursor-pointer"
                     : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed"
                 }`}
               >

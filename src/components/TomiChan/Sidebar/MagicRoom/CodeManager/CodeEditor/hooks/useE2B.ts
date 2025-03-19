@@ -159,24 +159,81 @@ export function useE2B() {
       setOutputImages([]);
 
       try {
-        if (language === "html") {
-          const processedHtml = await processHtmlWithDependencies(code);
-          const blob = new Blob([processedHtml], { type: "text/html" });
-          const url = URL.createObjectURL(blob);
-          window.open(url, "_blank");
-          setTimeout(() => URL.revokeObjectURL(url), 1000);
-          setOutput(
-            "Đã mở HTML trong tab mới (với các file CSS và JS đã nhúng)"
-          );
-          return;
-        }
-
-        const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
-
         // Chuẩn bị dữ liệu project nếu cần
         const projectData = projectId
           ? await prepareProjectData(projectId)
           : null;
+
+        const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
+
+        if (language === "html") {
+          if (projectId) {
+            // Chạy dự án web trên E2B
+            const response = await fetch("/api/code", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-E2B-API-Key": e2bApiKey,
+              },
+              body: JSON.stringify({
+                code,
+                language: "html",
+                projectData,
+                isWebProject: true,
+              }),
+            });
+
+            const data = await response.json();
+            if (data.error) {
+              setError(data.error);
+            } else if (data.webUrl) {
+              // Thử truy cập URL vài lần trước khi mở tab mới
+              let attempts = 0;
+              const maxAttempts = 5;
+              const checkUrl = async () => {
+                try {
+                  attempts++;
+                  // Thông báo rằng đang chờ server
+                  setOutput(
+                    `Đang chờ server khởi động (${attempts}/${maxAttempts})...`
+                  );
+
+                  // Thử mở tab mới
+                  window.open(data.webUrl, "_blank");
+                  setOutput(`Đã mở dự án web trong tab mới: ${data.webUrl}`);
+                } catch (err) {
+                  console.error("Lỗi khi mở URL:", err);
+
+                  if (attempts < maxAttempts) {
+                    // Thử lại sau 1 giây
+                    setTimeout(checkUrl, 1000);
+                  } else {
+                    setOutput(
+                      `Không thể kết nối đến server. Vui lòng thử mở URL thủ công: ${data.webUrl}`
+                    );
+                  }
+                }
+              };
+
+              // Bắt đầu kiểm tra URL
+              checkUrl();
+            } else {
+              setOutput(data.output || "");
+            }
+          } else {
+            // Vẫn giữ cách xử lý cũ cho các file HTML đơn lẻ không thuộc project
+            const processedHtml = await processHtmlWithDependencies(code);
+            const blob = new Blob([processedHtml], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            window.open(url, "_blank");
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            setOutput(
+              "Đã mở HTML trong tab mới (với các file CSS và JS đã nhúng)"
+            );
+          }
+          setIsRunning(false);
+          return;
+        }
 
         const response = await fetch("/api/code", {
           method: "POST",
@@ -187,7 +244,7 @@ export function useE2B() {
           body: JSON.stringify({
             code,
             language,
-            projectData, // Gửi dữ liệu project thay vì projectId
+            projectData,
           }),
         });
 

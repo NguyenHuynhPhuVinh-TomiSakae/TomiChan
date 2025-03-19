@@ -4,9 +4,14 @@ import { CodeFile } from "@/types";
 
 export async function POST(request: Request) {
   try {
-    const { code, language, isTerminalCommand, projectData } =
+    const { code, language, isTerminalCommand, projectData, isWebProject } =
       await request.json();
-    console.log("Received:", { code, language, isTerminalCommand });
+    console.log("Received:", {
+      code,
+      language,
+      isTerminalCommand,
+      isWebProject,
+    });
 
     const e2bApiKey =
       request.headers.get("X-E2B-API-Key") || process.env.E2B_API_KEY;
@@ -113,6 +118,53 @@ export async function POST(request: Request) {
         cwd: projectData ? projectPath : undefined,
       });
       return NextResponse.json({ output: output.stdout });
+    } else if (isWebProject && language === "html" && projectData) {
+      // Xử lý dự án web
+      try {
+        // Tìm file index.html hoặc sử dụng tên file hiện tại
+        const { files } = projectData;
+        const indexFile = files.find(
+          (file: CodeFile) => file.name.toLowerCase() === "index.html"
+        );
+
+        const mainHtmlFile =
+          indexFile ||
+          files.find((file: CodeFile) =>
+            file.name.toLowerCase().endsWith(".html")
+          );
+
+        if (!mainHtmlFile) {
+          throw new Error("Không tìm thấy file HTML trong dự án");
+        }
+
+        // Khởi động HTTP server với Python trong background ở port 8000
+        console.log("Khởi động HTTP server...");
+
+        // Đi đến thư mục project và chạy Python HTTP server
+        await sandbox.commands.run(
+          `cd ${projectPath} && python -m http.server 8000 --bind 0.0.0.0`,
+          {
+            background: true,
+            cwd: projectPath,
+          }
+        );
+
+        // Sử dụng getHost để lấy URL công khai
+        const host = sandbox.getHost(8000);
+        const webUrl = `http://${host}/${mainHtmlFile.name}`;
+
+        console.log("Web URL:", webUrl);
+
+        return NextResponse.json({
+          webUrl,
+          output: `Đã khởi động HTTP server tại ${webUrl}\nDự án web đã sẵn sàng để truy cập trong tab mới.`,
+        });
+      } catch (webError) {
+        console.error("Lỗi khi chạy dự án web:", webError);
+        return NextResponse.json({
+          error: `Lỗi khi chạy dự án web: ${(webError as Error).message}`,
+        });
+      }
     } else {
       let output = "";
       let error = "";

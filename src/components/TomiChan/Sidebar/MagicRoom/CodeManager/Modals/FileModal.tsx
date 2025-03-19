@@ -19,7 +19,6 @@ interface FileModalProps {
   onParentFolderChange?: (folderId: string | null) => void;
   selectedFolder?: CodeFolder | null;
   selectedProject?: Project | null;
-  isLoading?: boolean;
 }
 
 export function FileModal({
@@ -36,7 +35,6 @@ export function FileModal({
   selectedFile,
   selectedFolder,
   selectedProject,
-  isLoading = false,
 }: FileModalProps) {
   if (!isOpen) return null;
 
@@ -132,7 +130,6 @@ export function FileModal({
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
                           placeholder="Nhập tên dự án..."
                           autoFocus
-                          disabled={isLoading}
                         />
                       </div>
                       <div>
@@ -147,7 +144,6 @@ export function FileModal({
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
                           placeholder="Nhập mô tả dự án..."
                           rows={3}
-                          disabled={isLoading}
                         />
                       </div>
                     </>
@@ -159,7 +155,6 @@ export function FileModal({
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
                       placeholder="Nhập tên..."
                       autoFocus
-                      disabled={isLoading}
                     />
                   )}
                 </div>
@@ -167,21 +162,15 @@ export function FileModal({
                 <div className="flex justify-end gap-2 mt-4">
                   <button
                     onClick={onClose}
-                    className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isLoading}
+                    className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200 cursor-pointer"
                   >
                     Hủy
                   </button>
                   <button
                     onClick={onSubmit}
-                    className={`px-4 py-2 text-white rounded-lg transition-colors duration-200 cursor-pointer ${modalConfig[type].submitClass} disabled:opacity-50 disabled:cursor-not-allowed min-w-[80px] flex justify-center items-center`}
-                    disabled={isLoading}
+                    className={`px-4 py-2 text-white rounded-lg transition-colors duration-200 cursor-pointer ${modalConfig[type].submitClass}`}
                   >
-                    {isLoading ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                    ) : (
-                      modalConfig[type].submitText
-                    )}
+                    {modalConfig[type].submitText}
                   </button>
                 </div>
               </Dialog.Panel>

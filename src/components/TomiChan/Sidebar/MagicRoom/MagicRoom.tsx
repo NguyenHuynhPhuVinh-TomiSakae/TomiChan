@@ -100,6 +100,9 @@ export default function MagicRoom({ onToggleMagicMode }: MagicRoomProps) {
                 AI hỗ trợ viết code, debug và tối ưu hóa
               </p>
             </div>
+            <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
+              Không ổn định
+            </span>
           </motion.button>
 
           <motion.button

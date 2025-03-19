@@ -52,6 +52,7 @@ const checkForSpecialTags = (content: string) => {
     ["[DeleteProject]", "[/DeleteProject]"],
     ["[EMAIL]", "[/EMAIL]"],
     ["[TVU_SCHEDULE]", "[/TVU_SCHEDULE]"],
+    ["[TVU_SCORE]", "[/TVU_SCORE]"],
   ];
 
   return tags.some(

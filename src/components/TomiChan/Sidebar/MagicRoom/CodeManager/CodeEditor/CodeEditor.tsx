@@ -193,21 +193,8 @@ export default function CodeEditor({
     }
   };
 
-  // Xử lý khi người dùng chọn lưu trong modal
-  const handleSaveInModal = async () => {
-    await handleSave();
-    setShowUnsavedModal(false);
-    setSessionStorage("ui_state_magic", "code_manager");
-    if (getSessionStorage("pendingFileToOpen")) {
-      onBack?.();
-    }
-  };
-
-  // Xử lý khi người dùng chọn bỏ thay đổi trong modal
-  const handleDiscardInModal = () => {
-    setShowUnsavedModal(false);
-
-    // Kiểm tra xem có file đang chờ mở không
+  // Thêm hàm xử lý pending files
+  const handlePendingFiles = () => {
     const pendingFile = getSessionStorage("pendingFileToOpen");
     if (pendingFile && onFileOpen) {
       try {
@@ -218,7 +205,6 @@ export default function CodeEditor({
         console.error("Lỗi khi mở file:", error);
       }
     } else {
-      // Nếu đang có file chờ đóng
       const pendingFileId = getSessionStorage("pendingFileToClose");
       if (pendingFileId) {
         closeFile(pendingFileId);
@@ -228,6 +214,20 @@ export default function CodeEditor({
         }
       }
     }
+  };
+
+  // Xử lý khi người dùng chọn lưu trong modal
+  const handleSaveInModal = async () => {
+    await handleSave();
+    setShowUnsavedModal(false);
+    setSessionStorage("ui_state_magic", "code_manager");
+    handlePendingFiles();
+  };
+
+  // Xử lý khi người dùng chọn bỏ thay đổi trong modal
+  const handleDiscardInModal = () => {
+    setShowUnsavedModal(false);
+    handlePendingFiles();
   };
 
   // Xử lý khi người dùng chọn hủy trong modal

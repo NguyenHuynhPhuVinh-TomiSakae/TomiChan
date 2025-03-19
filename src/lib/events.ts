@@ -4,7 +4,10 @@ import mitt, { Emitter } from "mitt";
 type Events = {
   "magic:openCodeAssistant": void;
   "fileExplorer:reload": void;
-  "media:openFile": { fileName: string };
+  "media:openFile": {
+    fileName: string;
+    projectId?: string;
+  };
   "media:closeFile": void;
   "code:openFile": {
     filePath: string;

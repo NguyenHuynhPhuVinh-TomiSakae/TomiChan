@@ -134,9 +134,21 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
 
   // Thêm useEffect để theo dõi thay đổi của media_file_name
   React.useEffect(() => {
-    const handleOpenMedia = ({ fileName }: { fileName: string }) => {
-      // Tìm file cần mở
-      const targetFile = files.find((f) => f.name === fileName);
+    const handleOpenMedia = ({
+      fileName,
+      projectId,
+    }: {
+      fileName: string;
+      projectId?: string;
+    }) => {
+      // Tìm file cần mở, ưu tiên file trong project nếu có projectId
+      const targetFile = files.find((f) => {
+        if (projectId) {
+          return f.name === fileName && f.projectId === projectId;
+        }
+        return f.name === fileName;
+      });
+
       if (targetFile) {
         handleFileOpen(targetFile);
       }

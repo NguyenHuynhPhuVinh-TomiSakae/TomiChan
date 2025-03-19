@@ -18,7 +18,8 @@ export function useFileManager() {
   };
 
   // Function tạo file tree đầy đủ khi ở code_manager
-  const createFullFileTree = () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const createFullFileTree = (projectId?: string) => {
     const buildTree = (
       parentId?: string,
       indent: string = "",
@@ -104,15 +105,13 @@ export function useFileManager() {
   };
 
   // Function chỉ hiển thị file và thư mục ở root, không hiển thị danh sách dự án
-  const createFileTree = () => {
-    const buildTree = (
-      parentId?: string,
-      indent: string = "",
-      projectId?: string
-    ) => {
+  const createFileTree = (projectId?: string) => {
+    const buildTree = (parentId?: string, indent: string = "") => {
       let tree = "";
 
-      // Lấy folders con của parentId hiện tại và thuộc project hiện tại (nếu có)
+      // Lấy folders con của parentId hiện tại
+      // Nếu có projectId, chỉ lấy folder thuộc project đó
+      // Nếu không có projectId, chỉ lấy folder không thuộc project nào
       const subFolders = folders.filter(
         (f) =>
           f.parentId === parentId &&
@@ -124,13 +123,19 @@ export function useFileManager() {
         tree += `${indent}📁 ${folder.name}\n`;
 
         // Thêm files trong folder
-        const filesInFolder = files.filter((f) => f.folderId === folder.id);
+        // Nếu có projectId, chỉ lấy files thuộc project đó
+        const filesInFolder = files.filter(
+          (f) =>
+            f.folderId === folder.id &&
+            (projectId ? f.projectId === projectId : !f.projectId)
+        );
+
         for (const file of filesInFolder) {
           tree += `${indent}  📄 ${file.name}\n`;
         }
 
         // Đệ quy cho subfolders
-        tree += buildTree(folder.id, indent + "  ", projectId);
+        tree += buildTree(folder.id, indent + "  ");
       }
 
       return tree;
@@ -138,11 +143,19 @@ export function useFileManager() {
 
     let tree = "Cấu trúc thư mục hiện tại:\n\n";
 
-    // Thêm folders gốc không thuộc dự án nào
-    tree += buildTree();
+    // Thêm folders gốc
+    // Nếu có projectId, chỉ hiển thị folders thuộc project đó
+    // Nếu không có projectId, chỉ hiển thị folders không thuộc project nào
+    tree += buildTree(undefined);
 
-    // Thêm files không thuộc folder nào và không thuộc dự án nào
-    const rootFiles = files.filter((f) => !f.folderId && !f.projectId);
+    // Thêm files không thuộc folder nào
+    // Nếu có projectId, chỉ lấy files thuộc project đó
+    // Nếu không có projectId, chỉ lấy files không thuộc project nào
+    const rootFiles = files.filter(
+      (f) =>
+        !f.folderId && (projectId ? f.projectId === projectId : !f.projectId)
+    );
+
     for (const file of rootFiles) {
       tree += `📄 ${file.name}\n`;
     }

@@ -197,7 +197,7 @@ export function useSystemPrompt() {
           fileTree = createProjectFileTree(projectId, fileName);
         } else {
           // Nếu file ở root, chỉ hiện file và thư mục ở root
-          fileTree = createFileTree();
+          fileTree = createFileTree(undefined);
         }
 
         enhancedPrompt =
@@ -208,8 +208,12 @@ export function useSystemPrompt() {
 
         // Fallback về createFileTree nếu có lỗi
         enhancedPrompt =
-          getCodeViewPrompt(fileName, fileContent, createFileTree(), null) +
-          enhancedPrompt;
+          getCodeViewPrompt(
+            fileName,
+            fileContent,
+            createFileTree(undefined),
+            null
+          ) + enhancedPrompt;
       }
     }
 

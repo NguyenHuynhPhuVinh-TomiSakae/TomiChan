@@ -307,7 +307,10 @@ export function useCodeAssistant() {
       setSessionStorage("ui_state_magic", "code_view");
     }
 
-    emitter.emit(MAGIC_EVENTS.OPEN_CODE_FILE, { filePath: "" });
+    emitter.emit(MAGIC_EVENTS.OPEN_CODE_FILE, {
+      filePath: file.name,
+      projectId: file.projectId,
+    });
   };
 
   const handleEditorBack = async () => {

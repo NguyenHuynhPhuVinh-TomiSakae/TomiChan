@@ -80,6 +80,10 @@ const transformRules: TransformRule[] = [
     pattern: /\[PATH\]([\s\S]*?)\[\/PATH\]/g,
     replacement: "<file-path>$1</file-path>",
   },
+  {
+    pattern: /\[EMAIL\]([\s\S]*?)\[\/EMAIL\]/g,
+    replacement: "<email-block>$1</email-block>",
+  },
 ];
 
 export function transformMarkdownContent(content: string): string {

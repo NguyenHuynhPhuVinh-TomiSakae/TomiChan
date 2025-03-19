@@ -47,4 +47,7 @@ export interface CustomComponents extends Components {
   "open-code": (props: BaseComponentProps) => JSX.Element;
   "code-editor": (props: BaseComponentProps) => JSX.Element;
   "file-path": (props: BaseComponentProps) => JSX.Element;
+
+  // New component
+  "email-block": (props: BaseComponentProps) => JSX.Element;
 }

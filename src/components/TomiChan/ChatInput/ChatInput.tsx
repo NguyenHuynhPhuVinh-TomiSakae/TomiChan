@@ -10,6 +10,7 @@ import {
   IconVideo,
   IconMusicUp,
   IconArrowDown,
+  IconTool,
 } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UploadFiles from "./UploadFiles";
@@ -22,6 +23,7 @@ import {
 } from "@/hooks/useUploadFiles";
 import { scrollToBottom } from "../ChatMessages/ChatMessages";
 import { useMediaQuery } from "react-responsive";
+import ToolsModal, { getEnabledTools } from "./ToolsModal";
 
 interface ChatInputProps {
   onSendMessage: (
@@ -103,6 +105,10 @@ export default function ChatInput({
   const touchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { validateFiles, isFileTypeSupported } = useFileValidator();
+
+  const [showToolModal, setShowToolModal] = useState(false);
+
+  const enabledTools = getEnabledTools();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -560,38 +566,92 @@ export default function ChatInput({
 
             <div className={`h-10 ${isMagicMode ? "" : "sm:h-14"}`}>
               <AnimatePresence>
-                {selectedProvider === "google" && (
-                  <motion.button
-                    data-plus-button
-                    type="button"
-                    className={`absolute left-2 bottom-6 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 transition-all duration-200 border border-black dark:border-white ${
-                      isMagicMode ? "" : "sm:left-3 sm:bottom-8 sm:p-2"
-                    }`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (isGenerating) return;
+                {selectedProvider === "google" ? (
+                  <>
+                    <motion.button
+                      data-plus-button
+                      type="button"
+                      className={`absolute left-2 bottom-6 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full p-1 transition-all duration-200 border border-black dark:border-white ${
+                        isMagicMode ? "" : "sm:left-3 sm:bottom-8 sm:p-2"
+                      }`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (isGenerating) return;
 
-                      const button = e.currentTarget;
-                      const rect = button.getBoundingClientRect();
-                      setPopupPosition({
-                        x: rect.left,
-                        y: rect.top - 5,
-                      });
-                      setShowPopup(!showPopup);
-                    }}
-                    disabled={isGenerating}
+                        const button = e.currentTarget;
+                        const rect = button.getBoundingClientRect();
+                        setPopupPosition({
+                          x: rect.left,
+                          y: rect.top - 5,
+                        });
+                        setShowPopup(!showPopup);
+                      }}
+                      disabled={isGenerating}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <IconPlus
+                        size={18}
+                        className={`text-black dark:text-white ${
+                          isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
+                        }`}
+                        stroke={1.5}
+                      />
+                    </motion.button>
+
+                    <motion.div
+                      className={`absolute left-11 bottom-6 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 border border-black dark:border-white flex items-center ${
+                        isMagicMode ? "" : "sm:left-16"
+                      } ${isMagicMode ? "" : "sm:bottom-8"}`}
+                      onClick={() => setShowToolModal(true)}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <div className="flex items-center gap-1 px-1.5 sm:px-2 py-1">
+                        <IconTool
+                          size={16}
+                          className={`text-black dark:text-white ${
+                            isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
+                          }`}
+                          stroke={1.5}
+                        />
+                        <span className="text-xs sm:text-sm font-medium">
+                          Công cụ
+                        </span>
+                        <span className="bg-black dark:bg-white text-white dark:text-black text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-full">
+                          {enabledTools.length}
+                        </span>
+                      </div>
+                    </motion.div>
+                  </>
+                ) : (
+                  <motion.div
+                    className={`absolute left-2 bottom-6 cursor-pointer dark:hover:bg-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 border border-black dark:border-white flex items-center ${
+                      isMagicMode ? "" : "sm:left-3"
+                    } ${isMagicMode ? "" : "sm:bottom-8"}`}
+                    onClick={() => setShowToolModal(true)}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <IconPlus
-                      size={18}
-                      className={`text-black dark:text-white ${
-                        isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
-                      }`}
-                      stroke={1.5}
-                    />
-                  </motion.button>
+                    <div className="flex items-center gap-1 px-1.5 sm:px-2 py-1">
+                      <IconTool
+                        size={16}
+                        className={`text-black dark:text-white ${
+                          isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
+                        }`}
+                        stroke={1.5}
+                      />
+                      <span className="text-xs sm:text-sm font-medium">
+                        Công cụ
+                      </span>
+                      <span className="bg-black dark:bg-white text-white dark:text-black text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-full">
+                        {enabledTools.length}
+                      </span>
+                    </div>
+                  </motion.div>
                 )}
               </AnimatePresence>
 
@@ -800,6 +860,14 @@ export default function ChatInput({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ToolsModal
+        isOpen={showToolModal}
+        onClose={() => setShowToolModal(false)}
+        onSelectTool={(tool) => {
+          console.log("Selected tool:", tool);
+        }}
+      />
     </motion.form>
   );
 }

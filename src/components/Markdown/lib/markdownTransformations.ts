@@ -49,6 +49,18 @@ const transformRules: TransformRule[] = [
     replacement: "<delete-folder>$1</delete-folder>",
   },
   {
+    pattern: /\[CreateProject\]([\s\S]*?)\[\/CreateProject\]/g,
+    replacement: "<create-project>$1</create-project>",
+  },
+  {
+    pattern: /\[UpdateProject\]([\s\S]*?)\[\/UpdateProject\]/g,
+    replacement: "<update-project>$1</update-project>",
+  },
+  {
+    pattern: /\[DeleteProject\]([\s\S]*?)\[\/DeleteProject\]/g,
+    replacement: "<delete-project>$1</delete-project>",
+  },
+  {
     pattern: /\[OpenMedia\]([\s\S]*?)\[\/OpenMedia\]/g,
     replacement: "<open-media>$1</open-media>",
   },

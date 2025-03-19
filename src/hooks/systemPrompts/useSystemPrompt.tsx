@@ -18,6 +18,7 @@ import { getImageGenerationPrompt } from "./prompts/imageGenerationPrompt";
 import { getSearchPrompt } from "./prompts/searchPrompt";
 import { getSentFilesPrompt } from "./prompts/sentFilesPrompt";
 import { getSystemTagPrompt } from "./prompts/systemTagPrompt";
+import { getProjectManagementPrompt } from "./prompts/fileManagementPrompt";
 
 export function useSystemPrompt() {
   const [uiState, setUiState] = useState(
@@ -168,7 +169,9 @@ export function useSystemPrompt() {
         createFileTree,
         isMediaView
       );
-      enhancedPrompt = codeManagerPrompt + enhancedPrompt;
+      const projectManagementPrompt = getProjectManagementPrompt();
+      enhancedPrompt =
+        projectManagementPrompt + codeManagerPrompt + enhancedPrompt;
     }
 
     // Thêm hướng dẫn cho Magic Mode nếu được bật

@@ -1,5 +1,6 @@
 export const getFileManagementPrompt = () => `
-Bạn có thể sử dụng các lệnh sau để quản lý files và folders:
+Bạn có thể sử dụng các lệnh sau để quản lý files và folders (Lưu ý: khi sài thẻ, chỉ viết thẻ thuần không sử dụng ký hiệu markdown hoặc các ký tự đặc biệt khác):
+KHI ĐỀ CẬP TỚI THẺ THÌ KHÔNG SÀI THẺ MÀ CHỈ NÓI LÀ SẼ TẠO THÔI VÀ KHI NÀO TẠO THẬT SỰ THÌ MỚI SÀI THẺ!!
 
 1. Tạo file mới:
 [CreateFile]
@@ -97,4 +98,46 @@ path: images/photo.jpg
 [OpenCode]
 path: src/components/App.js
 [/OpenCode]
+`;
+
+export const getProjectManagementPrompt = () => `
+Bạn có thể sử dụng các lệnh sau để quản lý dự án (Lưu ý: khi sài thẻ, chỉ viết thẻ thuần không sử dụng ký hiệu markdown hoặc các ký tự đặc biệt khác)::
+KHI ĐỀ CẬP TỚI THẺ THÌ KHÔNG SÀI THẺ MÀ CHỈ NÓI LÀ SẼ TẠO THÔI VÀ KHI NÀO TẠO THẬT SỰ THÌ MỚI SÀI THẺ!!
+
+1. Tạo dự án mới:
+[CreateProject]
+name: tên_dự_án
+description: mô_tả_dự_án (không bắt buộc)
+[/CreateProject]
+
+2. Cập nhật dự án:
+[UpdateProject]
+id: id_dự_án
+name: tên_mới
+description: mô_tả_mới
+[/UpdateProject]
+
+3. Xóa dự án:
+[DeleteProject]
+id: id_dự_án
+[/DeleteProject]
+
+Ví dụ:
+- Tạo dự án mới:
+[CreateProject]
+name: Website Bán Hàng
+description: Dự án xây dựng website bán hàng sử dụng React và Node.js
+[/CreateProject]
+
+- Cập nhật dự án:
+[UpdateProject]
+id: abc123
+name: Website Thương Mại Điện Tử
+description: Dự án xây dựng website TMĐT với React, Node.js và MongoDB
+[/UpdateProject]
+
+- Xóa dự án:
+[DeleteProject]
+id: abc123
+[/DeleteProject]
 `;

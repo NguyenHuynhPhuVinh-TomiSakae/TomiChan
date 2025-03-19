@@ -4,6 +4,8 @@ import { chatDB } from "../../utils/db";
 import type { CodeFile, CodeFolder } from "../../types";
 import { emitter, FILE_EXPLORER_EVENTS, MAGIC_EVENTS } from "../../lib/events";
 import { setSessionStorage } from "@/utils/sessionStorage";
+import { nanoid } from "nanoid";
+import { getApiKey } from "../../utils/getApiKey";
 
 export function useCodeManagerProcessor() {
   const { createNewFile, createNewFolder, folders, files } = useCodeAssistant();
@@ -223,6 +225,109 @@ export function useCodeManagerProcessor() {
           // Thay thế localStorage bằng event
           setSessionStorage("ui_state_magic", "media_view");
           emitter.emit(MAGIC_EVENTS.OPEN_MEDIA, { fileName: targetFile.name });
+        }
+      }
+    }
+
+    // Xử lý CreateProject tag
+    const createProjectRegex =
+      /\[CreateProject\]([\s\S]*?)\[\/CreateProject\]/g;
+    const projectMatches = content.matchAll(createProjectRegex);
+
+    for (const match of projectMatches) {
+      const tagContent = match[0];
+      if (processedTags.current.has(tagContent)) continue;
+      processedTags.current.add(tagContent);
+
+      const projectContent = match[1];
+      const name = projectContent.match(/name:\s*(.*)/)?.[1]?.trim();
+      const description =
+        projectContent.match(/description:\s*(.*)/)?.[1]?.trim() || "";
+
+      if (name) {
+        // Tạo project mới
+        const newProject = {
+          id: nanoid(),
+          name,
+          description,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        await chatDB.saveProject(newProject);
+        hasChanges = true;
+      }
+    }
+
+    // Xử lý UpdateProject tag
+    const updateProjectRegex =
+      /\[UpdateProject\]([\s\S]*?)\[\/UpdateProject\]/g;
+    const updateProjectMatches = content.matchAll(updateProjectRegex);
+
+    for (const match of updateProjectMatches) {
+      const tagContent = match[0];
+      if (processedTags.current.has(tagContent)) continue;
+      processedTags.current.add(tagContent);
+
+      const projectContent = match[1];
+      const id = projectContent.match(/id:\s*(.*)/)?.[1]?.trim();
+      const name = projectContent.match(/name:\s*(.*)/)?.[1]?.trim();
+      const description =
+        projectContent.match(/description:\s*(.*)/)?.[1]?.trim() || "";
+
+      if (id && name) {
+        // Tìm project theo id
+        const project = await chatDB.getProject(id);
+
+        if (project) {
+          // Cập nhật project
+          const updatedProject = {
+            ...project,
+            name,
+            description,
+            updatedAt: new Date(),
+          };
+
+          await chatDB.saveProject(updatedProject);
+          hasChanges = true;
+        }
+      }
+    }
+
+    // Xử lý DeleteProject tag
+    const deleteProjectRegex =
+      /\[DeleteProject\]([\s\S]*?)\[\/DeleteProject\]/g;
+    const deleteProjectMatches = content.matchAll(deleteProjectRegex);
+
+    for (const match of deleteProjectMatches) {
+      const tagContent = match[0];
+      if (processedTags.current.has(tagContent)) continue;
+      processedTags.current.add(tagContent);
+
+      const projectContent = match[1];
+      const id = projectContent.match(/id:\s*(.*)/)?.[1]?.trim();
+
+      if (id) {
+        try {
+          // Xóa project từ DB
+          await chatDB.deleteProject(id);
+
+          // Cần thêm xử lý xóa project từ E2B nếu cần
+          const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
+          fetch("/api/e2b/delete-project", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-E2B-API-Key": e2bApiKey,
+            },
+            body: JSON.stringify({
+              projectId: id,
+            }),
+          });
+
+          hasChanges = true;
+        } catch (error) {
+          console.error("Lỗi khi xóa project:", error);
         }
       }
     }

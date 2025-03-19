@@ -13,20 +13,37 @@ export function useSentFiles(files: any[], currentFile: string) {
     const sentFilesStr = getSessionStorage("files_sent_to_ai", "[]");
     try {
       const fileNames = JSON.parse(sentFilesStr);
+
+      // Luôn tải lại tất cả các file từ database
+      const allFilesFromDB = await chatDB.getAllCodeFiles();
+
       const filesWithContent = await Promise.all(
         fileNames.map(async (fileName: string) => {
           const isCurrentlyOpenFile = fileName === currentFile;
+
+          // Nếu là file đang mở, trả về file với nội dung mới nhất
           if (isCurrentlyOpenFile) {
+            // Lấy nội dung mới nhất của file đang mở từ CSDL
+            const currentFileFromDB = allFilesFromDB.find(
+              (f) => f.name === fileName
+            );
             return {
               name: fileName,
-              content: "",
+              content: currentFileFromDB ? currentFileFromDB.content || "" : "",
             };
           }
-          let fileObj = files.find((f) => f.name === fileName);
-          if (!fileObj) {
-            const allFiles = await chatDB.getAllCodeFiles();
-            fileObj = allFiles.find((f) => f.name === fileName);
+
+          // Tìm file trong danh sách từ CSDL trước
+          const fileFromDB = allFilesFromDB.find((f) => f.name === fileName);
+          if (fileFromDB) {
+            return {
+              name: fileName,
+              content: fileFromDB.content || "",
+            };
           }
+
+          // Nếu không tìm thấy trong CSDL, kiểm tra trong files đã tải
+          const fileObj = files.find((f) => f.name === fileName);
           return {
             name: fileName,
             content: fileObj ? fileObj.content || "" : "",
@@ -34,9 +51,11 @@ export function useSentFiles(files: any[], currentFile: string) {
         })
       );
       setSentFiles(filesWithContent);
+      return filesWithContent;
     } catch (error) {
       console.error("Lỗi khi tải danh sách file đã gửi cho AI:", error);
       setSentFiles([]);
+      return [];
     }
   };
 

@@ -14,28 +14,31 @@ export function useCurrentFile(files: any[]) {
   const { loadSentFiles } = useSentFiles(files, currentFile);
   // Thêm hàm để lấy nội dung file đang mở
   const loadCurrentFileContent = async () => {
-    if (!currentFile) return;
+    if (!currentFile) return "";
 
     try {
-      // Tìm file trong danh sách files đã tải
-      const fileObj = files.find((f) => f.name === currentFile);
+      // Luôn tải lại từ database để đảm bảo dữ liệu mới nhất
+      const allFiles = await chatDB.getAllCodeFiles();
+      const fileFromDB = allFiles.find((f) => f.name === currentFile);
 
-      if (fileObj) {
-        setCurrentFileContent(fileObj.content || "");
+      if (fileFromDB) {
+        setCurrentFileContent(fileFromDB.content || "");
+        return fileFromDB.content || "";
       } else {
-        // Nếu không tìm thấy trong danh sách đã tải, tìm trong database
-        const allFiles = await chatDB.getAllCodeFiles();
-        const fileFromDB = allFiles.find((f) => f.name === currentFile);
-
-        if (fileFromDB) {
-          setCurrentFileContent(fileFromDB.content || "");
-        } else {
-          setCurrentFileContent("");
+        // Nếu không tìm thấy, tìm trong danh sách files đã tải
+        const fileObj = files.find((f) => f.name === currentFile);
+        if (fileObj) {
+          setCurrentFileContent(fileObj.content || "");
+          return fileObj.content || "";
         }
       }
+
+      setCurrentFileContent("");
+      return "";
     } catch (error) {
       console.error("Lỗi khi tải nội dung file:", error);
       setCurrentFileContent("");
+      return "";
     }
   };
 

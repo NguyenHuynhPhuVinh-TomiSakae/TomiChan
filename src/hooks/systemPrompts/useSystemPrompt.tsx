@@ -25,9 +25,7 @@ export function useSystemPrompt() {
   const [uiState, setUiState] = useState(
     getSessionStorage("ui_state_magic", "none")
   );
-  const [currentFile, setCurrentFile] = useState("");
-  const [currentFileContent, setCurrentFileContent] = useState("");
-  const [sentFiles, setSentFiles] = useState<any[]>([]);
+
   const {
     files,
     folders,
@@ -38,16 +36,12 @@ export function useSystemPrompt() {
     createFullFileTree,
   } = useFileManager();
 
-  const {
-    currentFile: currentFileFromUseCurrentFile,
-    currentFileContent: currentFileContentFromUseCurrentFile,
-    loadCurrentFileContent,
-  } = useCurrentFile(files);
-  const {
-    sentFiles: sentFilesFromUseSentFiles,
-    setSentFiles: setSentFilesFromUseSentFiles,
-    loadSentFiles,
-  } = useSentFiles(files, currentFile);
+  const { currentFile, currentFileContent, loadCurrentFileContent } =
+    useCurrentFile(files);
+  const { sentFiles, setSentFiles, loadSentFiles } = useSentFiles(
+    files,
+    currentFile
+  );
 
   useEffect(() => {
     const checkUiState = async () => {
@@ -109,14 +103,16 @@ export function useSystemPrompt() {
   }, [uiState, files]);
 
   const getEnhancedSystemPrompt = async (provider: string) => {
+    // Tải mới tất cả dữ liệu trước khi tạo system prompt
+    await loadFilesAndFolders();
+    await loadCurrentFileContent();
+    await loadSentFiles();
+
     // Tải lại files và folders nếu đang ở chế độ code_manager
     const isCodeManager = uiState === "code_manager";
     if (isCodeManager) {
       await loadFilesAndFolders();
     }
-
-    // Tải lại danh sách file đã gửi cho AI
-    await loadSentFiles();
 
     // Đọc trạng thái Magic Mode từ localStorage với tên biến mới
     const isMagicMode =
@@ -167,13 +163,13 @@ export function useSystemPrompt() {
 
     if (isCodeView) {
       // Sử dụng dữ liệu từ hook useCurrentFile
-      const fileName = currentFileFromUseCurrentFile;
-      let fileContent = currentFileContentFromUseCurrentFile;
+      const fileName = currentFile;
+      let fileContent = currentFileContent;
 
       // Nếu không có nội dung, tải nội dung file
       if (fileName && !fileContent) {
         await loadCurrentFileContent();
-        fileContent = currentFileContentFromUseCurrentFile;
+        fileContent = currentFileContent;
       }
 
       // Tìm thông tin projectId cho file hiện tại
@@ -263,5 +259,7 @@ export function useSystemPrompt() {
     currentFile,
     currentFileContent,
     sentFiles,
+    loadSentFiles,
+    loadCurrentFileContent,
   };
 }

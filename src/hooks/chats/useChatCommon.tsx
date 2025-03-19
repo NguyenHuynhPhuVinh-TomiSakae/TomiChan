@@ -83,6 +83,9 @@ export function useChatCommon<T>({
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Lấy instance của useSystemPrompt để truy cập các hàm cập nhật
+  const { loadFilesAndFolders, loadCurrentFileContent, loadSentFiles } =
+    useSystemPrompt();
 
   const stopGeneration = () => {
     if (abortController) {
@@ -257,6 +260,9 @@ export function useChatCommon<T>({
 
     const currentChatId = chatId;
 
+    // THÊM: Đảm bảo cập nhật dữ liệu mới nhất trước khi gửi tin nhắn
+    await refreshLatestFileData();
+
     // Lấy danh sách file đã gửi cho AI
     const sentFiles = getSentFilesFromLocalStorage();
 
@@ -385,6 +391,22 @@ export function useChatCommon<T>({
     }
   };
 
+  // THÊM: Hàm mới để cập nhật dữ liệu file mới nhất
+  const refreshLatestFileData = async () => {
+    try {
+      // Cập nhật danh sách files và folders
+      await loadFilesAndFolders();
+
+      // Cập nhật nội dung file hiện tại
+      await loadCurrentFileContent();
+
+      // Cập nhật danh sách file đã gửi cho AI
+      await loadSentFiles();
+    } catch (error) {
+      console.error("Lỗi khi cập nhật dữ liệu mới nhất:", error);
+    }
+  };
+
   const regenerateMessage = async (messageId: string) => {
     const messageIndex = messages.findIndex((msg) => msg.id === messageId);
     if (messageIndex === -1 || isGeneratingImage) return;
@@ -400,6 +422,9 @@ export function useChatCommon<T>({
     setError(null);
 
     try {
+      // THÊM: Đảm bảo cập nhật dữ liệu mới nhất trước khi tạo lại phản hồi
+      await refreshLatestFileData();
+
       const chatHistory = pushSystemPrompt(
         messages
           .slice(0, messageIndex)
@@ -480,6 +505,9 @@ export function useChatCommon<T>({
       localStorage.getItem(`${provider}_api_key`) ||
       (await getApiKey(provider, `${provider}_api_key`));
     if (!apiKey) return;
+
+    // THÊM: Đảm bảo cập nhật dữ liệu mới nhất trước khi gửi follow-up
+    await refreshLatestFileData();
 
     // Lấy danh sách file đã gửi cho AI
     const sentFiles = getSentFilesFromLocalStorage();

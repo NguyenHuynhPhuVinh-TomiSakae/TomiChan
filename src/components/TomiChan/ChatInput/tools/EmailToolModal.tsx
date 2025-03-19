@@ -52,11 +52,6 @@ export default function EmailToolModal({
   };
 
   const handleDisable = () => {
-    // Xóa cấu hình khi tắt công cụ
-    setLocalStorage("tool:email:email", "");
-    setLocalStorage("tool:email:password", "");
-    setEmail("");
-    setAppPassword("");
     onDisable();
     onClose();
   };

@@ -52,11 +52,6 @@ export default function AnimeSearchToolModal({
   };
 
   const handleDisable = () => {
-    // Xóa cấu hình khi tắt công cụ
-    setLocalStorage("tool:anime_search:language", "vi");
-    setLocalStorage("tool:anime_search:adult_content", "false");
-    setPreferredLanguage("vi");
-    setShowAdultContent(false);
     onDisable();
     onClose();
   };

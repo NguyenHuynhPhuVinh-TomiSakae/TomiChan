@@ -52,11 +52,7 @@ export default function TVUScheduleToolModal({
   };
 
   const handleDisable = () => {
-    // Xóa cấu hình khi tắt công cụ
-    setLocalStorage("tool:tvu_schedule:student_id", "");
-    setLocalStorage("tool:tvu_schedule:semester", "");
-    setStudentId("");
-    setSemester("");
+    // Không xóa cấu hình khi tắt công cụ nữa
     onDisable();
     onClose();
   };

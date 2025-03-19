@@ -540,6 +540,17 @@ export const CustomUIComponents = {
         title = "Thời Khóa Biểu";
     }
 
+    // Hàm xác định buổi học dựa trên tiết
+    const getBuoi = (tiet: string) => {
+      // Tách số tiết, ví dụ "1-3" sẽ lấy tiết đầu tiên là 1
+      const tietDau = parseInt(tiet.split("-")[0]);
+
+      if (tietDau >= 1 && tietDau <= 5) return "Buổi sáng";
+      if (tietDau >= 6 && tietDau <= 10) return "Buổi chiều";
+      if (tietDau >= 11 && tietDau <= 15) return "Buổi tối";
+      return "";
+    };
+
     // Lấy phần nội dung sau các thông tin header
     const contentStart =
       rawContent.indexOf(action || "") + (action || "").length;
@@ -603,6 +614,7 @@ export const CustomUIComponents = {
                 .match(/🏢 Phòng: (.*?)(?=\n|$)/)?.[1]
                 ?.trim();
               const tiet = subject.match(/⏰ Tiết (.*?)(?=\n|$)/)?.[1]?.trim();
+              const buoi = getBuoi(tiet || "");
 
               return (
                 <div
@@ -626,9 +638,16 @@ export const CustomUIComponents = {
                         <span>{phong}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400">
-                      <IconClock size={14} />
-                      <span className="text-sm font-medium">Tiết {tiet}</span>
+                    <div className="flex flex-col gap-2 items-end">
+                      <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400">
+                        <IconClock size={14} />
+                        <span className="text-sm font-medium">Tiết {tiet}</span>
+                      </div>
+                      {buoi && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 italic">
+                          {buoi}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

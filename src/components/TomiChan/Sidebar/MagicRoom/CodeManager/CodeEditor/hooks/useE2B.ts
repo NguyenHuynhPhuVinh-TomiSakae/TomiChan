@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback } from "react";
 import { getApiKey } from "../../../../../../../utils/getApiKey";
 import { chatDB } from "../../../../../../../utils/db";
@@ -135,8 +136,23 @@ export function useE2B() {
     [clearOutput]
   );
 
+  // Thêm hàm để chuẩn bị dữ liệu project
+  const prepareProjectData = async (projectId: string) => {
+    const allFiles = await chatDB.getAllCodeFiles();
+    const allFolders = await chatDB.getAllFolders();
+
+    const projectFiles = allFiles.filter((f) => f.projectId === projectId);
+    const projectFolders = allFolders.filter((f) => f.projectId === projectId);
+
+    return {
+      files: projectFiles,
+      folders: projectFolders,
+      projectId: projectId,
+    };
+  };
+
   const runCode = useCallback(
-    async (code: string, language: string) => {
+    async (code: string, language: string, projectId?: string) => {
       setIsRunning(true);
       clearOutput();
       setShowOutput(true);
@@ -144,10 +160,7 @@ export function useE2B() {
 
       try {
         if (language === "html") {
-          // Xử lý HTML với các dependencies
           const processedHtml = await processHtmlWithDependencies(code);
-
-          // Tạo blob và mở trong tab mới
           const blob = new Blob([processedHtml], { type: "text/html" });
           const url = URL.createObjectURL(blob);
           window.open(url, "_blank");
@@ -160,13 +173,22 @@ export function useE2B() {
 
         const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
 
+        // Chuẩn bị dữ liệu project nếu cần
+        const projectData = projectId
+          ? await prepareProjectData(projectId)
+          : null;
+
         const response = await fetch("/api/code", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "X-E2B-API-Key": e2bApiKey,
           },
-          body: JSON.stringify({ code, language }),
+          body: JSON.stringify({
+            code,
+            language,
+            projectData, // Gửi dữ liệu project thay vì projectId
+          }),
         });
 
         const data = await response.json();

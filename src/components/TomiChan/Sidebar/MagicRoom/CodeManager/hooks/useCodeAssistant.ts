@@ -5,6 +5,8 @@ import type { CodeFile, CodeFolder, Project } from "../../../../../../types";
 import { FILE_EXPLORER_EVENTS, MAGIC_EVENTS } from "@/lib/events";
 import { emitter } from "@/lib/events";
 import { setSessionStorage } from "../../../../../../utils/sessionStorage";
+import { toast } from "sonner";
+import { getApiKey } from "../../../../../../utils/getApiKey";
 
 export function useCodeAssistant() {
   const [files, setFiles] = useState<CodeFile[]>([]);
@@ -27,6 +29,7 @@ export function useCodeAssistant() {
   >(null);
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [currentProject, setCurrentProject] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadFiles();
@@ -361,11 +364,31 @@ export function useCodeAssistant() {
   const handleDeleteProject = async () => {
     if (!selectedProject) return;
 
-    await chatDB.deleteProject(selectedProject.id);
-    await loadProjects();
-    setIsDeleteModalOpen(false);
-    setSelectedProject(null);
-    setCurrentProject(null);
+    try {
+      setIsDeleting(true);
+      const e2bApiKey = await getApiKey("e2b", "e2b_api_key");
+      await fetch("/api/e2b/delete-project", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-E2B-API-Key": e2bApiKey,
+        },
+        body: JSON.stringify({
+          projectId: selectedProject.id,
+        }),
+      });
+
+      await chatDB.deleteProject(selectedProject.id);
+      await loadProjects();
+      setIsDeleteModalOpen(false);
+      setSelectedProject(null);
+      setCurrentProject(null);
+    } catch (error) {
+      console.error("Lỗi khi xóa project:", error);
+      toast.error("Có lỗi xảy ra khi xóa project");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleProjectClick = (projectId: string) => {
@@ -432,5 +455,6 @@ export function useCodeAssistant() {
     loadFiles,
     loadFolders,
     loadProjects,
+    isDeleting,
   };
 }

@@ -121,7 +121,7 @@ export default function CodeEditor({
     clearOutput();
     setShowOutput(true);
 
-    await runCode(content, language);
+    await runCode(content, language, file.projectId);
   };
 
   // Xử lý khi component unmount

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { HTMLAttributes } from "react";
+import React, { HTMLAttributes, useState } from "react";
 import {
   IconX,
   IconArrowLeft,
@@ -100,6 +100,7 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
     loadProjects,
     setCurrentProject,
     setCurrentFolder,
+    isDeleting,
   } = useCodeAssistant();
 
   // Thêm useEffect để gán ui_state khi khởi tạo
@@ -1033,6 +1034,7 @@ export default function CodeAssistant({ onClose }: CodeAssistantProps) {
             folders={folders}
             selectedParentFolder={selectedParentFolder}
             onParentFolderChange={setSelectedParentFolder}
+            isDeleting={isDeleting}
           />
         </>
       )}

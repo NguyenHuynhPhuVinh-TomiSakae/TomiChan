@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { CodeFile, CodeFolder, Project } from "../../../../../../types";
+import { IconLoader2 } from "@tabler/icons-react";
 
 interface FileModalProps {
   type: "new" | "edit" | "delete" | "newFolder" | "newProject";
@@ -19,6 +20,7 @@ interface FileModalProps {
   onParentFolderChange?: (folderId: string | null) => void;
   selectedFolder?: CodeFolder | null;
   selectedProject?: Project | null;
+  isDeleting?: boolean;
 }
 
 export function FileModal({
@@ -35,6 +37,7 @@ export function FileModal({
   selectedFile,
   selectedFolder,
   selectedProject,
+  isDeleting = false,
 }: FileModalProps) {
   if (!isOpen) return null;
 
@@ -162,14 +165,24 @@ export function FileModal({
                 <div className="flex justify-end gap-2 mt-4">
                   <button
                     onClick={onClose}
+                    disabled={isDeleting}
                     className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200 cursor-pointer"
                   >
                     Hủy
                   </button>
                   <button
                     onClick={onSubmit}
-                    className={`px-4 py-2 text-white rounded-lg transition-colors duration-200 cursor-pointer ${modalConfig[type].submitClass}`}
+                    disabled={isDeleting}
+                    className={`px-4 py-2 text-white rounded-lg transition-colors duration-200 cursor-pointer ${
+                      modalConfig[type].submitClass
+                    } ${isDeleting ? "opacity-70 cursor-not-allowed" : ""}`}
                   >
+                    {isDeleting ? (
+                      <IconLoader2
+                        className="animate-spin inline-block mr-1"
+                        size={16}
+                      />
+                    ) : null}
                     {modalConfig[type].submitText}
                   </button>
                 </div>

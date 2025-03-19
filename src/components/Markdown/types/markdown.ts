@@ -54,4 +54,8 @@ export interface CustomComponents extends Components {
   // TVU Schedule block
   "tvu-schedule-block": (props: BaseComponentProps) => JSX.Element;
   "tvu-schedule-result": (props: BaseComponentProps) => JSX.Element;
+
+  // TVU Score block
+  "tvu-score-block": (props: BaseComponentProps) => JSX.Element;
+  "tvu-score-result": (props: BaseComponentProps) => JSX.Element;
 }

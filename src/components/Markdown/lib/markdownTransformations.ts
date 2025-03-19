@@ -92,6 +92,14 @@ const transformRules: TransformRule[] = [
     pattern: /\[TVU_SCHEDULE_RESULT\]([\s\S]*?)\[\/TVU_SCHEDULE_RESULT\]/g,
     replacement: "<tvu-schedule-result>$1</tvu-schedule-result>",
   },
+  {
+    pattern: /\[TVU_SCORE\]([\s\S]*?)\[\/TVU_SCORE\]/g,
+    replacement: "<tvu-score-block>$1</tvu-score-block>",
+  },
+  {
+    pattern: /\[TVU_SCORE_RESULT\]([\s\S]*?)\[\/TVU_SCORE_RESULT\]/g,
+    replacement: "<tvu-score-result>$1</tvu-score-result>",
+  },
 ];
 
 export function transformMarkdownContent(content: string): string {

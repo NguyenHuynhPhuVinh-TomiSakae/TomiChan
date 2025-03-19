@@ -64,6 +64,8 @@ const customSchema = {
     "email-block",
     "tvu-schedule-block",
     "tvu-schedule-result",
+    "tvu-score-block",
+    "tvu-score-result",
   ],
 };
 

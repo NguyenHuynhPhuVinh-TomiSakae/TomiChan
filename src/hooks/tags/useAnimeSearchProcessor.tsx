@@ -7,6 +7,7 @@ interface AnimeSearchData {
   type: string;
   query: string;
   filter?: string;
+  page?: number;
 }
 
 const extractAnimeSearchData = (
@@ -24,6 +25,8 @@ const extractAnimeSearchData = (
     .toLowerCase();
   const query = searchContent.match(/QUERY:\s*(.*)/)?.[1]?.trim();
   const filterMatch = searchContent.match(/FILTER:\s*(.*)/)?.[1]?.trim();
+  const pageMatch = searchContent.match(/PAGE:\s*(.*)/)?.[1]?.trim();
+  const page = pageMatch ? parseInt(pageMatch, 10) : 1;
 
   if (!type || !query) return null;
   if (
@@ -38,12 +41,13 @@ const extractAnimeSearchData = (
     type,
     query,
     filter: filterMatch,
+    page,
   };
 };
 
 // Hàm tạo kết quả tìm kiếm trong cặp thẻ ANIME_SEARCH_RESULT
 const createSearchResultBlock = (
-  data: any[],
+  data: any,
   searchData: AnimeSearchData
 ): string => {
   const resultBlock = `[ANIME_SEARCH_RESULT]
@@ -80,7 +84,9 @@ const fetchAnimeData = async (searchData: AnimeSearchData) => {
         season = "winter"; // Mặc định
       }
 
-      apiUrl = `https://api.jikan.moe/v4/seasons/${year}/${season}?limit=${searchLimit}`;
+      apiUrl = `https://api.jikan.moe/v4/seasons/${year}/${season}?limit=${searchLimit}&page=${
+        searchData.page || 1
+      }`;
     } else {
       // Nếu không có đủ thông tin, sử dụng mùa hiện tại
       apiUrl = `https://api.jikan.moe/v4/seasons/now?limit=${searchLimit}`;
@@ -119,12 +125,16 @@ const fetchAnimeData = async (searchData: AnimeSearchData) => {
       day = "unknown"; // Sẽ trả về lỗi từ API
     }
 
-    apiUrl = `https://api.jikan.moe/v4/schedules?filter=${day}&limit=${searchLimit}`;
+    apiUrl = `https://api.jikan.moe/v4/schedules?filter=${day}&limit=${searchLimit}&page=${
+      searchData.page || 1
+    }`;
   } else {
     // Tìm kiếm thông thường (anime/manga)
     apiUrl = `https://api.jikan.moe/v4/${
       searchData.type
-    }?q=${encodeURIComponent(searchData.query)}&limit=${searchLimit}`;
+    }?q=${encodeURIComponent(searchData.query)}&limit=${searchLimit}&page=${
+      searchData.page || 1
+    }`;
 
     // Xử lý filter nếu có
     if (searchData.filter) {
@@ -170,8 +180,14 @@ const fetchAnimeData = async (searchData: AnimeSearchData) => {
       return `Không tìm thấy kết quả nào cho "${searchData.query}"`;
     }
 
-    // Thay đổi ở đây: Đưa dữ liệu JSON vào cặp thẻ ANIME_SEARCH_RESULT
-    return createSearchResultBlock(data.data || [], searchData);
+    // Trả về cả data và pagination info
+    return createSearchResultBlock(
+      {
+        data: data.data,
+        pagination: data.pagination,
+      },
+      searchData
+    );
   } catch (error) {
     console.error("Lỗi khi tìm kiếm anime:", error);
     let errorMessage = "Không thể tìm kiếm thông tin";

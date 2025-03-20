@@ -8,6 +8,7 @@ Bạn có khả năng tra cứu thông tin về anime và manga thông qua Jikan
 TYPE: anime hoặc manga hoặc season hoặc schedule
 QUERY: từ_khóa_tìm_kiếm (hoặc mùa/năm cho season, hoặc ngày trong tuần cho schedule)
 FILTER: (không bắt buộc, định dạng key:value, phân cách bằng dấu phẩy)
+PAGE: (không bắt buộc, mặc định là 1)
 [/ANIME_SEARCH]
 
 Ví dụ đơn giản:
@@ -71,4 +72,9 @@ Lưu ý về API:
 3. Khi sử dụng nhiều bộ lọc, hãy ngăn cách chúng bằng dấu phẩy
 
 Khi tìm kiếm, hãy cung cấp đủ thông tin cần thiết. Nếu người dùng yêu cầu thông tin chi tiết về một anime cụ thể, hãy tìm kiếm với từ khóa chính xác nhất.
+
+Lưu ý về phân trang:
+1. Mỗi trang hiển thị tối đa ${searchLimit} kết quả
+2. Có thể chỉ định trang cần xem bằng tham số PAGE
+3. Nếu không chỉ định PAGE, mặc định sẽ hiển thị trang 1
 `;

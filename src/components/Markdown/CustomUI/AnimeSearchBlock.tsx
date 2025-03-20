@@ -5,6 +5,7 @@ import {
   IconMovie,
   IconBook,
   IconExternalLink,
+  IconLoader2,
 } from "@tabler/icons-react";
 
 interface AnimeSearchBlockProps {
@@ -70,7 +71,9 @@ export const AnimeSearchBlock: React.FC<AnimeSearchBlockProps> = ({
 
       <div className="mt-3 flex justify-end">
         <div className="text-xs text-gray-500 dark:text-gray-400 italic flex items-center gap-1">
-          <IconSearch size={12} />
+          <div className="animate-spin">
+            <IconLoader2 size={12} className="text-indigo-500" />
+          </div>
           Đang tìm kiếm...
         </div>
       </div>
@@ -121,7 +124,15 @@ export const AnimeSearchResult: React.FC<AnimeSearchBlockProps> = ({
         .replace(/\\b/g, "\\b")
         .replace(/\\f/g, "\\f");
 
-      return JSON.parse(cleanJsonString);
+      const parsedData = JSON.parse(cleanJsonString);
+      // Kiểm tra xem có pagination info không
+      if (parsedData.pagination) {
+        return {
+          data: parsedData.data,
+          pagination: parsedData.pagination,
+        };
+      }
+      return { data: parsedData, pagination: null };
     } catch (error) {
       console.error("Lỗi khi parse JSON từ kết quả anime:", error);
       console.log("JSON string gây lỗi:", dataJsonString);
@@ -150,25 +161,35 @@ export const AnimeSearchResult: React.FC<AnimeSearchBlockProps> = ({
     <div className="my-6 rounded-lg overflow-hidden border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-800 shadow-lg">
       {/* Header có gradient và icon anime */}
       <div className="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-        <div className="flex items-center gap-2">
-          {type === "anime" ? (
-            <IconMovie className="text-white" size={24} />
-          ) : (
-            <IconBook className="text-white" size={24} />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {type === "anime" ? (
+              <IconMovie className="text-white" size={24} />
+            ) : (
+              <IconBook className="text-white" size={24} />
+            )}
+            <span className="font-bold text-xl">Kết quả tìm kiếm: {query}</span>
+          </div>
+          {/* Hiển thị trang hiện tại từ pagination info */}
+          {animeData?.pagination && (
+            <div className="text-sm bg-white/20 px-3 py-1 rounded-full">
+              Trang {animeData.pagination.current_page || 1}
+            </div>
           )}
-          <span className="font-bold text-xl">Kết quả tìm kiếm: {query}</span>
         </div>
         <div className="text-xs text-white/70 mt-1">
-          {Array.isArray(animeData)
-            ? `Tìm thấy ${animeData.length} kết quả`
+          {animeData?.data && Array.isArray(animeData.data)
+            ? `Tìm thấy ${animeData.data.length} kết quả`
             : ""}
         </div>
       </div>
 
       {/* Container cho nội dung kết quả */}
       <div className="divide-y divide-gray-200 dark:divide-gray-700">
-        {Array.isArray(animeData) && animeData.length > 0 ? (
-          animeData.map((item, index) => (
+        {animeData?.data &&
+        Array.isArray(animeData.data) &&
+        animeData.data.length > 0 ? (
+          animeData.data.map((item, index) => (
             <div
               key={item.mal_id}
               className="p-5 hover:bg-indigo-50 dark:hover:bg-gray-700/60 transition-colors duration-200"

@@ -51,7 +51,7 @@ DATA: ${JSON.stringify(data)}
 
 const fetchAnimeData = async (searchData: AnimeSearchData) => {
   console.log("Đang tìm kiếm anime/manga:", searchData);
-  const searchLimit = getLocalStorage("tool:anime:searchLimit", "5");
+  const searchLimit = getLocalStorage("tool:anime_search:limit", "5");
   let apiUrl = `https://api.jikan.moe/v4/${
     searchData.type
   }?q=${encodeURIComponent(searchData.query)}&limit=${searchLimit}`;

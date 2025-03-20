@@ -7,7 +7,7 @@ import {
 } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Message, ChatHistory } from "../../../types";
-import SettingsModal from "./SettingsModal";
+import SettingsModalNew from "../Settings/SettingsModalNew";
 import { chatDB } from "../../../utils/db";
 import ChatHistoryList from "./ChatHistoryList";
 import { useMediaQuery } from "react-responsive";
@@ -384,7 +384,7 @@ export default function Sidebar({
           </div>
         </div>
 
-        <SettingsModal
+        <SettingsModalNew
           isOpen={isSettingsModalOpen}
           onClose={() => setIsSettingsModalOpen(false)}
           theme={theme}

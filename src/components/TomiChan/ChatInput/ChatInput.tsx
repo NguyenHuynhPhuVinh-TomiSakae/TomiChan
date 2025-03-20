@@ -11,6 +11,7 @@ import {
   IconMusicUp,
   IconArrowDown,
   IconTool,
+  IconWand,
 } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UploadFiles from "./UploadFiles";
@@ -24,6 +25,7 @@ import {
 import { scrollToBottom } from "../ChatMessages/ChatMessages";
 import { useMediaQuery } from "react-responsive";
 import ToolsModal, { getEnabledTools } from "./ToolsModal";
+import { enhancePrompt } from "@/utils/promptEnhancer";
 
 interface ChatInputProps {
   onSendMessage: (
@@ -109,6 +111,31 @@ export default function ChatInput({
   const [showToolModal, setShowToolModal] = useState(false);
 
   const enabledTools = getEnabledTools();
+
+  const [isEnhancing, setIsEnhancing] = useState(false);
+
+  const updateTextareaHeight = (text: string) => {
+    if (textareaRef.current) {
+      const textarea = textareaRef.current;
+      textarea.style.height = "56px";
+      textarea.value = text; // Tạm thời set giá trị để tính toán chiều cao
+      const newHeight = Math.max(Math.min(textarea.scrollHeight, 200), 56);
+      textarea.style.height = `${newHeight}px`;
+      setTextareaHeight(newHeight);
+      textarea.value = message; // Khôi phục lại giá trị
+    }
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newMessage = e.target.value;
+    setMessage(newMessage);
+    updateTextareaHeight(newMessage);
+  };
+
+  // Thêm useEffect để theo dõi thay đổi của message
+  useEffect(() => {
+    updateTextareaHeight(message);
+  }, [message]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,16 +236,6 @@ export default function ChatInput({
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
-  };
-
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const textarea = e.target;
-    setMessage(textarea.value);
-
-    textarea.style.height = "56px";
-    const newHeight = Math.max(Math.min(textarea.scrollHeight, 200), 56);
-    textarea.style.height = `${newHeight}px`;
-    setTextareaHeight(newHeight);
   };
 
   useEffect(() => {
@@ -441,6 +458,21 @@ export default function ChatInput({
     };
   }, [isDragging]);
 
+  const handleEnh = async (prompt: string) => {
+    try {
+      setIsEnhancing(true);
+      const enhancedPrompt = await enhancePrompt(prompt);
+      console.log("Prompt đã được cải thiện:", enhancedPrompt);
+      setMessage(enhancedPrompt);
+      return enhancedPrompt;
+    } catch (error) {
+      console.error("Lỗi khi cường hóa prompt:", error);
+      return prompt;
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
+
   return (
     <motion.form
       ref={formRef}
@@ -657,68 +689,118 @@ export default function ChatInput({
 
               <AnimatePresence>
                 {(message.trim() || isGenerating) && (
-                  <motion.button
-                    type="button"
-                    className={`absolute right-2 bottom-6 cursor-pointer rounded-full p-2 bg-black dark:bg-white ${
-                      isMagicMode ? "" : "sm:right-3 sm:bottom-8"
-                    }`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (isGenerating && onStopGeneration) {
-                        onStopGeneration();
-                      } else if (!isGenerating && message.trim()) {
-                        handleSubmit(e);
-                      }
-                    }}
-                    initial={{
-                      opacity: 0,
-                      scale: 0.8,
-                      backgroundColor: "rgb(229 231 235)",
-                    }}
-                    animate={{
-                      opacity: 1,
-                      scale: 1,
-                      backgroundColor:
-                        document.documentElement.classList.contains("dark")
-                          ? "#ffffff"
-                          : "#000000",
-                      transition: {
-                        backgroundColor: {
-                          duration: 0.25,
-                          ease: "easeInOut",
+                  <>
+                    <motion.button
+                      type="button"
+                      className={`absolute right-12 bottom-6 cursor-pointer rounded-full p-2 ${
+                        isEnhancing
+                          ? "bg-purple-400 hover:bg-purple-500"
+                          : "bg-purple-600 hover:bg-purple-700"
+                      } ${isMagicMode ? "" : "sm:right-14 sm:bottom-8"}`}
+                      onClick={async () => {
+                        if (!message.trim() || isEnhancing) return;
+                        await handleEnh(message);
+                      }}
+                      disabled={isEnhancing || isGenerating}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {isEnhancing ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        >
+                          <IconSquare
+                            size={18}
+                            className={`text-white ${
+                              isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
+                            }`}
+                            stroke={1.5}
+                          />
+                        </motion.div>
+                      ) : (
+                        <IconWand
+                          size={18}
+                          className={`text-white ${
+                            isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
+                          }`}
+                          stroke={1.5}
+                        />
+                      )}
+                    </motion.button>
+
+                    <motion.button
+                      type="button"
+                      className={`absolute right-2 bottom-6 cursor-pointer rounded-full p-2 bg-black dark:bg-white ${
+                        isMagicMode ? "" : "sm:right-3 sm:bottom-8"
+                      }`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (isGenerating && onStopGeneration) {
+                          onStopGeneration();
+                          return;
+                        }
+                        if (!isGenerating && message.trim()) {
+                          handleSubmit(e);
+                        }
+                      }}
+                      disabled={false}
+                      initial={{
+                        opacity: 0,
+                        scale: 0.8,
+                        backgroundColor: "rgb(229 231 235)",
+                      }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                        backgroundColor:
+                          document.documentElement.classList.contains("dark")
+                            ? "#ffffff"
+                            : "#000000",
+                        transition: {
+                          backgroundColor: {
+                            duration: 0.25,
+                            ease: "easeInOut",
+                          },
                         },
-                      },
-                    }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {isGenerating ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                      >
-                        <IconSquare
+                      }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {isGenerating ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        >
+                          <IconSquare
+                            size={18}
+                            className={`text-white dark:text-black ${
+                              isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
+                            }`}
+                            stroke={1.5}
+                          />
+                        </motion.div>
+                      ) : (
+                        <IconSend2
                           size={18}
                           className={`text-white dark:text-black ${
                             isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
                           }`}
                           stroke={1.5}
                         />
-                      </motion.div>
-                    ) : (
-                      <IconSend2
-                        size={18}
-                        className={`text-white dark:text-black ${
-                          isMagicMode ? "" : "sm:w-[22px] sm:h-[22px]"
-                        }`}
-                        stroke={1.5}
-                      />
-                    )}
-                  </motion.button>
+                      )}
+                    </motion.button>
+                  </>
                 )}
               </AnimatePresence>
             </div>

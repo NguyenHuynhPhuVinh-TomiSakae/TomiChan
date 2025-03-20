@@ -18,11 +18,11 @@ export default function AnimeSearchToolModal({
   onDisable,
   isEnabled,
 }: AnimeSearchToolModalProps) {
-  const [searchLimit, setSearchLimit] = useState(10);
+  const [searchLimit, setSearchLimit] = useState(5);
 
   // Load cấu hình từ localStorage khi mở modal
   useEffect(() => {
-    const savedSearchLimit = getLocalStorage("tool:anime_search:limit", "10");
+    const savedSearchLimit = getLocalStorage("tool:anime_search:limit", "5");
     setSearchLimit(Number(savedSearchLimit));
   }, []);
 
@@ -77,9 +77,17 @@ export default function AnimeSearchToolModal({
           </h3>
           <p className="text-gray-600 dark:text-gray-400 text-sm">
             Công cụ Tra cứu Anime cung cấp thông tin chi tiết về các bộ anime,
-            manga và phim hoạt hình Nhật Bản. Bạn có thể tìm kiếm theo tên, thể
-            loại, năm phát hành và nhiều tiêu chí khác. Sử dụng Jikan API v4 để
-            kết nối với MyAnimeList và cung cấp dữ liệu chính xác nhất.
+            manga và phim hoạt hình Nhật Bản. Bạn có thể:
+            <ul className="list-disc ml-5 mt-2 space-y-1">
+              <li>Tìm kiếm theo tên, thể loại, năm phát hành</li>
+              <li>Tra cứu anime theo mùa (xuân, hạ, thu, đông) từng năm</li>
+              <li>Xem lịch chiếu anime theo ngày trong tuần</li>
+              <li>
+                Lọc kết quả theo nhiều tiêu chí như độ tuổi, trạng thái...
+              </li>
+            </ul>
+            Dữ liệu được cung cấp bởi Jikan API v4 kết nối với MyAnimeList để
+            đảm bảo thông tin chính xác và cập nhật.
           </p>
         </div>
 
@@ -91,7 +99,13 @@ export default function AnimeSearchToolModal({
           <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
             <p>1. Điều chỉnh số lượng kết quả tìm kiếm</p>
             <p>2. Nhấn nút bật để kích hoạt công cụ</p>
-            <p>3. Hỏi AI về bất kỳ anime hoặc manga nào bạn quan tâm</p>
+            <p>3. Yêu cầu AI tìm kiếm theo một trong các cách:</p>
+            <ul className="list-disc ml-8 mt-1 space-y-1">
+              <li>Tên anime/manga: &quot;Tìm anime Naruto&quot;</li>
+              <li>Theo mùa: &quot;Tìm anime mùa xuân 2023&quot;</li>
+              <li>Lịch chiếu: &quot;Xem lịch chiếu anime thứ bảy&quot;</li>
+              <li>Kết hợp bộ lọc: &quot;Tìm anime hành động năm 2022&quot;</li>
+            </ul>
           </div>
         </div>
 

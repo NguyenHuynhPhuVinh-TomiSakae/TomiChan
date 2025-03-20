@@ -26,7 +26,13 @@ const extractAnimeSearchData = (
   const filterMatch = searchContent.match(/FILTER:\s*(.*)/)?.[1]?.trim();
 
   if (!type || !query) return null;
-  if (type !== "anime" && type !== "manga") return null;
+  if (
+    type !== "anime" &&
+    type !== "manga" &&
+    type !== "season" &&
+    type !== "schedule"
+  )
+    return null;
 
   return {
     type,
@@ -52,29 +58,96 @@ DATA: ${JSON.stringify(data)}
 const fetchAnimeData = async (searchData: AnimeSearchData) => {
   console.log("Đang tìm kiếm anime/manga:", searchData);
   const searchLimit = getLocalStorage("tool:anime_search:limit", "5");
-  let apiUrl = `https://api.jikan.moe/v4/${
-    searchData.type
-  }?q=${encodeURIComponent(searchData.query)}&limit=${searchLimit}`;
+  let apiUrl = "";
 
-  // Xử lý filter nếu có
-  if (searchData.filter) {
-    const filterParts = searchData.filter.split(",").map((part) => part.trim());
+  // Tạo API URL tùy theo loại tìm kiếm
+  if (searchData.type === "season") {
+    // Xử lý tìm kiếm theo mùa (season)
+    const seasonParts = searchData.query.split(" ");
+    let season = "winter";
+    let year = new Date().getFullYear();
 
-    for (const part of filterParts) {
-      if (part.includes(":")) {
-        const [key, value] = part.split(":").map((p) => p.trim());
+    if (searchData.query.toLowerCase() === "current") {
+      // Dùng mùa hiện tại
+      apiUrl = `https://api.jikan.moe/v4/seasons/now?limit=${searchLimit}`;
+    } else if (seasonParts.length >= 2) {
+      // Format: [season] [year]
+      season = seasonParts[0].toLowerCase();
+      year = parseInt(seasonParts[1], 10) || year;
 
-        // Xử lý các loại filter phổ biến
-        if (key === "genres") {
-          apiUrl += `&genres=${encodeURIComponent(value)}`;
-        } else if (key === "year") {
-          apiUrl += `&start_date=${value}`;
-        } else if (key === "status") {
-          apiUrl += `&status=${encodeURIComponent(value)}`;
-        } else if (key === "rating") {
-          apiUrl += `&rating=${encodeURIComponent(value)}`;
-        } else {
-          apiUrl += `&${key}=${encodeURIComponent(value)}`;
+      // Kiểm tra mùa hợp lệ
+      if (!["winter", "spring", "summer", "fall"].includes(season)) {
+        season = "winter"; // Mặc định
+      }
+
+      apiUrl = `https://api.jikan.moe/v4/seasons/${year}/${season}?limit=${searchLimit}`;
+    } else {
+      // Nếu không có đủ thông tin, sử dụng mùa hiện tại
+      apiUrl = `https://api.jikan.moe/v4/seasons/now?limit=${searchLimit}`;
+    }
+  } else if (searchData.type === "schedule") {
+    // Xử lý tìm kiếm lịch chiếu (schedule)
+    let day = searchData.query.toLowerCase().trim();
+
+    // Xử lý từ khóa đặc biệt
+    if (day === "today") {
+      const today = new Date();
+      const weekdays = [
+        "sunday",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+      ];
+      day = weekdays[today.getDay()];
+    }
+
+    // Kiểm tra ngày hợp lệ
+    const validDays = [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+      "other",
+    ];
+    if (!validDays.includes(day)) {
+      day = "unknown"; // Sẽ trả về lỗi từ API
+    }
+
+    apiUrl = `https://api.jikan.moe/v4/schedules?filter=${day}&limit=${searchLimit}`;
+  } else {
+    // Tìm kiếm thông thường (anime/manga)
+    apiUrl = `https://api.jikan.moe/v4/${
+      searchData.type
+    }?q=${encodeURIComponent(searchData.query)}&limit=${searchLimit}`;
+
+    // Xử lý filter nếu có
+    if (searchData.filter) {
+      const filterParts = searchData.filter
+        .split(",")
+        .map((part) => part.trim());
+
+      for (const part of filterParts) {
+        if (part.includes(":")) {
+          const [key, value] = part.split(":").map((p) => p.trim());
+
+          // Xử lý các loại filter phổ biến
+          if (key === "genres") {
+            apiUrl += `&genres=${encodeURIComponent(value)}`;
+          } else if (key === "year") {
+            apiUrl += `&start_date=${value}`;
+          } else if (key === "status") {
+            apiUrl += `&status=${encodeURIComponent(value)}`;
+          } else if (key === "rating") {
+            apiUrl += `&rating=${encodeURIComponent(value)}`;
+          } else {
+            apiUrl += `&${key}=${encodeURIComponent(value)}`;
+          }
         }
       }
     }

@@ -259,7 +259,7 @@ export function useSystemPrompt() {
     if (isAnimeSearchEnabled) {
       // Lấy searchLimit từ localStorage
       const searchLimit = Number(
-        getLocalStorage("tool:anime_search:limit", "10")
+        getLocalStorage("tool:anime_search:limit", "5")
       );
       const animeSearchToolPrompt = getAnimeSearchToolPrompt(searchLimit);
       enhancedPrompt = animeSearchToolPrompt + enhancedPrompt;

@@ -94,7 +94,15 @@ export default function TVUScheduleToolModal({
             Trà Vinh qua tài khoản TTSV. Bạn có thể:
             <ul className="list-disc ml-5 mt-2 space-y-1">
               <li>Tra cứu thời khóa biểu cá nhân theo ngày</li>
+              <li>
+                Xem thời khóa biểu theo tuần (tuần này, tuần trước, tuần sau)
+              </li>
+              <li>
+                Tra cứu thời khóa biểu theo số tuần cụ thể (tuần 37, tuần
+                38,...)
+              </li>
               <li>Xem điểm số các học phần, điểm tổng kết</li>
+              <li>Tra cứu điểm theo học kỳ và năm học cụ thể</li>
             </ul>
             Công cụ được kết nối trực tiếp với API của hệ thống TTSV để đảm bảo
             thông tin chính xác.
@@ -114,7 +122,18 @@ export default function TVUScheduleToolModal({
             <ul className="list-disc ml-8 mt-1 space-y-1">
               <li>&quot;Xem thời khóa biểu hôm nay&quot;</li>
               <li>&quot;Thời khóa biểu ngày mai của tôi&quot;</li>
+              <li>&quot;Cho tôi xem thời khóa biểu tuần này&quot;</li>
+              <li>&quot;Xem thời khóa biểu tuần trước&quot;</li>
+              <li>&quot;Thời khóa biểu tuần sau của tôi&quot;</li>
+              <li>
+                &quot;Xem thời khóa biểu tuần 37&quot; (tra cứu theo số tuần cụ
+                thể)
+              </li>
               <li>&quot;Xem điểm của tôi&quot;</li>
+              <li>
+                &quot;Xem điểm học kỳ 2 năm 2023-2024&quot; (tra cứu điểm theo
+                kỳ cụ thể)
+              </li>
             </ul>
           </div>
         </div>

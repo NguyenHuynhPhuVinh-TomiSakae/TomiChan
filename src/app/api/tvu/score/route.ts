@@ -4,7 +4,7 @@ import axios from "axios";
 
 export async function POST(req: NextRequest) {
   try {
-    const { studentId, password } = await req.json();
+    const { studentId, password, year } = await req.json();
 
     if (!studentId || !password) {
       return NextResponse.json(
@@ -74,26 +74,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Lấy tất cả các môn từ các học kỳ
+    // Học kỳ được sắp xếp theo thứ tự mới nhất trước
+    const semesters = scoreData.data.ds_diem_hocky || [];
+
+    // Lọc học kỳ theo năm nếu có yêu cầu
+    const filteredSemesters = year
+      ? semesters.filter((semester: any) => {
+          // Tìm năm học trong tên học kỳ (ví dụ: "Học kỳ 1 - Năm học 2022 - 2023")
+          const yearMatch = semester.ten_hoc_ky.match(
+            /Năm học\s+(\d{4}\s*-\s*\d{4})/
+          );
+          // Chuẩn hóa định dạng năm học để so sánh
+          const normalizedYear = year.replace(/\s+/g, "");
+          const normalizedMatchYear = yearMatch?.[1]?.replace(/\s+/g, "");
+          return normalizedMatchYear === normalizedYear;
+        })
+      : semesters;
+
+    // Thêm thông tin về từng học kỳ và điểm hệ 4
+    const semesterInfos: any[] = [];
     const allSubjects: any[] = [];
+
+    // Khởi tạo giá trị mặc định
     let latestGPA = "0";
     let latestGPA4 = "0";
     let latestCredits = "0";
 
-    // Học kỳ được sắp xếp theo thứ tự mới nhất trước
-    const semesters = scoreData.data.ds_diem_hocky || [];
-
-    // Thêm thông tin về từng học kỳ và điểm hệ 4
-    const semesterInfos: any[] = [];
-
-    if (semesters.length > 0) {
+    if (filteredSemesters.length > 0) {
       // Lấy GPA & số tín chỉ từ học kỳ gần nhất
-      latestGPA = semesters[0].dtb_tich_luy_he_10 || "0";
-      latestGPA4 = semesters[0].dtb_tich_luy_he_4 || "0";
-      latestCredits = semesters[0].so_tin_chi_dat_tich_luy || "0";
+      latestGPA = filteredSemesters[0].dtb_tich_luy_he_10 || "0";
+      latestGPA4 = filteredSemesters[0].dtb_tich_luy_he_4 || "0";
+      latestCredits = filteredSemesters[0].so_tin_chi_dat_tich_luy || "0";
 
       // Thêm thông tin từng học kỳ
-      semesters.forEach((semester: any) => {
+      filteredSemesters.forEach((semester: any) => {
         semesterInfos.push({
           semesterName: semester.ten_hoc_ky,
           semesterId: semester.hoc_ky,
@@ -105,7 +119,7 @@ export async function POST(req: NextRequest) {
       });
 
       // Xử lý dữ liệu từ tất cả học kỳ
-      semesters.forEach((semester: any) => {
+      filteredSemesters.forEach((semester: any) => {
         const semesterName = semester.ten_hoc_ky;
         const semesterId = semester.hoc_ky;
 
@@ -149,7 +163,19 @@ export async function POST(req: NextRequest) {
       totalCredits: latestCredits,
       semesters: semesterInfos,
       subjects: allSubjects,
+      year: year || null,
     };
+
+    // Kiểm tra nếu không có dữ liệu học kỳ nào cho năm đã chọn
+    if (year && filteredSemesters.length === 0) {
+      return NextResponse.json(
+        {
+          error: `Không tìm thấy dữ liệu điểm cho năm học ${year}`,
+          notFound: true,
+        },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json(gpaData);
   } catch (error) {

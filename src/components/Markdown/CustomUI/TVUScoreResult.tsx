@@ -39,6 +39,7 @@ export const TVUScoreResult: React.FC<TVUScoreResultProps> = ({ children }) => {
   const totalCredits = rawContent
     .match(/TOTAL_CREDITS:\s*(.*?)(?=\n|$)/)?.[1]
     ?.trim();
+  const year = rawContent.match(/YEAR:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
 
   // Parse semester information
   const semestersMatch = rawContent.match(/SEMESTERS:\s*(.*?)(?=\n)/);
@@ -109,6 +110,11 @@ export const TVUScoreResult: React.FC<TVUScoreResultProps> = ({ children }) => {
           <h3 className="font-semibold text-lg text-green-600 dark:text-green-400">
             Bảng Điểm Học Tập
           </h3>
+          {year && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Năm học: {year}
+            </p>
+          )}
         </div>
       </div>
 
@@ -117,7 +123,7 @@ export const TVUScoreResult: React.FC<TVUScoreResultProps> = ({ children }) => {
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Điểm TB tích lũy (hệ 10)
+              {year ? "Điểm TB năm học" : "Điểm TB tích lũy"} (hệ 10)
             </div>
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {gpa10}
@@ -125,7 +131,7 @@ export const TVUScoreResult: React.FC<TVUScoreResultProps> = ({ children }) => {
           </div>
           <div className="text-center">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Điểm TB tích lũy (hệ 4)
+              {year ? "Điểm TB năm học" : "Điểm TB tích lũy"} (hệ 4)
             </div>
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {gpa4}
@@ -133,7 +139,7 @@ export const TVUScoreResult: React.FC<TVUScoreResultProps> = ({ children }) => {
           </div>
           <div className="text-center">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Tín chỉ tích lũy
+              {year ? "Tín chỉ năm học" : "Tín chỉ tích lũy"}
             </div>
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {totalCredits}
@@ -145,7 +151,7 @@ export const TVUScoreResult: React.FC<TVUScoreResultProps> = ({ children }) => {
       {/* Tổng quan từng học kỳ */}
       <div className="mb-4">
         <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">
-          Tổng quan học kỳ
+          {year ? `Tổng quan học kỳ năm ${year}` : "Tổng quan học kỳ"}
         </h4>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">

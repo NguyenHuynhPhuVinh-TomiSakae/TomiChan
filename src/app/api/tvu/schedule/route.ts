@@ -3,7 +3,8 @@ import axios from "axios";
 
 export async function POST(req: NextRequest) {
   try {
-    const { studentId, password, date } = await req.json();
+    const { studentId, password, date, isWeekView, weekOffset, week } =
+      await req.json();
 
     if (!studentId || !password || !date) {
       return NextResponse.json(
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     const scheduleFormData = new URLSearchParams();
     scheduleFormData.append("filter[hoc_ky]", "20242");
     scheduleFormData.append("filter[ten_hoc_ky]", "");
-    scheduleFormData.append("additional[paging][limit]", "100");
+    scheduleFormData.append("additional[paging][limit]", "1000");
     scheduleFormData.append("additional[paging][page]", "1");
 
     const scheduleResponse = await axios.post(
@@ -70,7 +71,6 @@ export async function POST(req: NextRequest) {
 
     // Thêm hàm xử lý ngày tháng
     const parseDate = (dateStr: string) => {
-      // Chuyển đổi tất cả các định dạng ngày về dạng YYYY-MM-DD
       const date = new Date(dateStr);
       return new Date(
         Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
@@ -79,22 +79,112 @@ export async function POST(req: NextRequest) {
         .split("T")[0];
     };
 
-    for (const week of schedule.data.ds_tuan_tkb) {
-      if (!week.ds_thoi_khoa_bieu) continue;
+    // Nếu có tham số week (số tuần), ưu tiên tìm tuần đó
+    if (week && isWeekView) {
+      const targetWeek = schedule.data.ds_tuan_tkb.find(
+        (w: { thong_tin_tuan?: string }) => {
+          if (!w.thong_tin_tuan) return false;
+          // Tìm số tuần từ chuỗi thông tin (ví dụ: "Tuần 38 (23/09/2024 - 29/09/2024)")
+          const tuanMatch = w.thong_tin_tuan.match(/Tuần\s+(\d+)/i);
+          if (!tuanMatch || !tuanMatch[1]) return false;
 
-      for (const subject of week.ds_thoi_khoa_bieu) {
-        const subjectDate = parseDate(subject.ngay_hoc);
-        const targetDate = parseDate(date);
-
-        if (subjectDate === targetDate) {
-          subjects.push({
-            tenMon: subject.ten_mon,
-            giangVien: subject.ten_giang_vien,
-            phong: subject.ma_phong,
-            tietBatDau: subject.tiet_bat_dau,
-            soTiet: subject.so_tiet,
-          });
+          // So sánh chính xác số tuần
+          return tuanMatch[1] === week;
         }
+      );
+
+      if (!targetWeek) {
+        return NextResponse.json({
+          date: date,
+          subjects: [],
+          weekInfo: {
+            thong_tin_tuan: `Không tìm thấy thông tin cho Tuần ${week}`,
+          },
+        });
+      }
+
+      return NextResponse.json({
+        date: date,
+        subjects: targetWeek.ds_thoi_khoa_bieu || [],
+        weekInfo: {
+          thong_tin_tuan: targetWeek.thong_tin_tuan,
+          ngay_bat_dau: targetWeek.ngay_bat_dau,
+          ngay_ket_thuc: targetWeek.ngay_ket_thuc,
+        },
+      });
+    }
+
+    // Tìm tuần học hiện tại
+    const targetDate = parseDate(date);
+    let currentWeek = null;
+    let weekIndex = 0;
+
+    for (let i = 0; i < schedule.data.ds_tuan_tkb.length; i++) {
+      const week = schedule.data.ds_tuan_tkb[i];
+      const weekStart = parseDate(
+        week.ngay_bat_dau.split("/").reverse().join("-")
+      );
+      const weekEnd = parseDate(
+        week.ngay_ket_thuc.split("/").reverse().join("-")
+      );
+
+      if (targetDate >= weekStart && targetDate <= weekEnd) {
+        currentWeek = week;
+        weekIndex = i;
+        break;
+      }
+    }
+
+    if (!currentWeek) {
+      return NextResponse.json({
+        date: date,
+        subjects: [],
+      });
+    }
+
+    // Nếu là xem theo tuần, lấy tất cả môn học trong tuần
+    if (isWeekView) {
+      // Tính toán tuần cần lấy dựa trên weekOffset
+      const targetWeekIndex = weekIndex + weekOffset;
+      if (
+        targetWeekIndex < 0 ||
+        targetWeekIndex >= schedule.data.ds_tuan_tkb.length
+      ) {
+        return NextResponse.json({
+          date: date,
+          subjects: [],
+          weekInfo: {
+            thong_tin_tuan: "Không có dữ liệu cho tuần này",
+          },
+        });
+      }
+
+      const targetWeek = schedule.data.ds_tuan_tkb[targetWeekIndex];
+      const weekSubjects = targetWeek.ds_thoi_khoa_bieu || [];
+
+      return NextResponse.json({
+        date: date,
+        subjects: weekSubjects,
+        weekInfo: {
+          thong_tin_tuan: targetWeek.thong_tin_tuan,
+          ngay_bat_dau: targetWeek.ngay_bat_dau,
+          ngay_ket_thuc: targetWeek.ngay_ket_thuc,
+        },
+      });
+    }
+
+    // Nếu là xem theo ngày, lọc môn học theo ngày
+    for (const subject of currentWeek.ds_thoi_khoa_bieu) {
+      const subjectDate = parseDate(subject.ngay_hoc);
+      if (subjectDate === targetDate) {
+        subjects.push({
+          ten_mon: subject.ten_mon,
+          ten_giang_vien: subject.ten_giang_vien,
+          ma_phong: subject.ma_phong,
+          tiet_bat_dau: subject.tiet_bat_dau,
+          so_tiet: subject.so_tiet,
+          ngay_hoc: subject.ngay_hoc,
+        });
       }
     }
 

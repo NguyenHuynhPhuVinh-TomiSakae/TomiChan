@@ -7,6 +7,7 @@ import axios from "axios";
 interface TVUScheduleData {
   action: string;
   date?: string;
+  week?: string;
 }
 
 // Trích xuất thông tin TVU_SCHEDULE tag từ nội dung tin nhắn
@@ -23,37 +24,107 @@ const extractTVUScheduleData = (
   const scheduleContent = match[1];
   const action = scheduleContent.match(/ACTION:\s*(.*)/)?.[1]?.trim();
   const date = scheduleContent.match(/DATE:\s*(.*)/)?.[1]?.trim();
+  const week = scheduleContent.match(/WEEK:\s*(.*)/)?.[1]?.trim();
 
   if (!action) {
     return null;
   }
 
-  return { action, date };
+  return { action, date, week };
+};
+
+// Thêm hàm helper để lấy ngày đầu và cuối tuần
+const getWeekDates = (
+  date: Date,
+  offset: number = 0
+): { startDate: string; endDate: string } => {
+  const currentDate = new Date(date);
+  currentDate.setDate(currentDate.getDate() + offset * 7); // Dịch chuyển số tuần
+
+  const day = currentDate.getDay();
+  const diff = currentDate.getDate() - day + (day === 0 ? -6 : 1); // Điều chỉnh khi chủ nhật
+  const startDate = new Date(currentDate.setDate(diff));
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6);
+
+  return {
+    startDate: formatDate(startDate),
+    endDate: formatDate(endDate),
+  };
 };
 
 // Cập nhật lại hàm getScheduleFromAPI
 const getScheduleFromAPI = async (
   studentId: string,
   password: string,
-  date: string
+  date: string,
+  isWeekView: boolean = false,
+  weekOffset: number = 0,
+  week?: string
 ): Promise<string> => {
   try {
     const response = await axios.post("/api/tvu/schedule", {
       studentId,
       password,
       date,
+      isWeekView,
+      weekOffset,
+      week,
     });
 
     // Xử lý response từ API local
     if (response.data?.subjects) {
       if (response.data.subjects.length === 0) {
-        return `Không có lịch học vào ngày ${date}.`;
+        return `Không có lịch học trong khoảng thời gian này.`;
       }
 
+      if (isWeekView) {
+        // Format dữ liệu theo tuần
+        const weekInfo = response.data.weekInfo;
+        let result = `📅 ${weekInfo.thong_tin_tuan}\n\n`;
+
+        // Nhóm các môn học theo ngày
+        const subjectsByDay = response.data.subjects.reduce(
+          (acc: any, subject: any) => {
+            const day = new Date(subject.ngay_hoc).getDay();
+            if (!acc[day]) acc[day] = [];
+            acc[day].push(subject);
+            return acc;
+          },
+          {}
+        );
+
+        // Tên các ngày trong tuần
+        const dayNames = [
+          "Chủ nhật",
+          "Thứ hai",
+          "Thứ ba",
+          "Thứ tư",
+          "Thứ năm",
+          "Thứ sáu",
+          "Thứ bảy",
+        ];
+
+        // In lịch học theo từng ngày
+        for (let i = 1; i <= 7; i++) {
+          if (subjectsByDay[i]) {
+            result += `\n📌 ${dayNames[i]}:\n`;
+            subjectsByDay[i].forEach((subject: any) => {
+              result += `📚 ${subject.ten_mon}\n`;
+              result += `👨‍🏫 GV: ${subject.ten_giang_vien}\n`;
+              result += `🏢 Phòng: ${subject.ma_phong}\n`;
+              result += `⏰ Tiết ${subject.tiet_bat_dau}-${subject.so_tiet}\n\n`;
+            });
+          }
+        }
+        return result;
+      }
+
+      // Format dữ liệu theo ngày (giữ nguyên logic cũ)
       return response.data.subjects
         .map(
           (subject: any) =>
-            `📚 ${subject.tenMon}\n👨‍🏫 GV: ${subject.giangVien}\n🏢 Phòng: ${subject.phong}\n⏰ Tiết ${subject.tietBatDau}-${subject.soTiet}`
+            `📚 ${subject.ten_mon}\n👨‍🏫 GV: ${subject.ten_giang_vien}\n🏢 Phòng: ${subject.ma_phong}\n⏰ Tiết ${subject.tiet_bat_dau}-${subject.so_tiet}`
         )
         .join("\n\n");
     }
@@ -134,6 +205,8 @@ export function useTVUScheduleProcessor() {
             }
 
             let targetDate = "";
+            let isWeekView = false;
+            let weekOffset = 0;
 
             switch (scheduleData.action) {
               case "xem_hom_nay":
@@ -152,6 +225,35 @@ export function useTVUScheduleProcessor() {
                 }
                 targetDate = scheduleData.date;
                 break;
+              case "xem_tuan_nay":
+                const currentWeek = getWeekDates(new Date());
+                targetDate = currentWeek.startDate;
+                isWeekView = true;
+                break;
+              case "xem_tuan_truoc":
+                const lastWeek = getWeekDates(new Date(), -1);
+                targetDate = lastWeek.startDate;
+                isWeekView = true;
+                weekOffset = -1;
+                break;
+              case "xem_tuan_sau":
+                const nextWeek = getWeekDates(new Date(), 1);
+                targetDate = nextWeek.startDate;
+                isWeekView = true;
+                weekOffset = 1;
+                break;
+              case "xem_theo_tuan":
+                if (!scheduleData.week) {
+                  throw new Error(
+                    "Vui lòng cung cấp số tuần để xem thời khóa biểu."
+                  );
+                }
+                // Sử dụng ngày hiện tại và truyền số tuần vào API
+                targetDate = formatDate(new Date());
+                isWeekView = true;
+                // Đặt weekOffset = 0 vì đang xem tuần cụ thể theo số tuần
+                // Thông tin về tuần sẽ được truyền qua tham số week
+                break;
               case "xem_lich_thi":
                 throw new Error("Chức năng xem lịch thi đang được phát triển.");
               default:
@@ -162,7 +264,10 @@ export function useTVUScheduleProcessor() {
             const scheduleResult = await getScheduleFromAPI(
               studentId,
               password,
-              targetDate
+              targetDate,
+              isWeekView,
+              weekOffset,
+              scheduleData.week
             );
 
             // Cập nhật tin nhắn với kết quả
@@ -179,15 +284,26 @@ export function useTVUScheduleProcessor() {
                   ""
                 );
 
+                // Tạo nội dung mới với kết quả
+                let resultContent =
+                  cleanContent +
+                  "\n\n[TVU_SCHEDULE_RESULT]\n" +
+                  `DATE: ${targetDate}\n` +
+                  `ACTION: ${scheduleData.action}\n`;
+
+                // Thêm thông tin về tuần nếu đang xem theo tuần cụ thể
+                if (
+                  scheduleData.action === "xem_theo_tuan" &&
+                  scheduleData.week
+                ) {
+                  resultContent += `WEEK: ${scheduleData.week}\n`;
+                }
+
+                resultContent += scheduleResult + "\n[/TVU_SCHEDULE_RESULT]";
+
                 newMessages[targetIndex] = {
                   ...newMessages[targetIndex],
-                  content:
-                    cleanContent +
-                    "\n\n[TVU_SCHEDULE_RESULT]\n" +
-                    `DATE: ${targetDate}\n` +
-                    `ACTION: ${scheduleData.action}\n` +
-                    scheduleResult +
-                    "\n[/TVU_SCHEDULE_RESULT]",
+                  content: resultContent,
                 };
                 saveChat(newMessages, chatId, model);
               }

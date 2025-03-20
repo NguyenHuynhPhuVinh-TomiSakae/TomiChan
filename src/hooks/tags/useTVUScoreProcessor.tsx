@@ -151,9 +151,16 @@ export function useTVUScoreProcessor() {
                       });
                     });
 
+                    // Xóa tag TVU_SCORE từ nội dung
+                    const cleanContent = content.replace(
+                      /\[TVU_SCORE\]([\s\S]*?)\[\/TVU_SCORE\]/g,
+                      ""
+                    );
+
                     newMessages[targetIndex] = {
                       ...newMessages[targetIndex],
                       content:
+                        cleanContent +
                         "\n\n[TVU_SCORE_RESULT]\n" +
                         `ACTION: ${scoreData.action}\n` +
                         `GPA10: ${scoreResult.gpa10}\n` +

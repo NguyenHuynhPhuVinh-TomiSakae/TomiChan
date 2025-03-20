@@ -69,10 +69,18 @@ const getScheduleFromAPI = async (
   }
 };
 
-// Sửa hàm formatDate để đảm bảo đúng timezone
+// Sửa hàm formatDate để đảm bảo đúng múi giờ Việt Nam
 const formatDate = (date: Date): string => {
-  // Sử dụng UTC để tránh lệch timezone
-  return date.toISOString().split("T")[0];
+  // Tính toán chênh lệch giữa múi giờ hiện tại và UTC+7
+  const localOffset = date.getTimezoneOffset() * 60000; // Đổi sang milliseconds
+  const utc = date.getTime() + localOffset;
+  const vietnamTime = new Date(utc + 7 * 60 * 60 * 1000); // UTC+7
+
+  // Định dạng ngày tháng năm theo chuẩn YYYY-MM-DD
+  const year = vietnamTime.getFullYear();
+  const month = String(vietnamTime.getMonth() + 1).padStart(2, "0");
+  const day = String(vietnamTime.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 export function useTVUScheduleProcessor() {
@@ -165,9 +173,16 @@ export function useTVUScheduleProcessor() {
               );
 
               if (targetIndex !== -1) {
+                // Xóa tag TVU_SCHEDULE từ nội dung
+                const cleanContent = content.replace(
+                  /\[TVU_SCHEDULE\]([\s\S]*?)\[\/TVU_SCHEDULE\]/g,
+                  ""
+                );
+
                 newMessages[targetIndex] = {
                   ...newMessages[targetIndex],
                   content:
+                    cleanContent +
                     "\n\n[TVU_SCHEDULE_RESULT]\n" +
                     `DATE: ${targetDate}\n` +
                     `ACTION: ${scheduleData.action}\n` +

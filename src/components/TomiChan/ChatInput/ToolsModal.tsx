@@ -121,13 +121,10 @@ export default function ToolsModal({
       >
         <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-800">
           {tools.map((tool) => {
-            const isInDevelopment = tool.id === "anime_search";
             return (
               <div
                 key={tool.id}
-                className={`flex items-center justify-between py-5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors px-4 -mx-4 relative ${
-                  isInDevelopment ? "opacity-50 pointer-events-none" : ""
-                }`}
+                className={`flex items-center justify-between py-5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors px-4 -mx-4 relative`}
                 onClick={() => handleToolClick(tool)}
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -139,11 +136,6 @@ export default function ToolsModal({
                       <h3 className="font-medium text-black dark:text-white truncate">
                         {tool.name}
                       </h3>
-                      {isInDevelopment && (
-                        <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded-full whitespace-nowrap">
-                          Đang phát triển
-                        </span>
-                      )}
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                       {tool.description}

@@ -100,6 +100,14 @@ const transformRules: TransformRule[] = [
     pattern: /\[TVU_SCORE_RESULT\]([\s\S]*?)\[\/TVU_SCORE_RESULT\]/g,
     replacement: "<tvu-score-result>$1</tvu-score-result>",
   },
+  {
+    pattern: /\[ANIME_SEARCH\]([\s\S]*?)\[\/ANIME_SEARCH\]/g,
+    replacement: "<anime-search-block>$1</anime-search-block>",
+  },
+  {
+    pattern: /\[ANIME_SEARCH_RESULT\]([\s\S]*?)\[\/ANIME_SEARCH_RESULT\]/g,
+    replacement: "<anime-search-result>$1</anime-search-result>",
+  },
 ];
 
 export function transformMarkdownContent(content: string): string {

@@ -90,10 +90,14 @@ export default function TVUScheduleToolModal({
             Mô tả chi tiết
           </h3>
           <p className="text-gray-600 dark:text-gray-400 text-sm">
-            Công cụ Xem TKB TVU giúp bạn tra cứu và quản lý thời khóa biểu một
-            cách dễ dàng thông qua tài khoản TTSV. Chỉ cần nhập mã số sinh viên
-            và mật khẩu hệ thống TTSV để xem lịch học, lịch thi và các thông tin
-            liên quan khác.
+            Công cụ Xem TKB TVU giúp bạn truy cập thông tin học tập tại Đại học
+            Trà Vinh qua tài khoản TTSV. Bạn có thể:
+            <ul className="list-disc ml-5 mt-2 space-y-1">
+              <li>Tra cứu thời khóa biểu cá nhân theo ngày</li>
+              <li>Xem điểm số các học phần, điểm tổng kết</li>
+            </ul>
+            Công cụ được kết nối trực tiếp với API của hệ thống TTSV để đảm bảo
+            thông tin chính xác.
           </p>
         </div>
 
@@ -106,6 +110,12 @@ export default function TVUScheduleToolModal({
             <p>1. Nhập mã số sinh viên của bạn</p>
             <p>2. Nhập mật khẩu TTSV</p>
             <p>3. Nhấn nút bật để kích hoạt công cụ</p>
+            <p>4. Yêu cầu AI thông tin bằng các câu hỏi như:</p>
+            <ul className="list-disc ml-8 mt-1 space-y-1">
+              <li>&quot;Xem thời khóa biểu hôm nay&quot;</li>
+              <li>&quot;Thời khóa biểu ngày mai của tôi&quot;</li>
+              <li>&quot;Xem điểm của tôi&quot;</li>
+            </ul>
           </div>
         </div>
 

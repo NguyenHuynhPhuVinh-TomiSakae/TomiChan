@@ -66,7 +66,19 @@ const customSchema = {
     "tvu-schedule-result",
     "tvu-score-block",
     "tvu-score-result",
+    "anime-search-block",
+    "anime-search-result",
   ],
+  attributes: {
+    ...defaultSchema.attributes,
+    img: [
+      ...(defaultSchema.attributes?.img || []),
+      "width",
+      "height",
+      "loading",
+      "style",
+    ],
+  },
 };
 
 export default function Markdown({ content, className = "" }: MarkdownProps) {

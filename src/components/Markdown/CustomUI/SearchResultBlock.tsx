@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useRef, useEffect } from "react";
-import { useThemeContext } from "../../providers/ThemeProvider";
+import { useThemeContext } from "../../../providers/ThemeProvider";
 import {
   IconSearch,
   IconChevronDown,

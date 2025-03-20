@@ -21,6 +21,7 @@ import { getSystemTagPrompt } from "./prompts/systemTagPrompt";
 import { getProjectManagementPrompt } from "./prompts/fileManagementPrompt";
 import { getEmailToolPrompt } from "./prompts/emailToolPrompt";
 import { getTVUScheduleToolPrompt } from "./prompts/tvuScheduleToolPrompt";
+import { getAnimeSearchToolPrompt } from "./prompts/animeSearchToolPrompt";
 
 export function useSystemPrompt() {
   const [uiState, setUiState] = useState(
@@ -243,6 +244,7 @@ export function useSystemPrompt() {
     const enabledTools = JSON.parse(getLocalStorage("enabled_tools", "[]"));
     const isEmailEnabled = enabledTools.includes("email");
     const isTVUScheduleEnabled = enabledTools.includes("tvu_schedule");
+    const isAnimeSearchEnabled = enabledTools.includes("anime_search");
 
     if (isEmailEnabled) {
       const emailToolPrompt = getEmailToolPrompt();
@@ -252,6 +254,15 @@ export function useSystemPrompt() {
     if (isTVUScheduleEnabled) {
       const tvuScheduleToolPrompt = getTVUScheduleToolPrompt();
       enhancedPrompt = tvuScheduleToolPrompt + enhancedPrompt;
+    }
+
+    if (isAnimeSearchEnabled) {
+      // Lấy searchLimit từ localStorage
+      const searchLimit = Number(
+        getLocalStorage("tool:anime_search:limit", "5")
+      );
+      const animeSearchToolPrompt = getAnimeSearchToolPrompt(searchLimit);
+      enhancedPrompt = animeSearchToolPrompt + enhancedPrompt;
     }
 
     // Luôn luôn thêm systemTagInstruction vào cuối

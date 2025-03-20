@@ -58,4 +58,8 @@ export interface CustomComponents extends Components {
   // TVU Score block
   "tvu-score-block": (props: BaseComponentProps) => JSX.Element;
   "tvu-score-result": (props: BaseComponentProps) => JSX.Element;
+
+  // Anime Search components
+  "anime-search-block": (props: BaseComponentProps) => JSX.Element;
+  "anime-search-result": (props: BaseComponentProps) => JSX.Element;
 }

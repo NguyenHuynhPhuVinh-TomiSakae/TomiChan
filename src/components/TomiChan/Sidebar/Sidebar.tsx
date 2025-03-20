@@ -84,6 +84,11 @@ export default function Sidebar({
     return getLocalStorage("e2b_api_key", "");
   });
 
+  // Thêm state cho e2bEnabled
+  const [e2bEnabled, setE2bEnabled] = React.useState(() => {
+    return getLocalStorage("e2b_enabled", false) === "true";
+  });
+
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
   React.useEffect(() => {
@@ -169,6 +174,12 @@ export default function Sidebar({
   const handleE2bApiKeyChange = (apiKey: string) => {
     setE2bApiKey(apiKey);
     setLocalStorage("e2b_api_key", apiKey);
+  };
+
+  // Thêm handler cho e2bEnabled
+  const handleE2bEnabledChange = (enabled: boolean) => {
+    setE2bEnabled(enabled);
+    setLocalStorage("e2b_enabled", enabled.toString());
   };
 
   const handleClearAllData = async () => {
@@ -389,6 +400,8 @@ export default function Sidebar({
           onClearAllData={handleClearAllData}
           e2bApiKey={e2bApiKey}
           onE2bApiKeyChange={handleE2bApiKeyChange}
+          e2bEnabled={e2bEnabled}
+          onE2bEnabledChange={handleE2bEnabledChange}
         />
       </div>
     </>

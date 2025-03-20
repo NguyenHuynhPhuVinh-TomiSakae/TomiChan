@@ -54,6 +54,7 @@ const checkForSpecialTags = (content: string) => {
     ["[TVU_SCHEDULE]", "[/TVU_SCHEDULE]"],
     ["[TVU_SCORE]", "[/TVU_SCORE]"],
     ["[ANIME_SEARCH]", "[/ANIME_SEARCH]"],
+    ["[python_exec]", "[/python_exec]"],
   ];
 
   return tags.some(

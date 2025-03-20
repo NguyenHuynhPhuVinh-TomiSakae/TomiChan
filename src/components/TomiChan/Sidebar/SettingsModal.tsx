@@ -43,6 +43,8 @@ interface SettingsModalProps {
   onClearAllData?: () => void;
   e2bApiKey?: string;
   onE2bApiKeyChange: (apiKey: string) => void;
+  e2bEnabled: boolean;
+  onE2bEnabledChange: (enabled: boolean) => void;
 }
 
 export default function SettingsModal({
@@ -61,6 +63,8 @@ export default function SettingsModal({
   onClearAllData,
   e2bApiKey,
   onE2bApiKeyChange,
+  e2bEnabled,
+  onE2bEnabledChange,
 }: SettingsModalProps) {
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
 
@@ -434,6 +438,24 @@ export default function SettingsModal({
               Thực thi mã (E2B)
             </h3>
             <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm">Cho phép thực thi mã</span>
+                <button
+                  onClick={() => onE2bEnabledChange(!e2bEnabled)}
+                  className={`w-12 h-6 rounded-full transition-colors cursor-pointer ${
+                    e2bEnabled
+                      ? "bg-black dark:bg-white"
+                      : "bg-gray-200 dark:bg-gray-700"
+                  } relative`}
+                >
+                  <span
+                    className={`block w-4 h-4 rounded-full bg-white dark:bg-black transition-transform transform ${
+                      e2bEnabled ? "translate-x-7" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+
               <div>
                 <label className="text-sm mb-1 block">E2B API Key</label>
                 <input

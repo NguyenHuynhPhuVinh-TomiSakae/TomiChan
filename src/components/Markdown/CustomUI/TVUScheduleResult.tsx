@@ -8,6 +8,7 @@ import {
   IconBuilding,
   IconClock,
   IconCalendar,
+  IconCalendarWeek,
 } from "@tabler/icons-react";
 
 interface TVUScheduleResultProps {
@@ -204,15 +205,17 @@ export const TVUScheduleResult: React.FC<TVUScheduleResultProps> = ({
             size={24}
           />
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="font-semibold text-lg text-blue-600 dark:text-blue-400">
             {title}
           </h3>
           {weekInfo && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-              <IconCalendar size={14} />
-              {weekInfo}
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 text-sm">
+                <IconCalendarWeek size={14} />
+                {weekInfo}
+              </span>
+            </div>
           )}
         </div>
       </div>
@@ -233,7 +236,12 @@ export const TVUScheduleResult: React.FC<TVUScheduleResultProps> = ({
         <div className="mt-4 space-y-6">
           {Object.entries(subjectsByDay).map(([day, daySubjects]) => (
             <div key={day} className="space-y-3">
-              <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 border-b pb-2">
+              <h4 className="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 pb-2">
+                {day && (
+                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400">
+                    <IconCalendar size={16} />
+                  </span>
+                )}
                 {day}
               </h4>
               <div className="grid gap-3">

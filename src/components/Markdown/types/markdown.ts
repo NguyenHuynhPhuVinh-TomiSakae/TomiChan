@@ -62,4 +62,8 @@ export interface CustomComponents extends Components {
   // Anime Search components
   "anime-search-block": (props: BaseComponentProps) => JSX.Element;
   "anime-search-result": (props: BaseComponentProps) => JSX.Element;
+
+  // Python execution components
+  "python-exec": (props: BaseComponentProps) => JSX.Element;
+  "python-result": (props: BaseComponentProps) => JSX.Element;
 }

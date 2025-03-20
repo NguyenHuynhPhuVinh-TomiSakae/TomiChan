@@ -26,6 +26,7 @@ import {
   AnimeSearchBlock,
   AnimeSearchResult,
 } from "./CustomUI/AnimeSearchBlock";
+import { PythonExecBlock, PythonResultBlock } from "./CustomUI/PythonExecBlock";
 
 interface CustomUIComponentsProps {
   children: React.ReactNode;
@@ -440,5 +441,13 @@ export const CustomUIComponents = {
 
   "anime-search-result": ({ children }: CustomUIComponentsProps) => {
     return <AnimeSearchResult>{children}</AnimeSearchResult>;
+  },
+
+  "python-exec": ({ children }: CustomUIComponentsProps) => {
+    return <PythonExecBlock>{children}</PythonExecBlock>;
+  },
+
+  "python-result": ({ children }: CustomUIComponentsProps) => {
+    return <PythonResultBlock>{children}</PythonResultBlock>;
   },
 };

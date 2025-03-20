@@ -63,6 +63,7 @@ const getScheduleFromAPI = async (
   week?: string
 ): Promise<string> => {
   try {
+    const semester = getLocalStorage("tool:tvu_schedule:semester", "20242");
     const response = await axios.post("/api/tvu/schedule", {
       studentId,
       password,
@@ -70,6 +71,7 @@ const getScheduleFromAPI = async (
       isWeekView,
       weekOffset,
       week,
+      semester,
     });
 
     // Xử lý response từ API local

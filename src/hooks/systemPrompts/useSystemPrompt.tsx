@@ -22,6 +22,7 @@ import { getProjectManagementPrompt } from "./prompts/fileManagementPrompt";
 import { getEmailToolPrompt } from "./prompts/emailToolPrompt";
 import { getTVUScheduleToolPrompt } from "./prompts/tvuScheduleToolPrompt";
 import { getAnimeSearchToolPrompt } from "./prompts/animeSearchToolPrompt";
+import { getCodeExecutionPrompt } from "./prompts/codeExecutionPrompt";
 
 export function useSystemPrompt() {
   const [uiState, setUiState] = useState(
@@ -263,6 +264,14 @@ export function useSystemPrompt() {
       );
       const animeSearchToolPrompt = getAnimeSearchToolPrompt(searchLimit);
       enhancedPrompt = animeSearchToolPrompt + enhancedPrompt;
+    }
+
+    // Kiểm tra xem tính năng thực thi mã có được bật không
+    const e2bEnabled = getLocalStorage("e2b_enabled", "false") === "true";
+
+    if (e2bEnabled) {
+      const codeExecutionPrompt = getCodeExecutionPrompt();
+      enhancedPrompt = codeExecutionPrompt + enhancedPrompt;
     }
 
     // Luôn luôn thêm systemTagInstruction vào cuối

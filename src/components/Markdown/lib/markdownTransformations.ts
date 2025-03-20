@@ -108,12 +108,35 @@ const transformRules: TransformRule[] = [
     pattern: /\[ANIME_SEARCH_RESULT\]([\s\S]*?)\[\/ANIME_SEARCH_RESULT\]/g,
     replacement: "<anime-search-result>$1</anime-search-result>",
   },
+  {
+    pattern: /\[python_exec\]([\s\S]*?)\[\/python_exec\]/g,
+    replacement: "<python-exec>$1</python-exec>",
+  },
+  {
+    pattern: /\[python_result\]([\s\S]*?)\[\/python_result\]/g,
+    replacement: "<python-result>$1</python-result>",
+  },
 ];
 
 export function transformMarkdownContent(content: string): string {
-  return transformRules.reduce((processedContent, rule) => {
-    return processedContent.replace(rule.pattern, (_, p1) =>
-      rule.replacement.replace("$1", p1)
-    );
-  }, content);
+  // Tách nội dung thành các phần trước, trong và sau thẻ think
+  const parts = content.split(/(<think>[\s\S]*?<\/think>)/);
+
+  // Xử lý từng phần
+  const transformedParts = parts.map((part) => {
+    // Nếu là phần nằm trong <think>, giữ nguyên
+    if (part.startsWith("<think>")) {
+      return part;
+    }
+
+    // Với các phần khác, áp dụng các quy tắc chuyển đổi
+    return transformRules.reduce((processedContent, rule) => {
+      return processedContent.replace(rule.pattern, (_, p1) =>
+        rule.replacement.replace("$1", p1)
+      );
+    }, part);
+  });
+
+  // Nối các phần lại với nhau
+  return transformedParts.join("");
 }

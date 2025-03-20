@@ -68,6 +68,8 @@ const customSchema = {
     "tvu-score-result",
     "anime-search-block",
     "anime-search-result",
+    "python-exec",
+    "python-result",
   ],
   attributes: {
     ...defaultSchema.attributes,

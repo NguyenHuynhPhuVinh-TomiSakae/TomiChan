@@ -18,21 +18,106 @@ export default function TVUScheduleToolModal({
   onDisable,
   isEnabled,
 }: TVUScheduleToolModalProps) {
+  // Hàm lấy học kỳ mặc định dựa vào thời gian hiện tại
+  const getDefaultSemester = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // getMonth() trả về 0-11
+
+    // Học kỳ 1: từ tháng 9 đến tháng 1 năm sau
+    // Học kỳ 2: từ tháng 2 đến tháng 6
+    if (currentMonth >= 9) {
+      // Học kỳ 1 của năm học mới
+      return `${currentYear}1`;
+    } else if (currentMonth >= 2 && currentMonth <= 6) {
+      // Học kỳ 2 của năm học hiện tại
+      return `${currentYear - 1}2`;
+    } else {
+      // Các tháng còn lại (7,8) thì vẫn giữ học kỳ 2 của năm học trước
+      return `${currentYear - 1}2`;
+    }
+  };
+
   const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
+  const [semester, setSemester] = useState(getDefaultSemester());
+  const [semesters, setSemesters] = useState<
+    { value: string; label: string }[]
+  >([
+    {
+      value: getDefaultSemester(),
+      label: `Học kỳ ${getDefaultSemester().slice(-1)} năm ${parseInt(
+        getDefaultSemester().slice(0, 4)
+      )}-${parseInt(getDefaultSemester().slice(0, 4)) + 1}`,
+    },
+  ]);
+
+  // Hàm tạo danh sách học kỳ dựa vào MSSV
+  const generateSemesters = (mssv: string) => {
+    // Lấy số năm từ MSSV (vị trí 5-6, ví dụ: 110122203 -> 22)
+    const yearMatch = mssv.match(/^1101(\d{2})/);
+    if (!yearMatch) return;
+
+    const startYear = 2000 + parseInt(yearMatch[1]);
+    const endYear = startYear + 5; // Giới hạn 6 năm (từ năm bắt đầu đến năm thứ 6)
+    const currentYear = new Date().getFullYear();
+
+    // Nếu năm hiện tại vượt quá 6 năm kể từ năm bắt đầu, lấy endYear
+    // Ngược lại lấy năm hiện tại
+    const maxYear = Math.min(endYear, currentYear);
+
+    const semesterList = [];
+
+    // Tạo danh sách học kỳ từ năm bắt đầu đến năm kết thúc
+    for (let year = startYear; year <= maxYear; year++) {
+      // Thêm học kỳ 1
+      semesterList.unshift({
+        value: `${year}1`,
+        label: `Học kỳ 1 năm ${year}-${year + 1}`,
+      });
+      // Thêm học kỳ 2
+      semesterList.unshift({
+        value: `${year}2`,
+        label: `Học kỳ 2 năm ${year}-${year + 1}`,
+      });
+    }
+
+    setSemesters(semesterList);
+
+    // Nếu học kỳ hiện tại không nằm trong danh sách học kỳ của sinh viên
+    // thì chọn học kỳ gần nhất
+    const currentSemester = getDefaultSemester();
+    const hasSemester = semesterList.some(
+      (sem) => sem.value === currentSemester
+    );
+    if (!hasSemester && semesterList.length > 0) {
+      setSemester(semesterList[0].value);
+    }
+  };
 
   // Load cấu hình từ localStorage khi mở modal
   useEffect(() => {
     const savedStudentId = getLocalStorage("tool:tvu_schedule:student_id", "");
     const savedPassword = getLocalStorage("tool:tvu_schedule:password", "");
+    const savedSemester = getLocalStorage(
+      "tool:tvu_schedule:semester",
+      "20242"
+    );
     setStudentId(savedStudentId);
     setPassword(savedPassword);
+    setSemester(savedSemester);
+
+    // Tạo danh sách học kỳ nếu có MSSV
+    if (savedStudentId) {
+      generateSemesters(savedStudentId);
+    }
   }, []);
 
-  // Tự động lưu cấu hình khi người dùng nhập
+  // Tự động tạo danh sách học kỳ khi MSSV thay đổi
   useEffect(() => {
     if (studentId.trim()) {
       setLocalStorage("tool:tvu_schedule:student_id", studentId);
+      generateSemesters(studentId);
     }
   }, [studentId]);
 
@@ -41,6 +126,12 @@ export default function TVUScheduleToolModal({
       setLocalStorage("tool:tvu_schedule:password", password);
     }
   }, [password]);
+
+  useEffect(() => {
+    if (semester.trim()) {
+      setLocalStorage("tool:tvu_schedule:semester", semester);
+    }
+  }, [semester]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,6 +273,30 @@ export default function TVUScheduleToolModal({
               <p>
                 Sử dụng mật khẩu bạn đăng nhập vào hệ thống TTSV (hệ thống đào
                 tạo trực tuyến)
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Học kỳ
+            </label>
+            <select
+              value={semester}
+              onChange={(e) => setSemester(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-black focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            >
+              {semesters.map((sem) => (
+                <option key={sem.value} value={sem.value}>
+                  {sem.label}
+                </option>
+              ))}
+            </select>
+            <div className="flex items-start gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
+              <IconInfoCircle size={16} className="mt-0.5 flex-shrink-0" />
+              <p>
+                Chọn học kỳ bạn muốn xem thời khóa biểu. Danh sách học kỳ được
+                tạo tự động dựa vào năm bắt đầu học của bạn.
               </p>
             </div>
           </div>

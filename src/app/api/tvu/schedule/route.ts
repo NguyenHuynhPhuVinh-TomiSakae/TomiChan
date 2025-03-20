@@ -3,8 +3,15 @@ import axios from "axios";
 
 export async function POST(req: NextRequest) {
   try {
-    const { studentId, password, date, isWeekView, weekOffset, week } =
-      await req.json();
+    const {
+      studentId,
+      password,
+      date,
+      isWeekView,
+      weekOffset,
+      week,
+      semester,
+    } = await req.json();
 
     if (!studentId || !password || !date) {
       return NextResponse.json(
@@ -40,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Lấy thời khóa biểu
     const scheduleFormData = new URLSearchParams();
-    scheduleFormData.append("filter[hoc_ky]", "20242");
+    scheduleFormData.append("filter[hoc_ky]", semester || "20242");
     scheduleFormData.append("filter[ten_hoc_ky]", "");
     scheduleFormData.append("additional[paging][limit]", "1000");
     scheduleFormData.append("additional[paging][page]", "1");

@@ -94,6 +94,9 @@ export default function TVUScheduleToolModal({
             Trà Vinh qua tài khoản TTSV. Bạn có thể:
             <ul className="list-disc ml-5 mt-2 space-y-1">
               <li>Tra cứu thời khóa biểu cá nhân theo ngày</li>
+              <li>
+                Xem thời khóa biểu theo tuần (tuần này, tuần trước, tuần sau)
+              </li>
               <li>Xem điểm số các học phần, điểm tổng kết</li>
             </ul>
             Công cụ được kết nối trực tiếp với API của hệ thống TTSV để đảm bảo
@@ -114,6 +117,9 @@ export default function TVUScheduleToolModal({
             <ul className="list-disc ml-8 mt-1 space-y-1">
               <li>&quot;Xem thời khóa biểu hôm nay&quot;</li>
               <li>&quot;Thời khóa biểu ngày mai của tôi&quot;</li>
+              <li>&quot;Cho tôi xem thời khóa biểu tuần này&quot;</li>
+              <li>&quot;Xem thời khóa biểu tuần trước&quot;</li>
+              <li>&quot;Thời khóa biểu tuần sau của tôi&quot;</li>
               <li>&quot;Xem điểm của tôi&quot;</li>
             </ul>
           </div>

@@ -31,29 +31,96 @@ const extractTVUScheduleData = (
   return { action, date };
 };
 
+// Thêm hàm helper để lấy ngày đầu và cuối tuần
+const getWeekDates = (
+  date: Date,
+  offset: number = 0
+): { startDate: string; endDate: string } => {
+  const currentDate = new Date(date);
+  currentDate.setDate(currentDate.getDate() + offset * 7); // Dịch chuyển số tuần
+
+  const day = currentDate.getDay();
+  const diff = currentDate.getDate() - day + (day === 0 ? -6 : 1); // Điều chỉnh khi chủ nhật
+  const startDate = new Date(currentDate.setDate(diff));
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6);
+
+  return {
+    startDate: formatDate(startDate),
+    endDate: formatDate(endDate),
+  };
+};
+
 // Cập nhật lại hàm getScheduleFromAPI
 const getScheduleFromAPI = async (
   studentId: string,
   password: string,
-  date: string
+  date: string,
+  isWeekView: boolean = false,
+  weekOffset: number = 0
 ): Promise<string> => {
   try {
     const response = await axios.post("/api/tvu/schedule", {
       studentId,
       password,
       date,
+      isWeekView,
+      weekOffset,
     });
 
     // Xử lý response từ API local
     if (response.data?.subjects) {
       if (response.data.subjects.length === 0) {
-        return `Không có lịch học vào ngày ${date}.`;
+        return `Không có lịch học trong khoảng thời gian này.`;
       }
 
+      if (isWeekView) {
+        // Format dữ liệu theo tuần
+        const weekInfo = response.data.weekInfo;
+        let result = `📅 ${weekInfo.thong_tin_tuan}\n\n`;
+
+        // Nhóm các môn học theo ngày
+        const subjectsByDay = response.data.subjects.reduce(
+          (acc: any, subject: any) => {
+            const day = new Date(subject.ngay_hoc).getDay();
+            if (!acc[day]) acc[day] = [];
+            acc[day].push(subject);
+            return acc;
+          },
+          {}
+        );
+
+        // Tên các ngày trong tuần
+        const dayNames = [
+          "Chủ nhật",
+          "Thứ hai",
+          "Thứ ba",
+          "Thứ tư",
+          "Thứ năm",
+          "Thứ sáu",
+          "Thứ bảy",
+        ];
+
+        // In lịch học theo từng ngày
+        for (let i = 1; i <= 7; i++) {
+          if (subjectsByDay[i]) {
+            result += `\n📌 ${dayNames[i]}:\n`;
+            subjectsByDay[i].forEach((subject: any) => {
+              result += `📚 ${subject.ten_mon}\n`;
+              result += `👨‍🏫 GV: ${subject.ten_giang_vien}\n`;
+              result += `🏢 Phòng: ${subject.ma_phong}\n`;
+              result += `⏰ Tiết ${subject.tiet_bat_dau}-${subject.so_tiet}\n\n`;
+            });
+          }
+        }
+        return result;
+      }
+
+      // Format dữ liệu theo ngày (giữ nguyên logic cũ)
       return response.data.subjects
         .map(
           (subject: any) =>
-            `📚 ${subject.tenMon}\n👨‍🏫 GV: ${subject.giangVien}\n🏢 Phòng: ${subject.phong}\n⏰ Tiết ${subject.tietBatDau}-${subject.soTiet}`
+            `📚 ${subject.ten_mon}\n👨‍🏫 GV: ${subject.ten_giang_vien}\n🏢 Phòng: ${subject.ma_phong}\n⏰ Tiết ${subject.tiet_bat_dau}-${subject.so_tiet}`
         )
         .join("\n\n");
     }
@@ -134,6 +201,8 @@ export function useTVUScheduleProcessor() {
             }
 
             let targetDate = "";
+            let isWeekView = false;
+            let weekOffset = 0;
 
             switch (scheduleData.action) {
               case "xem_hom_nay":
@@ -152,6 +221,23 @@ export function useTVUScheduleProcessor() {
                 }
                 targetDate = scheduleData.date;
                 break;
+              case "xem_tuan_nay":
+                const currentWeek = getWeekDates(new Date());
+                targetDate = currentWeek.startDate;
+                isWeekView = true;
+                break;
+              case "xem_tuan_truoc":
+                const lastWeek = getWeekDates(new Date(), -1);
+                targetDate = lastWeek.startDate;
+                isWeekView = true;
+                weekOffset = -1;
+                break;
+              case "xem_tuan_sau":
+                const nextWeek = getWeekDates(new Date(), 1);
+                targetDate = nextWeek.startDate;
+                isWeekView = true;
+                weekOffset = 1;
+                break;
               case "xem_lich_thi":
                 throw new Error("Chức năng xem lịch thi đang được phát triển.");
               default:
@@ -162,7 +248,9 @@ export function useTVUScheduleProcessor() {
             const scheduleResult = await getScheduleFromAPI(
               studentId,
               password,
-              targetDate
+              targetDate,
+              isWeekView,
+              weekOffset
             );
 
             // Cập nhật tin nhắn với kết quả

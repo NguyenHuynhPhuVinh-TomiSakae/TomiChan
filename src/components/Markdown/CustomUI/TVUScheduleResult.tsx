@@ -30,6 +30,7 @@ export const TVUScheduleResult: React.FC<TVUScheduleResultProps> = ({
 
   // Tách thông tin từ nội dung
   const action = rawContent.match(/ACTION:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
+  const week = rawContent.match(/WEEK:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
 
   // Xác định tiêu đề dựa trên action
   let title = "";
@@ -54,6 +55,9 @@ export const TVUScheduleResult: React.FC<TVUScheduleResultProps> = ({
       break;
     case "xem_tuan_sau":
       title = "Thời Khóa Biểu Tuần Sau";
+      break;
+    case "xem_theo_tuan":
+      title = `Thời Khóa Biểu Tuần ${week || ""}`;
       break;
     default:
       title = "Thời Khóa Biểu";

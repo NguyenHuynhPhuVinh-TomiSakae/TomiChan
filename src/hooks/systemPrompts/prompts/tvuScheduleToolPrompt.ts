@@ -9,12 +9,14 @@ Khi người dùng hỏi về thời khóa biểu, bạn có thể:
 5. Xem thời khóa biểu tuần này
 6. Xem thời khóa biểu tuần trước
 7. Xem thời khóa biểu tuần sau
+8. Xem thời khóa biểu theo số tuần cụ thể (ví dụ: tuần 38, tuần 37)
 
 Để gọi API tra cứu thời khóa biểu, hãy sử dụng cú pháp sau:
 
 [TVU_SCHEDULE]
-ACTION: xem_hom_nay | xem_ngay_mai | xem_theo_ngay | xem_lich_thi | xem_tuan_nay | xem_tuan_truoc | xem_tuan_sau
+ACTION: xem_hom_nay | xem_ngay_mai | xem_theo_ngay | xem_lich_thi | xem_tuan_nay | xem_tuan_truoc | xem_tuan_sau | xem_theo_tuan
 DATE: yyyy-MM-dd (chỉ cần thiết khi ACTION là xem_theo_ngay)
+WEEK: <số tuần> (chỉ cần thiết khi ACTION là xem_theo_tuan)
 [/TVU_SCHEDULE]
 
 Khi người dùng hỏi về điểm học tập, bạn có thể tra cứu bảng điểm của sinh viên. Để gọi API tra cứu điểm, hãy sử dụng cú pháp sau:
@@ -51,6 +53,14 @@ Assistant: Tôi sẽ kiểm tra thời khóa biểu TVU của bạn trong tuần
 
 [TVU_SCHEDULE]
 ACTION: xem_tuan_nay
+[/TVU_SCHEDULE]
+
+User: Cho mình xem thời khóa biểu tuần 38
+Assistant: Tôi sẽ kiểm tra thời khóa biểu TVU của bạn trong tuần 38.
+
+[TVU_SCHEDULE]
+ACTION: xem_theo_tuan
+WEEK: 38
 [/TVU_SCHEDULE]
 
 User: Cho mình xem thời khóa biểu tuần trước

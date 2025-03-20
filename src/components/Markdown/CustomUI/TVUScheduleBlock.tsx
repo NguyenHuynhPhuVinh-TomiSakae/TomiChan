@@ -27,6 +27,7 @@ export const TVUScheduleBlock: React.FC<TVUScheduleBlockProps> = ({
   // Tách thông tin từ nội dung
   const action = rawContent.match(/ACTION:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
   const date = rawContent.match(/DATE:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
+  const week = rawContent.match(/WEEK:\s*(.*?)(?=\n|$)/)?.[1]?.trim();
 
   // Xác định tiêu đề và thông tin phụ dựa trên action
   let title = "";
@@ -90,6 +91,16 @@ export const TVUScheduleBlock: React.FC<TVUScheduleBlockProps> = ({
     case "xem_tuan_sau":
       title = "Thời Khóa Biểu Tuần Sau";
       subtitle = "Lịch học trong tuần sau";
+      icon = (
+        <IconCalendarTime
+          className="text-blue-500 dark:text-blue-400"
+          size={24}
+        />
+      );
+      break;
+    case "xem_theo_tuan":
+      title = `Thời Khóa Biểu Tuần ${week || ""}`;
+      subtitle = `Lịch học trong tuần ${week || "được chọn"}`;
       icon = (
         <IconCalendarTime
           className="text-blue-500 dark:text-blue-400"

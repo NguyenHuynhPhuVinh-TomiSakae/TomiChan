@@ -3,7 +3,7 @@ import axios from "axios";
 
 export async function POST(req: NextRequest) {
   try {
-    const { studentId, password, date, isWeekView, weekOffset } =
+    const { studentId, password, date, isWeekView, weekOffset, week } =
       await req.json();
 
     if (!studentId || !password || !date) {
@@ -78,6 +78,41 @@ export async function POST(req: NextRequest) {
         .toISOString()
         .split("T")[0];
     };
+
+    // Nếu có tham số week (số tuần), ưu tiên tìm tuần đó
+    if (week && isWeekView) {
+      const targetWeek = schedule.data.ds_tuan_tkb.find(
+        (w: { thong_tin_tuan?: string }) => {
+          if (!w.thong_tin_tuan) return false;
+          // Tìm số tuần từ chuỗi thông tin (ví dụ: "Tuần 38 (23/09/2024 - 29/09/2024)")
+          const tuanMatch = w.thong_tin_tuan.match(/Tuần\s+(\d+)/i);
+          if (!tuanMatch || !tuanMatch[1]) return false;
+
+          // So sánh chính xác số tuần
+          return tuanMatch[1] === week;
+        }
+      );
+
+      if (!targetWeek) {
+        return NextResponse.json({
+          date: date,
+          subjects: [],
+          weekInfo: {
+            thong_tin_tuan: `Không tìm thấy thông tin cho Tuần ${week}`,
+          },
+        });
+      }
+
+      return NextResponse.json({
+        date: date,
+        subjects: targetWeek.ds_thoi_khoa_bieu || [],
+        weekInfo: {
+          thong_tin_tuan: targetWeek.thong_tin_tuan,
+          ngay_bat_dau: targetWeek.ngay_bat_dau,
+          ngay_ket_thuc: targetWeek.ngay_ket_thuc,
+        },
+      });
+    }
 
     // Tìm tuần học hiện tại
     const targetDate = parseDate(date);

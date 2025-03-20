@@ -6,6 +6,7 @@ import axios from "axios";
 
 interface TVUScoreData {
   action: string;
+  year?: string;
 }
 
 // Trích xuất thông tin TVU_SCORE tag từ nội dung tin nhắn
@@ -19,23 +20,26 @@ const extractTVUScoreData = (messageContent: string): TVUScoreData | null => {
 
   const scoreContent = match[1];
   const action = scoreContent.match(/ACTION:\s*(.*)/)?.[1]?.trim();
+  const year = scoreContent.match(/YEAR:\s*(.*)/)?.[1]?.trim();
 
   if (!action) {
     return null;
   }
 
-  return { action };
+  return { action, year };
 };
 
 // Lấy dữ liệu điểm từ API
 const getScoreFromAPI = async (
   studentId: string,
-  password: string
+  password: string,
+  year?: string
 ): Promise<any> => {
   try {
     const response = await axios.post("/api/tvu/score", {
       studentId,
       password,
+      year,
     });
 
     // Xử lý response từ API local
@@ -108,7 +112,11 @@ export function useTVUScoreProcessor() {
             switch (scoreData.action) {
               case "xem_diem":
                 // Lấy dữ liệu điểm
-                const scoreResult = await getScoreFromAPI(studentId, password);
+                const scoreResult = await getScoreFromAPI(
+                  studentId,
+                  password,
+                  scoreData.year
+                );
 
                 // Cập nhật tin nhắn với kết quả
                 setMessages((prev) => {
@@ -119,24 +127,30 @@ export function useTVUScoreProcessor() {
 
                   if (targetIndex !== -1) {
                     // Sắp xếp học kỳ theo thứ tự mới nhất đầu tiên
-                    const sortedSemesters = [...scoreResult.semesters].sort(
-                      (a, b) => b.semesterId.localeCompare(a.semesterId)
-                    );
+                    const sortedSemesters = Array.isArray(scoreResult.semesters)
+                      ? [...scoreResult.semesters].sort((a, b) =>
+                          b.semesterId.localeCompare(a.semesterId)
+                        )
+                      : [];
 
                     // Nhóm môn học theo học kỳ để hiển thị UI
-                    const subjectsBySemester = scoreResult.subjects.reduce(
-                      (acc: any, subject: any) => {
-                        if (!acc[subject.semesterId]) {
-                          acc[subject.semesterId] = [];
-                        }
-                        // Chỉ lấy các môn học đã có điểm tổng kết
-                        if (subject.avgScore && subject.avgScore !== "-") {
-                          acc[subject.semesterId].push(subject);
-                        }
-                        return acc;
-                      },
-                      {}
-                    );
+                    const subjectsBySemester = Array.isArray(
+                      scoreResult.subjects
+                    )
+                      ? scoreResult.subjects.reduce(
+                          (acc: any, subject: any) => {
+                            if (!acc[subject.semesterId]) {
+                              acc[subject.semesterId] = [];
+                            }
+                            // Chỉ lấy các môn học đã có điểm tổng kết
+                            if (subject.avgScore && subject.avgScore !== "-") {
+                              acc[subject.semesterId].push(subject);
+                            }
+                            return acc;
+                          },
+                          {}
+                        )
+                      : {};
 
                     // Sắp xếp các môn học trong mỗi học kỳ theo điểm và mã môn
                     Object.keys(subjectsBySemester).forEach((semId) => {

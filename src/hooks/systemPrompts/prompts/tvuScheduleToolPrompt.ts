@@ -74,6 +74,14 @@ Assistant: Tôi sẽ tra cứu điểm học tập của bạn từ hệ thống
 ACTION: xem_diem
 [/TVU_SCORE]
 
+User: Cho mình xem điểm học tập năm 2023-2024
+Assistant: Tôi sẽ tra cứu điểm học tập của bạn năm học 2023-2024 từ hệ thống TTSV.
+
+[TVU_SCORE]
+ACTION: xem_diem
+YEAR: 2023-2024
+[/TVU_SCORE]
+
 Khi không tìm thấy thông tin hoặc có lỗi, hãy thông báo cho người dùng một cách rõ ràng và lịch sự.
 
 Nếu người dùng chưa cấu hình công cụ, hãy hướng dẫn họ cách bật và cấu hình công cụ từ danh sách công cụ AI.

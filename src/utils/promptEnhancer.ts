@@ -1,4 +1,7 @@
 import { getGeminiResponse } from "@/lib/gemini";
+import { getGroqResponse } from "@/lib/groq";
+import { getOpenRouterResponse } from "@/lib/openrouter";
+import { getLocalStorage } from "./localStorage";
 
 const ENHANCEMENT_PROMPT = `Bạn là một chuyên gia về prompt engineering. Nhiệm vụ của bạn là cải thiện và làm rõ ràng hơn prompt được cung cấp. Hãy:
 1. Thêm chi tiết và ngữ cảnh cần thiết
@@ -16,14 +19,45 @@ Hãy cải thiện prompt sau:`;
 export async function enhancePrompt(originalPrompt: string): Promise<string> {
   try {
     let enhancedPrompt = "";
-
-    await getGeminiResponse(
-      `${ENHANCEMENT_PROMPT}\n${originalPrompt}`,
-      [],
-      (chunk: string) => {
-        enhancedPrompt += chunk;
-      }
+    // Lấy provider từ cài đặt của người dùng, mặc định là provider AI hiện tại
+    const selectedProvider = getLocalStorage(
+      "prompt_enhancement_provider",
+      getLocalStorage("selected_provider", "google")
     );
+
+    const handleChunk = (chunk: string) => {
+      enhancedPrompt += chunk;
+    };
+
+    switch (selectedProvider) {
+      case "google":
+        await getGeminiResponse(
+          `${ENHANCEMENT_PROMPT}\n${originalPrompt}`,
+          [],
+          handleChunk
+        );
+        break;
+      case "groq":
+        await getGroqResponse(
+          `${ENHANCEMENT_PROMPT}\n${originalPrompt}`,
+          [],
+          handleChunk
+        );
+        break;
+      case "openrouter":
+        await getOpenRouterResponse(
+          `${ENHANCEMENT_PROMPT}\n${originalPrompt}`,
+          [],
+          handleChunk
+        );
+        break;
+      default:
+        await getGeminiResponse(
+          `${ENHANCEMENT_PROMPT}\n${originalPrompt}`,
+          [],
+          handleChunk
+        );
+    }
 
     return enhancedPrompt.trim();
   } catch (error) {

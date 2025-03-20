@@ -18,31 +18,18 @@ export default function AnimeSearchToolModal({
   onDisable,
   isEnabled,
 }: AnimeSearchToolModalProps) {
-  const [preferredLanguage, setPreferredLanguage] = useState("vi");
-  const [showAdultContent, setShowAdultContent] = useState(false);
+  const [searchLimit, setSearchLimit] = useState(10);
 
   // Load cấu hình từ localStorage khi mở modal
   useEffect(() => {
-    const savedLanguage = getLocalStorage("tool:anime_search:language", "vi");
-    const savedAdultContent = getLocalStorage(
-      "tool:anime_search:adult_content",
-      "false"
-    );
-    setPreferredLanguage(savedLanguage);
-    setShowAdultContent(savedAdultContent === "true");
+    const savedSearchLimit = getLocalStorage("tool:anime_search:limit", "10");
+    setSearchLimit(Number(savedSearchLimit));
   }, []);
 
   // Tự động lưu cấu hình khi người dùng thay đổi
   useEffect(() => {
-    setLocalStorage("tool:anime_search:language", preferredLanguage);
-  }, [preferredLanguage]);
-
-  useEffect(() => {
-    setLocalStorage(
-      "tool:anime_search:adult_content",
-      showAdultContent.toString()
-    );
-  }, [showAdultContent]);
+    setLocalStorage("tool:anime_search:limit", searchLimit.toString());
+  }, [searchLimit]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,9 +78,8 @@ export default function AnimeSearchToolModal({
           <p className="text-gray-600 dark:text-gray-400 text-sm">
             Công cụ Tra cứu Anime cung cấp thông tin chi tiết về các bộ anime,
             manga và phim hoạt hình Nhật Bản. Bạn có thể tìm kiếm theo tên, thể
-            loại, năm phát hành và nhiều tiêu chí khác. Công cụ này cũng cho
-            phép bạn tùy chỉnh ngôn ngữ hiển thị và lọc nội dung phù hợp với lứa
-            tuổi.
+            loại, năm phát hành và nhiều tiêu chí khác. Sử dụng Jikan API v4 để
+            kết nối với MyAnimeList và cung cấp dữ liệu chính xác nhất.
           </p>
         </div>
 
@@ -103,9 +89,9 @@ export default function AnimeSearchToolModal({
             Hướng dẫn sử dụng
           </h3>
           <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-            <p>1. Chọn ngôn ngữ hiển thị ưu tiên</p>
-            <p>2. Tùy chỉnh cài đặt hiển thị nội dung</p>
-            <p>3. Nhấn nút bật để kích hoạt công cụ</p>
+            <p>1. Điều chỉnh số lượng kết quả tìm kiếm</p>
+            <p>2. Nhấn nút bật để kích hoạt công cụ</p>
+            <p>3. Hỏi AI về bất kỳ anime hoặc manga nào bạn quan tâm</p>
           </div>
         </div>
 
@@ -115,50 +101,53 @@ export default function AnimeSearchToolModal({
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Ngôn ngữ ưu tiên
+              Số lượng kết quả tìm kiếm
             </label>
-            <select
-              value={preferredLanguage}
-              onChange={(e) => setPreferredLanguage(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-black focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            >
-              <option value="vi">Tiếng Việt</option>
-              <option value="en">English</option>
-              <option value="ja">日本語</option>
-            </select>
+            <input
+              type="range"
+              min="5"
+              max="25"
+              step="5"
+              value={searchLimit}
+              onChange={(e) => setSearchLimit(Number(e.target.value))}
+              className="w-full"
+            />
+            <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <span>5</span>
+              <span>10</span>
+              <span>15</span>
+              <span>20</span>
+              <span>25</span>
+            </div>
+            <div className="text-center text-sm font-medium text-blue-600 dark:text-blue-400 mt-2">
+              {searchLimit} kết quả
+            </div>
             <div className="flex items-start gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
               <IconInfoCircle size={16} className="mt-0.5 flex-shrink-0" />
               <p>
-                Ngôn ngữ ưu tiên sẽ được sử dụng để hiển thị thông tin anime khi
-                có sẵn. Nếu không có thông tin bằng ngôn ngữ đã chọn, hệ thống
-                sẽ hiển thị bằng tiếng Anh.
+                Số lượng kết quả tìm kiếm tối đa sẽ được hiển thị trong mỗi lần
+                tìm kiếm. Jikan API có giới hạn kết quả tìm kiếm và tần suất yêu
+                cầu.
               </p>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="showAdultContent"
-                checked={showAdultContent}
-                onChange={(e) => setShowAdultContent(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          <div className="bg-yellow-50 dark:bg-yellow-900/30 rounded-lg p-4 mt-4">
+            <div className="flex items-start gap-2">
+              <IconInfoCircle
+                size={18}
+                className="text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0"
               />
-              <label
-                htmlFor="showAdultContent"
-                className="text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Hiển thị nội dung người lớn
-              </label>
-            </div>
-            <div className="flex items-start gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
-              <IconInfoCircle size={16} className="mt-0.5 flex-shrink-0" />
-              <p>
-                Khi bật tùy chọn này, kết quả tìm kiếm sẽ bao gồm cả nội dung
-                dành cho người lớn. Vui lòng cân nhắc kỹ trước khi bật tùy chọn
-                này.
-              </p>
+              <div>
+                <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                  Lưu ý về nội dung
+                </h4>
+                <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                  Công cụ này chỉ hiển thị nội dung phù hợp với mọi lứa tuổi
+                  (SFW). Kết quả tìm kiếm đã được lọc để đảm bảo an toàn và phù
+                  hợp cho tất cả người dùng.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -170,7 +159,7 @@ export default function AnimeSearchToolModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors cursor-pointer"
             >
               Đóng
             </button>
@@ -178,14 +167,14 @@ export default function AnimeSearchToolModal({
               <button
                 type="button"
                 onClick={handleDisable}
-                className="px-6 py-2 rounded-lg text-sm font-medium transition-colors bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800"
+                className="px-6 py-2 rounded-lg text-sm font-medium transition-colors bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 cursor-pointer"
               >
                 Tắt công cụ
               </button>
             ) : (
               <button
                 type="submit"
-                className="px-6 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800"
+                className="px-6 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 cursor-pointer"
               >
                 Bật công cụ
               </button>

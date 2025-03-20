@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: "www.google.com",
         pathname: "/s2/**",
       },
+      {
+        protocol: "https",
+        hostname: "cdn.myanimelist.net",
+        pathname: "/images/**",
+      },
     ],
   },
 };

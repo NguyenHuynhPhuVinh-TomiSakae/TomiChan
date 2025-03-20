@@ -22,6 +22,10 @@ import { TVUScheduleBlock } from "./CustomUI/TVUScheduleBlock";
 import { TVUScheduleResult } from "./CustomUI/TVUScheduleResult";
 import { TVUScoreBlock } from "./CustomUI/TVUScoreBlock";
 import { TVUScoreResult } from "./CustomUI/TVUScoreResult";
+import {
+  AnimeSearchBlock,
+  AnimeSearchResult,
+} from "./CustomUI/AnimeSearchBlock";
 
 interface CustomUIComponentsProps {
   children: React.ReactNode;
@@ -428,5 +432,13 @@ export const CustomUIComponents = {
 
   "tvu-score-result": ({ children }: CustomUIComponentsProps) => {
     return <TVUScoreResult>{children}</TVUScoreResult>;
+  },
+
+  "anime-search-block": ({ children }: CustomUIComponentsProps) => {
+    return <AnimeSearchBlock>{children}</AnimeSearchBlock>;
+  },
+
+  "anime-search-result": ({ children }: CustomUIComponentsProps) => {
+    return <AnimeSearchResult>{children}</AnimeSearchResult>;
   },
 };
